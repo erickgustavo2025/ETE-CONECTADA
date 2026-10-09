@@ -1,0 +1,159 @@
+/* Aparência compartilhada. Cada tela define apenas tamanho e posicionamento. */
+.ete-button {
+  --button-bg: var(--blue);
+  --button-hover: var(--blue-hover);
+  --button-pressed: var(--navy);
+  --button-ink: var(--white);
+  --button-border: transparent;
+  --button-shadow: var(--shadow-control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 14px 23px;
+  border: 1px solid var(--button-border);
+  border-radius: var(--radius-button);
+  background: var(--button-bg);
+  color: var(--button-ink);
+  box-shadow: var(--button-shadow);
+  font: 650 16px/1.35 var(--font-body);
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ete-button:hover:not(:disabled) {
+  background: var(--button-hover);
+  box-shadow: 0 6px 16px #0a203f1c;
+  transform: translateY(-1px);
+}
+.ete-button:active:not(:disabled) {
+  background: var(--button-pressed);
+  transform: translateY(1px);
+  box-shadow: none;
+}
+.ete-button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+.ete-button:disabled {
+  background: #e4eaf3;
+  color: #65758b;
+  border-color: #dbe3ee;
+  box-shadow: none;
+}
+.ete-button--secondary {
+  --button-bg: var(--white);
+  --button-hover: var(--pale);
+  --button-pressed: #dce8fb;
+  --button-ink: var(--navy);
+  --button-border: #cbd8e9;
+  --button-shadow: none;
+}
+.ete-button--header {
+  --button-bg: #ffffff0d;
+  --button-hover: #ffffff1c;
+  --button-pressed: #ffffff29;
+  --button-ink: var(--white);
+  --button-border: #ffffff2e;
+  --button-shadow: none;
+}
+.ete-button--on-dark {
+  --button-bg: #ffffff0b;
+  --button-hover: #ffffff19;
+  --button-pressed: #ffffff26;
+  --button-ink: var(--white);
+  --button-border: #ffffff26;
+  --button-shadow: none;
+}
+.ete-button--header:focus-visible,
+.ete-button--on-dark:focus-visible {
+  outline-color: var(--yellow);
+}
+.ete-button--header:hover:not(:disabled),
+.ete-button--on-dark:hover:not(:disabled) {
+  border-color: #ffffff70;
+  box-shadow: none;
+}
+.ete-button--danger {
+  --button-bg: var(--red);
+  --button-hover: #9e1c34;
+  --button-pressed: #84162b;
+}
+.ete-button--danger-outline {
+  --button-bg: var(--white);
+  --button-hover: #fff1f4;
+  --button-pressed: #fce3e9;
+  --button-ink: #a12038;
+  --button-border: #e6bcc5;
+  --button-shadow: none;
+}
+.ete-button > svg,
+.ete-button > img {
+  flex: none;
+}
+.ete-button--header .entry-icon {
+  filter: invert(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ete-button {
+    transition: none;
+  }
+  .ete-button:hover:not(:disabled),
+  .ete-button:active:not(:disabled) {
+    transform: none;
+  }
+}
+@media (forced-colors: active) {
+  .ete-button {
+    border: 1px solid ButtonText;
+  }
+  .ete-button:disabled {
+    color: GrayText;
+    border-color: GrayText;
+  }
+}
+
+/* A mesma aparência para ações menores, sem reduzir o alvo de toque. */
+.ete-button--compact {
+  min-height: 44px;
+  padding: 10px 16px;
+  gap: 9px;
+  font-size: 14px;
+}
+.ete-button--icon {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  flex: none;
+}
+.ete-button {
+  cursor: pointer;
+}
+.ete-button:disabled {
+  cursor: not-allowed;
+}
+.ete-button[aria-busy="true"] {
+  cursor: progress;
+}
+
+.ete-button--quiet {
+  --button-bg: transparent;
+  --button-hover: var(--pale);
+  --button-pressed: #dce8fb;
+  --button-ink: var(--blue);
+  --button-border: transparent;
+  --button-shadow: none;
+}
+.ete-button--quiet:hover:not(:disabled),
+.ete-button--quiet:active:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}

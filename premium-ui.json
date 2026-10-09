@@ -1,0 +1,15 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["apps/portal/src", "apps/site/app", "shared"],
+  "locale": "pt-BR",
+  "canonicalMap": "DESIGN.md",
+  "requiredCapabilities": ["Form", "Select/Listbox", "Date", "Scrollbar"],
+  "ownership": { "Select/Listbox": "native", "Date": "native" },
+  "requiredCommands": ["build", "registration", "declarations"],
+  "commands": {
+    "build": "npm run build",
+    "registration": "npm run test:registration",
+    "declarations": "npm run test:declarations"
+  },
+  "evidence": { "failurePaths": "apps/portal/scripts/test-declarations.ts" }
+}

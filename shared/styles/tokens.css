@@ -1,0 +1,77 @@
+/* Fonte canônica das duas aplicações. Fontes locais carregadas nos layouts. */
+:root {
+  --navy: #102e59;
+  --navy-deep: #0a203f;
+  --blue: #155bcc;
+  --blue-hover: #104bab;
+  --yellow: #f5c518;
+  --red: #bb2440;
+  --white: #fff;
+  --pale: #eaf1fc;
+  --ink: #172b47;
+  --muted: #5c6d83;
+  --border: #dbe3ee;
+  --bg: #f5f7fb;
+  --font-display: var(--font-manrope, "Trebuchet MS"), Arial, sans-serif;
+  --font-body: var(--font-source, "Segoe UI"), Arial, sans-serif;
+  --radius-control: 12px;
+  --radius-button: 12px;
+  --radius-panel: 28px;
+  --page-max: 1200px;
+  --focus: #629bf0;
+  --shadow-control: 0 4px 12px #0a203f12;
+  --shadow-panel: 0 24px 64px #0a203f0b;
+  --scroll-thumb: #9aacc4;
+  --scroll-track: #f5f7fb;
+  --scroll-hover: #5c6d83;
+  --scroll-active: #102e59;
+  --z-focus: 100;
+  --stripe: linear-gradient(
+    90deg,
+    var(--blue) 0% 65%,
+    var(--yellow) 65% 80%,
+    var(--red) 80% 100%
+  );
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border: 2px solid var(--scroll-track);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-hover);
+}
+*::-webkit-scrollbar-thumb:active {
+  background: var(--scroll-active);
+}
+html {
+  scrollbar-gutter: stable;
+}
+a,
+button:not(:disabled),
+summary,
+select {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+textarea {
+  resize: none;
+}
+@media (forced-colors: active) {
+  * {
+    scrollbar-color: auto;
+  }
+}
