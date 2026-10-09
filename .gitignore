@@ -1,0 +1,38 @@
+node_modules/
+.next/
+.env
+.env.*
+!.env.example
+*.log
+*.tsbuildinfo
+reunioes/
+apps/portal/src/generated/prisma/
+
+# Local generated verification reports
+premium-audit.json
+
+# Configuração local de ferramentas e credenciais
+.agents/
+.aws/
+.codex/
+
+# Backups e arquivos de alunos não fazem parte do código
+**/Backup*.json
+backups/
+backup/
+*.zip
+
+# Arquivos temporários
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# Somente modelos revisáveis; nunca documentos emitidos
+/output/*
+!/output/pdf/
+/output/pdf/*
+!/output/pdf/declaracao-vinculo-alinhada.png
+!/output/pdf/declaracao-vinculo-referencia.pdf
+!/output/pdf/declaracao-vinculo-modelo.pdf
+!/output/pdf/declaracao-vinculo-exemplo-integrado.pdf

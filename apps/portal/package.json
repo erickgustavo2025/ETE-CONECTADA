@@ -1,0 +1,45 @@
+{
+  "name": "@ete-conectada/portal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack -p 3001",
+    "build": "next build --webpack",
+    "start": "next start -p 3001",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:status": "prisma migrate status",
+    "db:studio": "prisma studio",
+    "prebuild": "prisma generate",
+    "predev": "prisma generate",
+    "test:db": "tsx scripts/test-db.ts",
+    "test:registration": "tsx scripts/test-registration.ts",
+    "diagnose:login": "node --import tsx scripts/diagnose-login.ts",
+    "students:import": "node --import tsx scripts/import-students.ts",
+    "access:secretary": "node --import tsx scripts/set-secretary.ts",
+    "test:declarations": "node --import tsx scripts/test-declarations.ts"
+  },
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "next": "16.2.6",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.16.3",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "dotenv": "17.3.1",
+    "prisma": "7.10.0",
+    "tsx": "4.21.0",
+    "typescript": "^5.9.0"
+  }
+}

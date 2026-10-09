@@ -1,0 +1,16 @@
+{
+  "name": "ete-conectada",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:site": "npm run dev --workspace @ete-conectada/site",
+    "dev:portal": "npm run dev --workspace @ete-conectada/portal",
+    "build": "npm run build --workspaces --if-present",
+    "students:import": "npm run students:import --workspace @ete-conectada/portal --",
+    "access:secretary": "npm run access:secretary --workspace @ete-conectada/portal --",
+    "test:registration": "npm run test:registration --workspace @ete-conectada/portal",
+    "test:declarations": "npm run test:declarations --workspace @ete-conectada/portal"
+  }
+}
