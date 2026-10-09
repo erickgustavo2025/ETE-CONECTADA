@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Student {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cpf       String?  @unique @db.Char(11)
+  birthDate DateTime @map("birth_date") @db.Date
+  fullName  String?  @map("full_name")
+  schoolRegistration String? @unique @map("school_registration")
+  importSourceId String? @unique @map("import_source_id")
+  registrationAllowed Boolean @default(true) @map("registration_allowed")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  account   Account?
+  declarationRequests DeclarationRequest[]
+  enrollments Enrollment[]
+  @@map("students")
+}
+
+enum EducationMode {
+  INTEGRADO
+  SUBSEQUENTE
+}
+
+model Enrollment {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  mode EducationMode
+  className String @map("class_name")
+  grade Int?
+  courseLabel String @map("course_label")
+  schoolYear Int? @map("school_year")
+  importSourceId String? @unique @map("import_source_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  declarationRequests DeclarationRequest[]
+  @@index([studentId])
+  @@index([className])
+  @@map("enrollments")
+}
+
+model Account {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId    String   @unique @map("student_id") @db.Uuid
+  email        String?  @unique
+  passwordHash String?  @map("password_hash")
+  status       String   @default("unclaimed")
+  role         String   @default("student")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  preparedDeclarations DeclarationRequest[] @relation("PreparedBy")
+  completedDeclarations DeclarationRequest[] @relation("ReadyBy")
+  sessions     Session[]
+  verificationTokens EmailVerificationToken[]
+  @@map("accounts")
+}
+
+model Session {
+  tokenHash String @id @map("token_hash")
+  accountId String @map("account_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([accountId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model EmailVerificationToken {
+  tokenHash String @id @map("token_hash")
+  accountId String @map("account_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([accountId])
+  @@map("email_verification_tokens")
+}
+
+enum DeclarationRequestStatus {
+  REQUESTED
+  IN_PREPARATION
+  READY_FOR_PICKUP
+}
+
+model DeclarationRequest {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  enrollmentId String @map("enrollment_id") @db.Uuid
+  status DeclarationRequestStatus @default(REQUESTED)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  generatedAt DateTime? @map("generated_at") @db.Timestamptz(6)
+  readyAt DateTime? @map("ready_at") @db.Timestamptz(6)
+  preparedById String? @map("prepared_by_id") @db.Uuid
+  readyById String? @map("ready_by_id") @db.Uuid
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  preparedBy Account? @relation("PreparedBy", fields: [preparedById], references: [id], onDelete: SetNull)
+  readyBy Account? @relation("ReadyBy", fields: [readyById], references: [id], onDelete: SetNull)
+  @@index([studentId, createdAt])
+  @@index([status, createdAt])
+  @@index([enrollmentId])
+  @@map("declaration_requests")
+}
+
+// Histórico anterior ao Prisma, preservado para auditoria.
+model LegacyMigration {
+  version String @id
+  appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz(6)
+  @@map("portal_schema_migrations")
+}
