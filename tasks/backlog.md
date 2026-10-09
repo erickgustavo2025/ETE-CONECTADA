@@ -1,123 +1,132 @@
 # Cards da ETE Conectada — base de 09/10/2026
 
-104 cards: 25 registros históricos e 79 itens futuros. Todos destinados inicialmente ao PRODUCT BACKLOG, conforme pedido de TH. Ver [plano](plan.md) e [inventário](../docs/planejamento/inventario.md).
+111 cards: 25 registros históricos em CONCLUÍDO e 86 itens futuros em A FAZER, conforme último pedido de TH. Guia EC-000 preservado como referência arquivada e cinco cards explicativos preservados. Ver [plano](plan.md), [inventário](../docs/planejamento/inventario.md), [contexto da secretaria](../docs/planejamento/contexto-secretaria-2026-10-09.md) e [Git/colaboração](../docs/planejamento/git-e-colaboracao.md).
 
-Esta lista é uma base revisável das necessidades conhecidas, não garantia de requisitos completos para todos os módulos futuros. Datas e autores históricos não foram inventados.
+Esta é uma base revisável das necessidades conhecidas; a fila A FAZER não é compromisso de sprint. FEITO DEV registra código/documentação existentes, sem alegar produção homologada.
 
 ## Índice
 
-| ID | Área | Estado | Prioridade | Dono sugerido | Card |
-|---|---|---|---|---|---|
-| EC-001 | Arquitetura | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Estruturar monorepositório Next.js com duas aplicações](#ec-001) |
-| EC-002 | Gestão | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Documentar arquitetura, operação e decisões da equipe](#ec-002) |
-| EC-003 | Design | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Consolidar identidade ETE/Pernambuco e estilos compartilhados](#ec-003) |
-| EC-004 | Site | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Criar site institucional público](#ec-004) |
-| EC-005 | Site | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Corrigir navegação entre aplicações e acesso pela rede local](#ec-005) |
-| EC-006 | Dados | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Integrar Prisma 7 com PostgreSQL/Neon](#ec-006) |
-| EC-007 | Dados | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Versionar migrações de alunos, acesso e solicitações](#ec-007) |
-| EC-008 | Testes | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Preparar seed de três alunos sintéticos](#ec-008) |
-| EC-009 | Dados | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Implementar importação por lista branca e matrícula](#ec-009) |
-| EC-010 | Acesso | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Implementar primeiro acesso com matrícula e nascimento](#ec-010) |
-| EC-011 | Acesso | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Validar CPF e credenciais na criação de conta](#ec-011) |
-| EC-012 | Segurança | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Armazenar senhas com scrypt](#ec-012) |
-| EC-013 | Acesso | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Confirmar e-mail com token de uso único](#ec-013) |
-| EC-014 | Acesso | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Corrigir retomada de cadastro pendente](#ec-014) |
-| EC-015 | Acesso | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Implementar login por CPF ou e-mail em desenvolvimento](#ec-015) |
-| EC-016 | Segurança | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Persistir sessões e revogá-las no logout](#ec-016) |
-| EC-017 | Portal | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Proteger página inicial e apresentar menu de serviços](#ec-017) |
-| EC-018 | Desempenho | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Reduzir consultas de sessão e diagnosticar login](#ec-018) |
-| EC-019 | Declarações | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Persistir pedido de declaração e acompanhamento pelo aluno](#ec-019) |
-| EC-020 | Declarações | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Criar atendimento protegido pelo papel secretary](#ec-020) |
-| EC-021 | Declarações | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Gerar minuta A4 individual e em lotes de até 100](#ec-021) |
-| EC-022 | Declarações | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Separar geração do PDF e liberação para retirada](#ec-022) |
-| EC-023 | Portal | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Remover perfil e fotos do front e backend ativos](#ec-023) |
-| EC-024 | Pesquisa | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Preparar modelos e pesquisas de declaração/QR](#ec-024) |
-| EC-025 | Gestão | FEITO DEV | Histórico | Não atribuído retrospectivamente | [Organizar trabalho acumulado em sete commits](#ec-025) |
-| EC-026 | Gestão | A FAZER | P1 | TH + Erick | [Revisar inventário e priorizar primeira sprint](#ec-026) |
-| EC-027 | Gestão | A FAZER | P1 | TH | [Definir padrão de branch e pull request por card](#ec-027) |
-| EC-028 | CI/CD | A FAZER | P1 | TH | [Criar CI de instalação e build dos dois workspaces](#ec-028) |
-| EC-029 | CI/CD | A FAZER | P1 | TH | [Adicionar comandos de tipos, lint e formatação](#ec-029) |
-| EC-030 | Testes | A FAZER | P1 | Erick | [Cobrir validações puras de primeiro acesso](#ec-030) |
-| EC-031 | Testes | A FAZER | P0 | Erick | [Impedir testes e seeds no banco errado](#ec-031) |
-| EC-032 | CI/CD | A FAZER | P1 | TH | [Criar PostgreSQL descartável e aplicar migrações no CI](#ec-032) |
-| EC-033 | CI/CD | A FAZER | P1 | TH | [Automatizar testes existentes de cadastro e declaração](#ec-033) |
-| EC-034 | Gestão | A FAZER | P1 | TH | [Proteger main com revisão e checks obrigatórios](#ec-034) |
-| EC-035 | Testes | A FAZER | P1 | Erick | [Cobrir senha e hash malformado com testes puros](#ec-035) |
-| EC-036 | Testes | A FAZER | P1 | Erick | [Cobrir campos e frequência da declaração em testes puros](#ec-036) |
-| EC-037 | Testes | A FAZER | P1 | Erick | [Cobrir importação idempotente e rollback](#ec-037) |
-| EC-038 | Testes | A FAZER | P0 | Erick | [Ampliar regressão de sessão e autorização](#ec-038) |
-| EC-039 | Testes | A FAZER | P1 | Erick | [Criar testes de navegador das jornadas principais](#ec-039) |
-| EC-040 | Testes | A FAZER | P0 | TH | [Testar bloqueios atuais em build de produção](#ec-040) |
-| EC-041 | Segurança | A FAZER | P1 | TH | [Definir triagem de dependências e automatizar alertas](#ec-041) |
-| EC-042 | Segurança | A FAZER | P1 | TH | [Adicionar análise de código e segredos ao CI](#ec-042) |
-| EC-043 | Segurança | A FAZER | P0 | TH | [Revisar segurança dos workflows](#ec-043) |
-| EC-044 | Acesso | DEPENDE DA ESCOLA | P0 | Erick | [Definir titularidade e recuperação com a escola](#ec-044) |
-| EC-045 | Acesso | DEPENDE DA ESCOLA | P0 | Erick | [Confirmar papéis de secretaria e gestão](#ec-045) |
-| EC-046 | Declarações | DEPENDE DA ESCOLA | P0 | Erick | [Validar modelo e signatários da declaração](#ec-046) |
-| EC-047 | Dados | DEPENDE DA ESCOLA | P0 | Erick | [Obter dicionário e exportação autorizada de dados escolares](#ec-047) |
-| EC-048 | Declarações | DEPENDE DA ESCOLA | P0 | Erick | [Confirmar finalidade e fonte da frequência](#ec-048) |
-| EC-049 | Segurança | DEPENDE DA ESCOLA | P0 | TH | [Definir política de acesso, retenção e suporte a dados pessoais](#ec-049) |
-| EC-050 | Infraestrutura | DEPENDE DA ESCOLA | P0 | TH | [Confirmar domínio, hospedagem e responsável institucional](#ec-050) |
-| EC-051 | Acesso | DEPENDE DA ESCOLA | P0 | Erick | [Definir contas de servidores e revogação de privilégios](#ec-051) |
-| EC-052 | Dados | A FAZER | P1 | Erick | [Persistir dados complementares aprovados do aluno](#ec-052) |
-| EC-053 | Dados | A FAZER | P0 | Erick | [Registrar situação e vigência da matrícula](#ec-053) |
-| EC-054 | Declarações | A FAZER | P0 | Erick | [Cadastrar configuração institucional aprovada](#ec-054) |
-| EC-055 | Dados | A FAZER | P1 | Erick | [Especificar importação de planilha oficial da secretaria](#ec-055) |
-| EC-056 | Dados | A FAZER | P1 | Erick | [Implementar prévia e importação da planilha aprovada](#ec-056) |
-| EC-057 | Dados | A FAZER | P1 | Erick | [Sincronizar novas turmas e alterações sem apagar histórico](#ec-057) |
-| EC-058 | Acesso | A FAZER | P0 | Erick | [Implementar verificação de titularidade aprovada](#ec-058) |
-| EC-059 | Acesso | A FAZER | P0 | Erick | [Implementar recuperação de acesso aprovada](#ec-059) |
-| EC-060 | Segurança | A FAZER | P0 | Erick | [Limitar tentativas de login e primeiro acesso](#ec-060) |
-| EC-061 | Segurança | A FAZER | P0 | Erick | [Limitar corpo e custo de processamento nas rotas de acesso](#ec-061) |
-| EC-062 | Segurança | A FAZER | P0 | TH | [Padronizar proteção de origem e URL de confirmação](#ec-062) |
-| EC-063 | Segurança | A FAZER | P0 | TH | [Configurar cookie e sessão para HTTPS](#ec-063) |
-| EC-064 | Segurança | A FAZER | P1 | TH | [Aplicar cabeçalhos de segurança e cache privado](#ec-064) |
-| EC-065 | Acesso | A FAZER | P0 | TH | [Configurar remetente e envio de e-mail real](#ec-065) |
-| EC-066 | Testes | A FAZER | P0 | Erick | [Testar falhas e garantir ausência de link de teste em produção](#ec-066) |
-| EC-067 | Segurança | A FAZER | P0 | Erick | [Registrar ações sensíveis com auditoria mínima](#ec-067) |
-| EC-068 | Segurança | A FAZER | P0 | TH | [Revisar segurança antes de habilitar produção](#ec-068) |
-| EC-069 | Declarações | A FAZER | P0 | Erick | [Aplicar modelo aprovado à geração A4](#ec-069) |
-| EC-070 | Declarações | DEPENDE DA ESCOLA | P1 | Erick | [Confirmar dados e modelo do subsequente](#ec-070) |
-| EC-071 | Declarações | A FAZER | P1 | Erick | [Implementar declaração do subsequente](#ec-071) |
-| EC-072 | Declarações | DEPENDE DA ESCOLA | P1 | Erick | [Definir retirada, cancelamento, correção e novo pedido](#ec-072) |
-| EC-073 | Declarações | A FAZER | P1 | Erick | [Implementar transições de atendimento aprovadas](#ec-073) |
-| EC-074 | Testes | A FAZER | P1 | Erick | [Testar impressão e casos extremos do lote](#ec-074) |
-| EC-075 | Declarações | DEPENDE DA ESCOLA | P1 | Erick | [Decidir guarda e versão do documento final](#ec-075) |
-| EC-076 | Site | DEPENDE DA ESCOLA | P0 | Erick | [Receber textos e assets oficiais do site](#ec-076) |
-| EC-077 | Site | A FAZER | P1 | Erick | [Publicar conteúdo aprovado na interface](#ec-077) |
-| EC-078 | Design | A FAZER | P1 | Erick | [Revisar acessibilidade e responsividade das jornadas](#ec-078) |
-| EC-079 | Desempenho | A FAZER | P1 | TH | [Medir desempenho com metas realistas](#ec-079) |
-| EC-080 | Infraestrutura | A FAZER | P1 | TH | [Criar imagens Docker para site e portal](#ec-080) |
-| EC-081 | Infraestrutura | A FAZER | P1 | TH | [Orquestrar aplicações e volumes na VPS](#ec-081) |
-| EC-082 | Infraestrutura | A FAZER | P0 | TH | [Configurar DNS, proxy reverso e HTTPS](#ec-082) |
-| EC-083 | Infraestrutura | A FAZER | P0 | TH | [Preparar acessos e atualizações da VPS](#ec-083) |
-| EC-084 | Infraestrutura | A FAZER | P0 | TH | [Definir backup e demonstrar restauração](#ec-084) |
-| EC-085 | Infraestrutura | A FAZER | P1 | TH | [Disponibilizar homologação isolada](#ec-085) |
-| EC-086 | CI/CD | A FAZER | P1 | TH | [Construir e versionar artefato de release no CI](#ec-086) |
-| EC-087 | CI/CD | A FAZER | P0 | TH | [Criar deploy automatizado com aprovação e rollback](#ec-087) |
-| EC-088 | CI/CD | A FAZER | P0 | TH | [Definir operação segura de migrações na release](#ec-088) |
-| EC-089 | Infraestrutura | A FAZER | P0 | TH | [Monitorar disponibilidade e erros sem expor dados](#ec-089) |
-| EC-090 | Infraestrutura | A FAZER | P1 | TH | [Documentar incidentes, suporte e manutenção](#ec-090) |
-| EC-091 | Acesso | A FAZER | P0 | Erick | [Habilitar acesso de produção após aprovação](#ec-091) |
-| EC-092 | Gestão | A FAZER | P0 | TH + Erick | [Realizar piloto assistido e aprovar MVP](#ec-092) |
-| EC-093 | Gestão | A FAZER | P0 | TH + Erick | [Lançar MVP e revisar operação](#ec-093) |
-| EC-094 | Futuro | FUTURO — DESCOBERTA | P2 | Erick | [Aprovar escopo e privacidade da consulta por QR](#ec-094) |
-| EC-095 | Futuro | FUTURO CONDICIONAL | P2 | Erick | [Persistir registro imutável e cancelamento do documento](#ec-095) |
-| EC-096 | Futuro | FUTURO CONDICIONAL | P2 | Erick | [Implementar QR e consulta de documento](#ec-096) |
-| EC-097 | Futuro | FUTURO — DESCOBERTA | P2 | TH | [Revalidar assinatura eletrônica e integração GOV.BR](#ec-097) |
-| EC-098 | Futuro | FUTURO CONDICIONAL | P2 | Erick | [Detalhar e implementar método de assinatura aprovado](#ec-098) |
-| EC-099 | Futuro | FUTURO — DESCOBERTA | P2 | Erick | [Levantar regras do histórico escolar](#ec-099) |
-| EC-100 | Futuro | FUTURO — DESCOBERTA | P2 | Erick | [Levantar arquivo e vínculo de dados do SISTEC](#ec-100) |
-| EC-101 | Futuro | FUTURO — DESCOBERTA | P2 | Erick | [Levantar requisitos de diploma e futura emissão](#ec-101) |
-| EC-102 | Futuro | FUTURO — DESCOBERTA | P2 | Erick | [Levantar importação de notas e acesso pedagógico](#ec-102) |
-| EC-103 | Futuro | FUTURO — DESCOBERTA | P2 | Erick | [Definir indicadores e apoio ao Conselho de Classe](#ec-103) |
-| EC-104 | Futuro | FUTURO — DESCOBERTA | P2 | TH | [Especificar API autorizada para outros projetos](#ec-104) |
+| ID | Área | Estado | Lista | Prioridade | Dono sugerido | Card |
+|---|---|---|---|---|---|---|
+| EC-001 | Arquitetura | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Estruturar monorepositório Next.js com duas aplicações](#ec-001) |
+| EC-002 | Gestão | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Documentar arquitetura, operação e decisões da equipe](#ec-002) |
+| EC-003 | Design | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Consolidar identidade ETE/Pernambuco e estilos compartilhados](#ec-003) |
+| EC-004 | Site | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Criar site institucional público](#ec-004) |
+| EC-005 | Site | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Corrigir navegação entre aplicações e acesso pela rede local](#ec-005) |
+| EC-006 | Dados | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Integrar Prisma 7 com PostgreSQL/Neon](#ec-006) |
+| EC-007 | Dados | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Versionar migrações de alunos, acesso e solicitações](#ec-007) |
+| EC-008 | Testes | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Preparar seed de três alunos sintéticos](#ec-008) |
+| EC-009 | Dados | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Implementar importação por lista branca e matrícula](#ec-009) |
+| EC-010 | Acesso | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Implementar primeiro acesso com matrícula e nascimento](#ec-010) |
+| EC-011 | Acesso | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Validar CPF e credenciais na criação de conta](#ec-011) |
+| EC-012 | Segurança | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Armazenar senhas com scrypt](#ec-012) |
+| EC-013 | Acesso | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Confirmar e-mail com token de uso único](#ec-013) |
+| EC-014 | Acesso | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Corrigir retomada de cadastro pendente](#ec-014) |
+| EC-015 | Acesso | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Implementar login por CPF ou e-mail em desenvolvimento](#ec-015) |
+| EC-016 | Segurança | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Persistir sessões e revogá-las no logout](#ec-016) |
+| EC-017 | Portal | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Proteger página inicial e apresentar menu de serviços](#ec-017) |
+| EC-018 | Desempenho | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Reduzir consultas de sessão e diagnosticar login](#ec-018) |
+| EC-019 | Declarações | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Persistir pedido de declaração e acompanhamento pelo aluno](#ec-019) |
+| EC-020 | Declarações | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Criar atendimento protegido pelo papel secretary](#ec-020) |
+| EC-021 | Declarações | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Gerar minuta A4 individual e em lotes de até 100](#ec-021) |
+| EC-022 | Declarações | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Separar geração do PDF e liberação para retirada](#ec-022) |
+| EC-023 | Portal | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Remover perfil e fotos do front e backend ativos](#ec-023) |
+| EC-024 | Pesquisa | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Preparar modelos e pesquisas de declaração/QR](#ec-024) |
+| EC-025 | Gestão | FEITO DEV | CONCLUÍDO | Histórico | Não atribuído retrospectivamente | [Organizar trabalho acumulado em sete commits](#ec-025) |
+| EC-026 | Gestão | A FAZER | A FAZER | P1 | TH + Erick | [Revisar inventário e priorizar primeira sprint](#ec-026) |
+| EC-027 | Gestão | A FAZER | A FAZER | P1 | TH | [Definir padrão de branch e pull request por card](#ec-027) |
+| EC-028 | CI/CD | A FAZER | A FAZER | P1 | TH | [Criar CI de instalação e build dos dois workspaces](#ec-028) |
+| EC-029 | CI/CD | A FAZER | A FAZER | P1 | TH | [Adicionar comandos de tipos, lint e formatação](#ec-029) |
+| EC-030 | Testes | A FAZER | A FAZER | P1 | Erick | [Cobrir validações puras de primeiro acesso](#ec-030) |
+| EC-031 | Testes | A FAZER | A FAZER | P0 | Erick | [Impedir testes e seeds no banco errado](#ec-031) |
+| EC-032 | CI/CD | A FAZER | A FAZER | P1 | TH | [Criar PostgreSQL descartável e aplicar migrações no CI](#ec-032) |
+| EC-033 | CI/CD | A FAZER | A FAZER | P1 | TH | [Automatizar testes existentes de cadastro e declaração](#ec-033) |
+| EC-034 | Gestão | A FAZER | A FAZER | P1 | TH | [Proteger main com revisão e checks obrigatórios](#ec-034) |
+| EC-035 | Testes | A FAZER | A FAZER | P1 | Erick | [Cobrir senha e hash malformado com testes puros](#ec-035) |
+| EC-036 | Testes | A FAZER | A FAZER | P1 | Erick | [Cobrir campos e frequência da declaração em testes puros](#ec-036) |
+| EC-037 | Testes | A FAZER | A FAZER | P1 | Erick | [Cobrir importação idempotente e rollback](#ec-037) |
+| EC-038 | Testes | A FAZER | A FAZER | P0 | Erick | [Ampliar regressão de sessão e autorização](#ec-038) |
+| EC-039 | Testes | A FAZER | A FAZER | P1 | Erick | [Criar testes de navegador das jornadas principais](#ec-039) |
+| EC-040 | Testes | A FAZER | A FAZER | P0 | TH | [Testar bloqueios atuais em build de produção](#ec-040) |
+| EC-041 | Segurança | A FAZER | A FAZER | P1 | TH | [Definir triagem de dependências e automatizar alertas](#ec-041) |
+| EC-042 | Segurança | A FAZER | A FAZER | P1 | TH | [Adicionar análise de código e segredos ao CI](#ec-042) |
+| EC-043 | Segurança | A FAZER | A FAZER | P0 | TH | [Revisar segurança dos workflows](#ec-043) |
+| EC-044 | Acesso | DEPENDE DA ESCOLA | A FAZER | P0 | Erick | [Definir titularidade e recuperação com a escola](#ec-044) |
+| EC-045 | Acesso | DEPENDE DA ESCOLA | A FAZER | P0 | Erick | [Confirmar papéis de secretaria e gestão](#ec-045) |
+| EC-046 | Declarações | DEPENDE DA ESCOLA | A FAZER | P0 | Erick | [Validar modelo e signatários da declaração](#ec-046) |
+| EC-047 | Dados | DEPENDE DA ESCOLA | A FAZER | P0 | Erick | [Obter dicionário e exportação autorizada de dados escolares](#ec-047) |
+| EC-048 | Declarações | DEPENDE DA ESCOLA | A FAZER | P0 | Erick | [Confirmar finalidade e fonte da frequência](#ec-048) |
+| EC-049 | Segurança | DEPENDE DA ESCOLA | A FAZER | P0 | TH | [Definir política de acesso, retenção e suporte a dados pessoais](#ec-049) |
+| EC-050 | Infraestrutura | DEPENDE DA ESCOLA | A FAZER | P0 | TH | [Confirmar domínio, hospedagem e responsável institucional](#ec-050) |
+| EC-051 | Acesso | DEPENDE DA ESCOLA | A FAZER | P0 | Erick | [Definir contas de servidores e revogação de privilégios](#ec-051) |
+| EC-052 | Dados | A FAZER | A FAZER | P1 | Erick | [Persistir dados complementares aprovados do aluno](#ec-052) |
+| EC-053 | Dados | A FAZER | A FAZER | P0 | Erick | [Registrar situação e vigência da matrícula](#ec-053) |
+| EC-054 | Declarações | A FAZER | A FAZER | P0 | Erick | [Cadastrar configuração institucional aprovada](#ec-054) |
+| EC-055 | Dados | A FAZER | A FAZER | P1 | Erick | [Especificar importação de planilha oficial da secretaria](#ec-055) |
+| EC-056 | Dados | A FAZER | A FAZER | P1 | Erick | [Implementar núcleo comum de prévia e importação segura](#ec-056) |
+| EC-057 | Dados | A FAZER | A FAZER | P1 | Erick | [Sincronizar novas turmas e alterações sem apagar histórico](#ec-057) |
+| EC-058 | Acesso | A FAZER | A FAZER | P0 | Erick | [Implementar verificação de titularidade aprovada](#ec-058) |
+| EC-059 | Acesso | A FAZER | A FAZER | P0 | Erick | [Implementar recuperação de acesso aprovada](#ec-059) |
+| EC-060 | Segurança | A FAZER | A FAZER | P0 | Erick | [Limitar tentativas de login e primeiro acesso](#ec-060) |
+| EC-061 | Segurança | A FAZER | A FAZER | P0 | Erick | [Limitar corpo e custo de processamento nas rotas de acesso](#ec-061) |
+| EC-062 | Segurança | A FAZER | A FAZER | P0 | TH | [Padronizar proteção de origem e URL de confirmação](#ec-062) |
+| EC-063 | Segurança | A FAZER | A FAZER | P0 | TH | [Configurar cookie e sessão para HTTPS](#ec-063) |
+| EC-064 | Segurança | A FAZER | A FAZER | P1 | TH | [Aplicar cabeçalhos de segurança e cache privado](#ec-064) |
+| EC-065 | Acesso | A FAZER | A FAZER | P0 | TH | [Configurar remetente e envio de e-mail real](#ec-065) |
+| EC-066 | Testes | A FAZER | A FAZER | P0 | Erick | [Testar falhas e garantir ausência de link de teste em produção](#ec-066) |
+| EC-067 | Segurança | A FAZER | A FAZER | P0 | Erick | [Registrar ações sensíveis com auditoria mínima](#ec-067) |
+| EC-068 | Segurança | A FAZER | A FAZER | P0 | TH | [Revisar segurança antes de habilitar produção](#ec-068) |
+| EC-069 | Declarações | A FAZER | A FAZER | P0 | Erick | [Aplicar modelo aprovado à geração A4](#ec-069) |
+| EC-070 | Declarações | DEPENDE DA ESCOLA | A FAZER | P1 | Erick | [Confirmar dados e modelo do subsequente](#ec-070) |
+| EC-071 | Declarações | A FAZER | A FAZER | P1 | Erick | [Implementar declaração do subsequente](#ec-071) |
+| EC-072 | Declarações | DEPENDE DA ESCOLA | A FAZER | P1 | Erick | [Definir retirada, cancelamento, correção e novo pedido](#ec-072) |
+| EC-073 | Declarações | A FAZER | A FAZER | P1 | Erick | [Implementar transições de atendimento aprovadas](#ec-073) |
+| EC-074 | Testes | A FAZER | A FAZER | P1 | Erick | [Testar impressão e casos extremos do lote](#ec-074) |
+| EC-075 | Declarações | DEPENDE DA ESCOLA | A FAZER | P1 | Erick | [Decidir guarda e versão do documento final](#ec-075) |
+| EC-076 | Site | DEPENDE DA ESCOLA | A FAZER | P0 | Erick | [Receber textos e assets oficiais do site](#ec-076) |
+| EC-077 | Site | A FAZER | A FAZER | P1 | Erick | [Publicar conteúdo aprovado na interface](#ec-077) |
+| EC-078 | Design | A FAZER | A FAZER | P1 | Erick | [Revisar acessibilidade e responsividade das jornadas](#ec-078) |
+| EC-079 | Desempenho | A FAZER | A FAZER | P1 | TH | [Medir desempenho com metas realistas](#ec-079) |
+| EC-080 | Infraestrutura | A FAZER | A FAZER | P1 | TH | [Criar imagens Docker para site e portal](#ec-080) |
+| EC-081 | Infraestrutura | A FAZER | A FAZER | P1 | TH | [Orquestrar aplicações e volumes na VPS](#ec-081) |
+| EC-082 | Infraestrutura | A FAZER | A FAZER | P0 | TH | [Configurar DNS, proxy reverso e HTTPS](#ec-082) |
+| EC-083 | Infraestrutura | A FAZER | A FAZER | P0 | TH | [Preparar acessos e atualizações da VPS](#ec-083) |
+| EC-084 | Infraestrutura | A FAZER | A FAZER | P0 | TH | [Definir backup e demonstrar restauração](#ec-084) |
+| EC-085 | Infraestrutura | A FAZER | A FAZER | P1 | TH | [Disponibilizar homologação isolada](#ec-085) |
+| EC-086 | CI/CD | A FAZER | A FAZER | P1 | TH | [Construir e versionar artefato de release no CI](#ec-086) |
+| EC-087 | CI/CD | A FAZER | A FAZER | P0 | TH | [Criar deploy automatizado com aprovação e rollback](#ec-087) |
+| EC-088 | CI/CD | A FAZER | A FAZER | P0 | TH | [Definir operação segura de migrações na release](#ec-088) |
+| EC-089 | Infraestrutura | A FAZER | A FAZER | P0 | TH | [Monitorar disponibilidade e erros sem expor dados](#ec-089) |
+| EC-090 | Infraestrutura | A FAZER | A FAZER | P1 | TH | [Documentar incidentes, suporte e manutenção](#ec-090) |
+| EC-091 | Acesso | A FAZER | A FAZER | P0 | Erick | [Habilitar acesso de produção após aprovação](#ec-091) |
+| EC-092 | Gestão | A FAZER | A FAZER | P0 | TH + Erick | [Realizar piloto assistido e aprovar MVP](#ec-092) |
+| EC-093 | Gestão | A FAZER | A FAZER | P0 | TH + Erick | [Lançar MVP e revisar operação](#ec-093) |
+| EC-094 | Futuro | FUTURO — DESCOBERTA | A FAZER | P2 | Erick | [Aprovar escopo e privacidade da consulta por QR](#ec-094) |
+| EC-095 | Futuro | FUTURO CONDICIONAL | A FAZER | P2 | Erick | [Persistir registro imutável e cancelamento do documento](#ec-095) |
+| EC-096 | Futuro | FUTURO CONDICIONAL | A FAZER | P2 | Erick | [Implementar QR e consulta de documento](#ec-096) |
+| EC-097 | Futuro | FUTURO — DESCOBERTA | A FAZER | P2 | TH | [Revalidar assinatura eletrônica e integração GOV.BR](#ec-097) |
+| EC-098 | Futuro | FUTURO CONDICIONAL | A FAZER | P2 | Erick | [Detalhar e implementar método de assinatura aprovado](#ec-098) |
+| EC-099 | Futuro | FUTURO — DESCOBERTA | A FAZER | P2 | Erick | [Levantar regras do histórico escolar](#ec-099) |
+| EC-100 | Futuro | FUTURO — DESCOBERTA | A FAZER | P2 | Erick | [Levantar arquivo e vínculo de dados do SISTEC](#ec-100) |
+| EC-101 | Futuro | FUTURO — DESCOBERTA | A FAZER | P2 | Erick | [Levantar requisitos de diploma e futura emissão](#ec-101) |
+| EC-102 | Futuro | FUTURO — DESCOBERTA | A FAZER | P2 | Erick | [Levantar importação de notas e acesso pedagógico](#ec-102) |
+| EC-103 | Futuro | FUTURO — DESCOBERTA | A FAZER | P2 | Erick | [Definir indicadores e apoio ao Conselho de Classe](#ec-103) |
+| EC-104 | Futuro | FUTURO — DESCOBERTA | A FAZER | P2 | TH | [Especificar API autorizada para outros projetos](#ec-104) |
+| EC-105 | Dados | A FAZER | A FAZER | P1 | Erick | [Importar e atualizar alunos do integrado](#ec-105) |
+| EC-106 | Dados | A FAZER | A FAZER | P1 | Erick | [Importar e atualizar alunos do subsequente](#ec-106) |
+| EC-107 | Dados | DEPENDE DA ESCOLA | A FAZER | P1 | Erick | [Especificar e implementar exportação autorizada por modalidade](#ec-107) |
+| EC-108 | Dados | A FAZER | A FAZER | P1 | Erick | [Configurar módulos e calendário dos cursos subsequentes](#ec-108) |
+| EC-109 | Testes | A FAZER | A FAZER | P1 | TH | [Automatizar regressão dos dois fluxos de importação](#ec-109) |
+| EC-110 | Gestão | A FAZER | A FAZER | P1 | TH | [Padronizar contexto compartilhado entre TH e Erick](#ec-110) |
+| EC-111 | Produto | FUTURO — DESCOBERTA | A FAZER | P2 | Erick | [Levantar requisitos do sistema de certificados](#ec-111) |
 
 ## EC-001
 
 [Abrir card no Trello](https://trello.com/c/ABr85ZdO/2-feito-dev-ec-001-estruturar-monoreposit%C3%B3rio-nextjs-com-duas-aplica%C3%A7%C3%B5es)
 
 ### Estruturar monorepositório Next.js com duas aplicações
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Arquitetura | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -139,12 +148,13 @@ npm workspaces, site na porta 3000 e portal na 3001. Outros projetos permanecem 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-002
 
 [Abrir card no Trello](https://trello.com/c/cIvGDqBQ/3-feito-dev-ec-002-documentar-arquitetura-opera%C3%A7%C3%A3o-e-decis%C3%B5es-da-equipe)
 
 ### Documentar arquitetura, operação e decisões da equipe
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Gestão | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -166,12 +176,13 @@ Regras de escopo, comandos, pendências institucionais e direção visual regist
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-003
 
 [Abrir card no Trello](https://trello.com/c/3gmIunHQ/4-feito-dev-ec-003-consolidar-identidade-ete-pernambuco-e-estilos-compartilhados)
 
 ### Consolidar identidade ETE/Pernambuco e estilos compartilhados
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Design | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -193,12 +204,13 @@ Marca própria ETE Conectada, azul/marinho/branco, fontes locais, arte de Pernam
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-004
 
 [Abrir card no Trello](https://trello.com/c/ny4wuscA/5-feito-dev-ec-004-criar-site-institucional-p%C3%BAblico)
 
 ### Criar site institucional público
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Site | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -220,12 +232,13 @@ Página da escola e acesso ao portal implementados; conteúdo institucional aind
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-005
 
 [Abrir card no Trello](https://trello.com/c/ChroKhn8/6-feito-dev-ec-005-corrigir-navega%C3%A7%C3%A3o-entre-aplica%C3%A7%C3%B5es-e-acesso-pela-rede-local)
 
 ### Corrigir navegação entre aplicações e acesso pela rede local
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Site | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -247,12 +260,13 @@ Links preservam host em desenvolvimento e mudam portas; NEXT_PUBLIC_LAN_HOST e o
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-006
 
 [Abrir card no Trello](https://trello.com/c/I5JyeD8n/7-feito-dev-ec-006-integrar-prisma-7-com-postgresql-neon)
 
 ### Integrar Prisma 7 com PostgreSQL/Neon
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Dados | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -274,12 +288,13 @@ Cliente tipado e adaptador PostgreSQL; falta de DATABASE_URL impede consultas. N
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-007
 
 [Abrir card no Trello](https://trello.com/c/RgqQF5T8/8-feito-dev-ec-007-versionar-migra%C3%A7%C3%B5es-de-alunos-acesso-e-solicita%C3%A7%C3%B5es)
 
 ### Versionar migrações de alunos, acesso e solicitações
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Dados | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -301,12 +316,13 @@ Histórico de schema versionado, inclusive migração que retira o modelo ativo 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-008
 
 [Abrir card no Trello](https://trello.com/c/W5hXnmFV/9-feito-dev-ec-008-preparar-seed-de-tr%C3%AAs-alunos-sint%C3%A9ticos)
 
 ### Preparar seed de três alunos sintéticos
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Testes | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -328,12 +344,13 @@ Seed contém cenários de primeiro acesso e login e preserva contas existentes q
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-009
 
 [Abrir card no Trello](https://trello.com/c/rIeP8NDR/10-feito-dev-ec-009-implementar-importa%C3%A7%C3%A3o-por-lista-branca-e-matr%C3%ADcula)
 
 ### Implementar importação por lista branca e matrícula
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Dados | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -355,12 +372,13 @@ Importação transacional/idempotente sem senhas, e-mails, fotos ou papéis exte
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-010
 
 [Abrir card no Trello](https://trello.com/c/7GQ4bbVb/11-feito-dev-ec-010-implementar-primeiro-acesso-com-matr%C3%ADcula-e-nascimento)
 
 ### Implementar primeiro acesso com matrícula e nascimento
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Acesso | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -382,12 +400,13 @@ Consulta de elegibilidade e abertura de modal em desenvolvimento; a verificaçã
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-011
 
 [Abrir card no Trello](https://trello.com/c/GKFntRa2/12-feito-dev-ec-011-validar-cpf-e-credenciais-na-cria%C3%A7%C3%A3o-de-conta)
 
 ### Validar CPF e credenciais na criação de conta
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Acesso | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -409,12 +428,13 @@ Dígitos verificadores, unicidade do CPF, e-mail, senha de 8 a 128 caracteres e 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-012
 
 [Abrir card no Trello](https://trello.com/c/QX34xtZP/13-feito-dev-ec-012-armazenar-senhas-com-scrypt)
 
 ### Armazenar senhas com scrypt
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Segurança | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -436,12 +456,13 @@ Hash e comparação separados; a aplicação não armazena a senha em texto simp
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-013
 
 [Abrir card no Trello](https://trello.com/c/yOaI5GXm/14-feito-dev-ec-013-confirmar-e-mail-com-token-de-uso-%C3%BAnico)
 
 ### Confirmar e-mail com token de uso único
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Acesso | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -463,12 +484,13 @@ Token com validade limitada e hash; integração Resend condicionada à configur
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-014
 
 [Abrir card no Trello](https://trello.com/c/TYsbOIw0/15-feito-dev-ec-014-corrigir-retomada-de-cadastro-pendente)
 
 ### Corrigir retomada de cadastro pendente
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Acesso | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -490,12 +512,13 @@ Renovação com mesmas credenciais invalida link anterior; após expiração é 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-015
 
 [Abrir card no Trello](https://trello.com/c/JwC63Cad/16-feito-dev-ec-015-implementar-login-por-cpf-ou-e-mail-em-desenvolvimento)
 
 ### Implementar login por CPF ou e-mail em desenvolvimento
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Acesso | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -517,12 +540,13 @@ Somente conta ativa com senha correta inicia sessão. API permanece bloqueada fo
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-016
 
 [Abrir card no Trello](https://trello.com/c/7gJfcP5D/17-feito-dev-ec-016-persistir-sess%C3%B5es-e-revog%C3%A1-las-no-logout)
 
 ### Persistir sessões e revogá-las no logout
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Segurança | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -544,12 +568,13 @@ Token de sessão guardado como hash no banco, cookie HttpOnly, expiração e log
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-017
 
 [Abrir card no Trello](https://trello.com/c/5S8vnZba/18-feito-dev-ec-017-proteger-p%C3%A1gina-inicial-e-apresentar-menu-de-servi%C3%A7os)
 
 ### Proteger página inicial e apresentar menu de serviços
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Portal | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -571,12 +596,13 @@ Sem sessão, / redireciona para login. Home autenticada, menu à esquerda; hist�
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-018
 
 [Abrir card no Trello](https://trello.com/c/vMJb3XD5/19-feito-dev-ec-018-reduzir-consultas-de-sess%C3%A3o-e-diagnosticar-login)
 
 ### Reduzir consultas de sessão e diagnosticar login
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Desempenho | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -598,12 +624,13 @@ Consulta de sessão consolidada, idle do pool em 60 segundos e script de diagnó
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-019
 
 [Abrir card no Trello](https://trello.com/c/4kOt8AvK/20-feito-dev-ec-019-persistir-pedido-de-declara%C3%A7%C3%A3o-e-acompanhamento-pelo-aluno)
 
 ### Persistir pedido de declaração e acompanhamento pelo aluno
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Declarações | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -625,12 +652,13 @@ Um pedido aberto por matrícula, repetição retorna existente, aluno consulta s
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-020
 
 [Abrir card no Trello](https://trello.com/c/5SGlv5tQ/21-feito-dev-ec-020-criar-atendimento-protegido-pelo-papel-secretary)
 
 ### Criar atendimento protegido pelo papel secretary
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Declarações | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -652,12 +680,13 @@ Busca e consulta autorizadas no servidor; concessão via script a conta ativa. P
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-021
 
 [Abrir card no Trello](https://trello.com/c/ugh0D99Q/22-feito-dev-ec-021-gerar-minuta-a4-individual-e-em-lotes-de-at%C3%A9-100)
 
 ### Gerar minuta A4 individual e em lotes de até 100
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Declarações | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -679,12 +708,13 @@ Seleção por aluno/turma e conferência; dados complementares em memória. Freq
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-022
 
 [Abrir card no Trello](https://trello.com/c/7DU8Bav8/23-feito-dev-ec-022-separar-gera%C3%A7%C3%A3o-do-pdf-e-libera%C3%A7%C3%A3o-para-retirada)
 
 ### Separar geração do PDF e liberação para retirada
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Declarações | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -706,12 +736,13 @@ Solicitada → em preparação após geração → pronta para retirada após co
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-023
 
 [Abrir card no Trello](https://trello.com/c/1eciDlom/24-feito-dev-ec-023-remover-perfil-e-fotos-do-front-e-backend-ativos)
 
 ### Remover perfil e fotos do front e backend ativos
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Portal | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -733,12 +764,13 @@ Referências antigas arquivadas; nenhum fluxo ativo de upload, SDK S3 ou modelo 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-024
 
 [Abrir card no Trello](https://trello.com/c/0qBUHrlQ/25-feito-dev-ec-024-preparar-modelos-e-pesquisas-de-declara%C3%A7%C3%A3o-qr)
 
 ### Preparar modelos e pesquisas de declaração/QR
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Pesquisa | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -760,12 +792,13 @@ Referência alinhada, proposta A4 e exemplo fictício. Pesquisa de assinatura/co
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-025
 
 [Abrir card no Trello](https://trello.com/c/EbntmBhv/26-feito-dev-ec-025-organizar-trabalho-acumulado-em-sete-commits)
 
 ### Organizar trabalho acumulado em sete commits
+
+**Lista:** CONCLUÍDO
 
 **Estado:** FEITO DEV
 **Área:** Gestão | **Prioridade:** Histórico | **Escopo:** Registro histórico
@@ -787,12 +820,13 @@ Sete commits locais reais de 09/10/2026; HEAD inicial 3fb180c igual à referênc
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-026
 
 [Abrir card no Trello](https://trello.com/c/HKDfuYpw/27-p1-ec-026-revisar-invent%C3%A1rio-e-priorizar-primeira-sprint)
 
 ### Revisar inventário e priorizar primeira sprint
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Gestão | **Prioridade:** P1 | **Escopo:** S
@@ -814,12 +848,13 @@ Validar esta base juntos; todo card começa no PRODUCT BACKLOG por solicitação
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-027
 
 [Abrir card no Trello](https://trello.com/c/zklVaWMp/28-p1-ec-027-definir-padr%C3%A3o-de-branch-e-pull-request-por-card)
 
 ### Definir padrão de branch e pull request por card
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Gestão | **Prioridade:** P1 | **Escopo:** S
@@ -827,7 +862,7 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 **Janela sugerida:** Sprint 0 (não é prazo ou compromisso)
 **Dependências:** EC-026
 
-Os dois podem atuar em todas as áreas; cada alteração fica rastreável ao card.
+Padrão documentado e branches de área solicitadas em 09/10. Usar branches curtas por card; feature/declaracoes é um nome de branch, não uma pasta de branches. Ainda falta template e PR de exemplo com revisão cruzada.
 
 **Critérios de aceite**
 - [ ] Uma branch curta por mudança e PR com problema, testes e limitações.
@@ -835,18 +870,19 @@ Os dois podem atuar em todas as áreas; cada alteração fica rastreável ao car
 
 **Verificação:** Abrir PR de exemplo e conferir vínculo ao ID do card.
 
-**Evidência / arquivos prováveis:** README.md; futuro .github/PULL_REQUEST_TEMPLATE.md
+**Evidência / arquivos prováveis:** docs/planejamento/git-e-colaboracao.md; futuro .github/PULL_REQUEST_TEMPLATE.md
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-028
 
 [Abrir card no Trello](https://trello.com/c/NaOGVMf1/29-p1-ec-028-criar-ci-de-instala%C3%A7%C3%A3o-e-build-dos-dois-workspaces)
 
 ### Criar CI de instalação e build dos dois workspaces
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** CI/CD | **Prioridade:** P1 | **Escopo:** M
@@ -868,12 +904,13 @@ Primeiro pipeline sem banco real e sem deploy; usar Node 24 e npm ci.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-029
 
 [Abrir card no Trello](https://trello.com/c/pKUUOBWJ/30-p1-ec-029-adicionar-comandos-de-tipos-lint-e-formata%C3%A7%C3%A3o)
 
 ### Adicionar comandos de tipos, lint e formatação
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** CI/CD | **Prioridade:** P1 | **Escopo:** M
@@ -895,12 +932,13 @@ Hoje não há scripts explícitos de lint/typecheck/teste unitário na raiz.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-030
 
 [Abrir card no Trello](https://trello.com/c/T531jv9k/31-p1-ec-030-cobrir-valida%C3%A7%C3%B5es-puras-de-primeiro-acesso)
 
 ### Cobrir validações puras de primeiro acesso
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P1 | **Escopo:** M
@@ -922,12 +960,13 @@ Adicionar runner simples e testes sem banco para CPF, matrícula, e-mail e nasci
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-031
 
 [Abrir card no Trello](https://trello.com/c/BATBoYt8/32-p0-ec-031-impedir-testes-e-seeds-no-banco-errado)
 
 ### Impedir testes e seeds no banco errado
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P0 | **Escopo:** M
@@ -949,12 +988,13 @@ Os scripts existentes escrevem registros temporários e aceitam DATABASE_URL; s�
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-032
 
 [Abrir card no Trello](https://trello.com/c/HMYNNrrg/33-p1-ec-032-criar-postgresql-descart%C3%A1vel-e-aplicar-migra%C3%A7%C3%B5es-no-ci)
 
 ### Criar PostgreSQL descartável e aplicar migrações no CI
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** CI/CD | **Prioridade:** P1 | **Escopo:** M
@@ -976,12 +1016,13 @@ Preparar service container e teste de migrações com banco vazio; não usar bra
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-033
 
 [Abrir card no Trello](https://trello.com/c/IkSWG056/34-p1-ec-033-automatizar-testes-existentes-de-cadastro-e-declara%C3%A7%C3%A3o)
 
 ### Automatizar testes existentes de cadastro e declaração
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** CI/CD | **Prioridade:** P1 | **Escopo:** M
@@ -1003,12 +1044,13 @@ As APIs funcionam somente em development: integração precisa subir dev:portal;
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-034
 
 [Abrir card no Trello](https://trello.com/c/aD7HOKM5/35-p1-ec-034-proteger-main-com-revis%C3%A3o-e-checks-obrigat%C3%B3rios)
 
 ### Proteger main com revisão e checks obrigatórios
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Gestão | **Prioridade:** P1 | **Escopo:** S
@@ -1030,12 +1072,13 @@ Aplicar regras disponíveis no plano do repositório privado; se recurso indispo
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-035
 
 [Abrir card no Trello](https://trello.com/c/gdtbFuDY/36-p1-ec-035-cobrir-senha-e-hash-malformado-com-testes-puros)
 
 ### Cobrir senha e hash malformado com testes puros
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P1 | **Escopo:** S
@@ -1057,12 +1100,13 @@ Testar comportamento de segurança sem depender de HTTP ou Neon.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-036
 
 [Abrir card no Trello](https://trello.com/c/tC0H63hT/37-p1-ec-036-cobrir-campos-e-frequ%C3%AAncia-da-declara%C3%A7%C3%A3o-em-testes-puros)
 
 ### Cobrir campos e frequência da declaração em testes puros
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P1 | **Escopo:** M
@@ -1084,12 +1128,13 @@ Complementar os testes de API com casos determinísticos de validação.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-037
 
 [Abrir card no Trello](https://trello.com/c/YMmrYUDF/38-p1-ec-037-cobrir-importa%C3%A7%C3%A3o-idempotente-e-rollback)
 
 ### Cobrir importação idempotente e rollback
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P1 | **Escopo:** M
@@ -1111,12 +1156,13 @@ Provar importação com fixtures pequenas inteiramente sintéticas.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-038
 
 [Abrir card no Trello](https://trello.com/c/EuAGerw9/39-p0-ec-038-ampliar-regress%C3%A3o-de-sess%C3%A3o-e-autoriza%C3%A7%C3%A3o)
 
 ### Ampliar regressão de sessão e autorização
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P0 | **Escopo:** M
@@ -1138,12 +1184,13 @@ Cobrir expiração, logout e tentativa de acessar dados de outro aluno/papel.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-039
 
 [Abrir card no Trello](https://trello.com/c/5PCPaJvl/40-p1-ec-039-criar-testes-de-navegador-das-jornadas-principais)
 
 ### Criar testes de navegador das jornadas principais
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P1 | **Escopo:** M
@@ -1165,12 +1212,13 @@ Automatizar fluxos completos sem substituir a avaliação visual humana.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-040
 
 [Abrir card no Trello](https://trello.com/c/P7dFAHmk/41-p0-ec-040-testar-bloqueios-atuais-em-build-de-produ%C3%A7%C3%A3o)
 
 ### Testar bloqueios atuais em build de produção
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P0 | **Escopo:** M
@@ -1192,12 +1240,13 @@ Build de produção deve preservar decisão atual até liberação institucional
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-041
 
 [Abrir card no Trello](https://trello.com/c/ZcW0Em00/42-p1-ec-041-definir-triagem-de-depend%C3%AAncias-e-automatizar-alertas)
 
 ### Definir triagem de dependências e automatizar alertas
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P1 | **Escopo:** M
@@ -1219,12 +1268,13 @@ Não tratar alerta histórico do chat como vulnerabilidade atual; estabelecer tr
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-042
 
 [Abrir card no Trello](https://trello.com/c/NGPLXC4D/43-p1-ec-042-adicionar-an%C3%A1lise-de-c%C3%B3digo-e-segredos-ao-ci)
 
 ### Adicionar análise de código e segredos ao CI
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P1 | **Escopo:** M
@@ -1246,12 +1296,13 @@ Escolher ferramenta compatível com repositório privado e plano; CodeQL/secret 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-043
 
 [Abrir card no Trello](https://trello.com/c/ErzpHzMr/44-p0-ec-043-revisar-seguran%C3%A7a-dos-workflows)
 
 ### Revisar segurança dos workflows
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P0 | **Escopo:** M
@@ -1273,12 +1324,13 @@ Separar execução de PR da execução privilegiada de deploy.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-044
 
 [Abrir card no Trello](https://trello.com/c/iZtDZgvB/45-p0-ec-044-definir-titularidade-e-recupera%C3%A7%C3%A3o-com-a-escola)
 
 ### Definir titularidade e recuperação com a escola
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Acesso | **Prioridade:** P0 | **Escopo:** M
@@ -1300,12 +1352,13 @@ Matrícula/nascimento/CPF válido/e-mail escolhido não comprovam identidade; pe
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-045
 
 [Abrir card no Trello](https://trello.com/c/JGSzvo19/46-p0-ec-045-confirmar-pap%C3%A9is-de-secretaria-e-gest%C3%A3o)
 
 ### Confirmar papéis de secretaria e gestão
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Acesso | **Prioridade:** P0 | **Escopo:** M
@@ -1327,12 +1380,13 @@ Hoje apenas secretary; pedido do chat fala em gestor e aguarda decisão.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-046
 
 [Abrir card no Trello](https://trello.com/c/OfX42eXE/47-p0-ec-046-validar-modelo-e-signat%C3%A1rios-da-declara%C3%A7%C3%A3o)
 
 ### Validar modelo e signatários da declaração
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Declarações | **Prioridade:** P0 | **Escopo:** M
@@ -1340,7 +1394,7 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 **Janela sugerida:** Sprint 0 (não é prazo ou compromisso)
 **Dependências:** Nenhuma
 
-Levar divergências como pedido de conferência; pesquisa anterior não substitui orientação da escola/GRE.
+Recebidos em 09/10 um DOCX de referência do subsequente 2026.2 e um PDF do integrado/proposta com campos. Confirmada pela equipe a diferença entre modalidades. Receber referência não confirma todos os campos, signatários, divergências ou aprovação oficial da escola/GRE.
 
 **Critérios de aceite**
 - [ ] Obter versão vigente, campos, texto e dois signatários/substituições aceitas.
@@ -1348,12 +1402,11 @@ Levar divergências como pedido de conferência; pesquisa anterior não substitu
 
 **Verificação:** Registrar aprovação institucional e confrontar modelo aprovado com PDF fictício.
 
-**Evidência / arquivos prováveis:** docs/declaracao-vinculo/viabilidade.md; output/pdf/
+**Evidência / arquivos prováveis:** docs/planejamento/contexto-secretaria-2026-10-09.md; docs/declaracao-vinculo/viabilidade.md; output/pdf/
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-047
 
@@ -1361,13 +1414,15 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 
 ### Obter dicionário e exportação autorizada de dados escolares
 
+**Lista:** A FAZER
+
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Dados | **Prioridade:** P0 | **Escopo:** M
 **Responsável sugerido:** Erick | **Revisão:** TH
 **Janela sugerida:** Sprint 0 (não é prazo ou compromisso)
 **Dependências:** Nenhuma
 
-Descobrir sistema de origem e formato oficial; backup JSON atual não é importador de Excel da secretaria.
+Exportação AlunosTurmas recebida em 09/10: XLS binário legado, 46 registros, somente Matrícula/Nome/Data de nascimento (texto); sem modalidade, curso, turma ou situação. Fonte preservada localmente. Obter vínculo/modalidade e dicionário da secretaria; não adivinhar campos ausentes nem usar arquivo real como fixture.
 
 **Critérios de aceite**
 - [ ] Mapear campos, atualização e qualidade: filiação, naturalidade/UF, nome social, matrícula, modalidade, curso, período e situação.
@@ -1375,18 +1430,19 @@ Descobrir sistema de origem e formato oficial; backup JSON atual não é importa
 
 **Verificação:** Conferir dicionário com secretaria e validar amostra sintética.
 
-**Evidência / arquivos prováveis:** apps/portal/prisma/schema.prisma; chat compartilhado
+**Evidência / arquivos prováveis:** docs/planejamento/contexto-secretaria-2026-10-09.md; apps/portal/prisma/schema.prisma
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-048
 
 [Abrir card no Trello](https://trello.com/c/pBgB7stA/49-p0-ec-048-confirmar-finalidade-e-fonte-da-frequ%C3%AAncia)
 
 ### Confirmar finalidade e fonte da frequência
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Declarações | **Prioridade:** P0 | **Escopo:** M
@@ -1408,12 +1464,13 @@ Determinar quando declaração comprova frequência e onde se obtém valor real.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-049
 
 [Abrir card no Trello](https://trello.com/c/TDffSOCc/50-p0-ec-049-definir-pol%C3%ADtica-de-acesso-reten%C3%A7%C3%A3o-e-suporte-a-dados-pessoais)
 
 ### Definir política de acesso, retenção e suporte a dados pessoais
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Segurança | **Prioridade:** P0 | **Escopo:** M
@@ -1435,12 +1492,13 @@ Levantar decisões com responsável institucional, incluindo dados de menores, l
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-050
 
 [Abrir card no Trello](https://trello.com/c/WEzDxun3/51-p0-ec-050-confirmar-dom%C3%ADnio-hospedagem-e-respons%C3%A1vel-institucional)
 
 ### Confirmar domínio, hospedagem e responsável institucional
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Infraestrutura | **Prioridade:** P0 | **Escopo:** M
@@ -1448,26 +1506,27 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 **Janela sugerida:** Sprint 1 (não é prazo ou compromisso)
 **Dependências:** Nenhuma
 
-eteconectada.com/portal planejados; histórico também explora domínio institucional via SEE/ATI. Não contratar nada nesta tarefa.
+TH definiu como escolha planejada uma VPS Hostinger KVM4 por 24 meses. Ainda não contratada. Domínio, orçamento final, adequação, responsável institucional e administração de DNS/contas permanecem pendentes; não comprar ou habilitar produção nesta organização.
 
 **Critérios de aceite**
-- [ ] Escola define domínio/hospedagem permitidos e quem administra contas/DNS/VPS.
-- [ ] Registrar orçamento, capacidade e opção institucional, sem presumir concessão de subdomínio.
+- [ ] Registrar confirmação institucional de domínio, orçamento e administração da VPS Hostinger KVM4 planejada por 24 meses.
+- [ ] Conferir requisitos reais, backup e custos antes da contratação; não presumir domínio institucional concedido.
 
 **Verificação:** Decisão registrada e encaminhamentos feitos pelo responsável autorizado.
 
-**Evidência / arquivos prováveis:** AGENTS.md; chat compartilhado
+**Evidência / arquivos prováveis:** AGENTS.md; docs/planejamento/contexto-secretaria-2026-10-09.md
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-051
 
 [Abrir card no Trello](https://trello.com/c/8uEbZedI/52-p0-ec-051-definir-contas-de-servidores-e-revoga%C3%A7%C3%A3o-de-privil%C3%A9gios)
 
 ### Definir contas de servidores e revogação de privilégios
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Acesso | **Prioridade:** P0 | **Escopo:** M
@@ -1489,12 +1548,13 @@ Hoje Account pertence obrigatoriamente a Student; não criar aluno falso para fu
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-052
 
 [Abrir card no Trello](https://trello.com/c/tw0mdESE/53-p1-ec-052-persistir-dados-complementares-aprovados-do-aluno)
 
 ### Persistir dados complementares aprovados do aluno
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Dados | **Prioridade:** P1 | **Escopo:** M
@@ -1516,12 +1576,13 @@ Hoje filiação/naturalidade/nome social ficam somente no editor aberto.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-053
 
 [Abrir card no Trello](https://trello.com/c/F2nX729f/54-p0-ec-053-registrar-situa%C3%A7%C3%A3o-e-vig%C3%AAncia-da-matr%C3%ADcula)
 
 ### Registrar situação e vigência da matrícula
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Dados | **Prioridade:** P0 | **Escopo:** M
@@ -1543,12 +1604,13 @@ Schema atual não registra situação da matrícula; não basta importar turma p
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-054
 
 [Abrir card no Trello](https://trello.com/c/2Ofbkiv5/55-p0-ec-054-cadastrar-configura%C3%A7%C3%A3o-institucional-aprovada)
 
 ### Cadastrar configuração institucional aprovada
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Declarações | **Prioridade:** P0 | **Escopo:** M
@@ -1570,12 +1632,13 @@ Centralizar identificação da escola e responsáveis conforme modelo validado.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-055
 
 [Abrir card no Trello](https://trello.com/c/uXCqyZeL/56-p1-ec-055-especificar-importa%C3%A7%C3%A3o-de-planilha-oficial-da-secretaria)
 
 ### Especificar importação de planilha oficial da secretaria
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Dados | **Prioridade:** P1 | **Escopo:** M
@@ -1583,26 +1646,27 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 **Janela sugerida:** Depois (não é prazo ou compromisso)
 **Dependências:** EC-047, EC-049
 
-Demanda do histórico: importar turmas exportadas pelo sistema escolar, além do backup JSON atual.
+Contrato para XLS legado AlunosTurmas recebido (cabeçalho na linha 6; três colunas matrícula/nome/nascimento em texto) e futura amostra do subsequente. Duas entradas explícitas: integrado e subsequente; metadados/modalidade/turma precisam vir de fonte conferida. Não inferir formato pelo sufixo .xls nem modalidade pelo curso.
 
 **Critérios de aceite**
-- [ ] Definir formato real, colunas, limites, duplicação e relatório de divergências.
-- [ ] Criar fixtures sintéticas e contrato de validação antes de desenvolver upload.
+- [ ] Confirmar formato/conteúdo, cabeçalhos, campos autoritativos, atualização, duplicados e faltantes para cada modalidade.
+- [ ] Definir formatos aceitos e criar arquivos estritamente sintéticos; obter amostra do subsequente sem reutilizar dados reais como fixture.
 
 **Verificação:** Conferência do contrato com amostra sanitizada.
 
-**Evidência / arquivos prováveis:** apps/portal/src/lib/student-import.ts; chat compartilhado
+**Evidência / arquivos prováveis:** docs/planejamento/contexto-secretaria-2026-10-09.md; apps/portal/src/lib/student-import.ts
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-056
 
 [Abrir card no Trello](https://trello.com/c/Ob3ibKwF/57-p1-ec-056-implementar-pr%C3%A9via-e-importa%C3%A7%C3%A3o-da-planilha-aprovada)
 
-### Implementar prévia e importação da planilha aprovada
+### Implementar núcleo comum de prévia e importação segura
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Dados | **Prioridade:** P1 | **Escopo:** M
@@ -1610,11 +1674,11 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 **Janela sugerida:** Depois (não é prazo ou compromisso)
 **Dependências:** EC-055, EC-052, EC-053
 
-Receber arquivo autorizado, mostrar resultado previsto e confirmar antes de aplicar.
+Núcleo compartilhado para os dois caminhos EC-105/106: leitura validada, prévia, confirmação e aplicação transacional. Importar diretamente atualiza o cadastro após validação; não significa apagar alunos ausentes nem criar contas automaticamente. Nenhum destes fluxos de planilha existe ainda.
 
 **Critérios de aceite**
-- [ ] Entrada inválida não muda banco; transação/idempotência e relatório sem dados excessivos.
-- [ ] Somente papel aprovado; limites de arquivo/linhas e confirmação explícita.
+- [ ] Entrada inválida não muda banco; transação, idempotência e relatório mínimo de divergências.
+- [ ] Autorização no servidor, limites de tamanho/linhas, confirmação e conflitos entre modalidades tratados antes da escrita.
 
 **Verificação:** Testar upload/importação/rollback com fixtures sintéticas.
 
@@ -1622,14 +1686,15 @@ Receber arquivo autorizado, mostrar resultado previsto e confirmar antes de apli
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-057
 
 [Abrir card no Trello](https://trello.com/c/kANEeXw1/58-p1-ec-057-sincronizar-novas-turmas-e-altera%C3%A7%C3%B5es-sem-apagar-hist%C3%B3rico)
 
 ### Sincronizar novas turmas e alterações sem apagar histórico
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Dados | **Prioridade:** P1 | **Escopo:** M
@@ -1651,12 +1716,13 @@ Tratar renovação de período, transferências e divergências segundo escola.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-058
 
 [Abrir card no Trello](https://trello.com/c/Ipvojz2m/59-p0-ec-058-implementar-verifica%C3%A7%C3%A3o-de-titularidade-aprovada)
 
 ### Implementar verificação de titularidade aprovada
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Acesso | **Prioridade:** P0 | **Escopo:** M
@@ -1678,12 +1744,13 @@ Implementar somente o mecanismo escolhido pela escola; preservar matrícula/nasc
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-059
 
 [Abrir card no Trello](https://trello.com/c/mAbVjRwS/60-p0-ec-059-implementar-recupera%C3%A7%C3%A3o-de-acesso-aprovada)
 
 ### Implementar recuperação de acesso aprovada
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Acesso | **Prioridade:** P0 | **Escopo:** M
@@ -1705,12 +1772,13 @@ E-mail foi previsto no histórico para recuperação, mas não existe fluxo de e
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-060
 
 [Abrir card no Trello](https://trello.com/c/vfH0Jnjb/61-p0-ec-060-limitar-tentativas-de-login-e-primeiro-acesso)
 
 ### Limitar tentativas de login e primeiro acesso
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P0 | **Escopo:** M
@@ -1732,12 +1800,13 @@ Não há rate limiting no código observado; escolher armazenamento compatível 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-061
 
 [Abrir card no Trello](https://trello.com/c/bFUV89zR/62-p0-ec-061-limitar-corpo-e-custo-de-processamento-nas-rotas-de-acesso)
 
 ### Limitar corpo e custo de processamento nas rotas de acesso
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P0 | **Escopo:** M
@@ -1759,12 +1828,13 @@ Login/cadastro usam request.json sem limite equivalente ao observado em algumas 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-062
 
 [Abrir card no Trello](https://trello.com/c/lVPipoS3/63-p0-ec-062-padronizar-prote%C3%A7%C3%A3o-de-origem-e-url-de-confirma%C3%A7%C3%A3o)
 
 ### Padronizar proteção de origem e URL de confirmação
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P0 | **Escopo:** M
@@ -1786,12 +1856,13 @@ Revisar todas as mutações, inclusive login/logout; URL de confirmação deriva
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-063
 
 [Abrir card no Trello](https://trello.com/c/6u19Qun4/64-p0-ec-063-configurar-cookie-e-sess%C3%A3o-para-https)
 
 ### Configurar cookie e sessão para HTTPS
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P0 | **Escopo:** M
@@ -1813,12 +1884,13 @@ Cookie atual usa secure:false em desenvolvimento; preparar produção antes de h
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-064
 
 [Abrir card no Trello](https://trello.com/c/UvRJyKIL/65-p1-ec-064-aplicar-cabe%C3%A7alhos-de-seguran%C3%A7a-e-cache-privado)
 
 ### Aplicar cabeçalhos de segurança e cache privado
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P1 | **Escopo:** M
@@ -1840,12 +1912,13 @@ Conferir páginas e APIs, incluindo erros, além dos privateHeaders já existent
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-065
 
 [Abrir card no Trello](https://trello.com/c/639rsiTE/66-p0-ec-065-configurar-remetente-e-envio-de-e-mail-real)
 
 ### Configurar remetente e envio de e-mail real
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Acesso | **Prioridade:** P0 | **Escopo:** M
@@ -1867,12 +1940,13 @@ Resend tem integração condicional; domínio/remetente/verificação DNS ainda 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-066
 
 [Abrir card no Trello](https://trello.com/c/BD4JVyMb/67-p0-ec-066-testar-falhas-e-garantir-aus%C3%AAncia-de-link-de-teste-em-produ%C3%A7%C3%A3o)
 
 ### Testar falhas e garantir ausência de link de teste em produção
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P0 | **Escopo:** M
@@ -1894,12 +1968,13 @@ Desenvolvimento retorna dev_link até em falha do provedor; isso deve permanecer
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-067
 
 [Abrir card no Trello](https://trello.com/c/43NNikRd/68-p0-ec-067-registrar-a%C3%A7%C3%B5es-sens%C3%ADveis-com-auditoria-m%C3%ADnima)
 
 ### Registrar ações sensíveis com auditoria mínima
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P0 | **Escopo:** M
@@ -1921,12 +1996,13 @@ Há contas/datas de preparação e liberação, mas não histórico completo de 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-068
 
 [Abrir card no Trello](https://trello.com/c/IAfgAs3x/69-p0-ec-068-revisar-seguran%C3%A7a-antes-de-habilitar-produ%C3%A7%C3%A3o)
 
 ### Revisar segurança antes de habilitar produção
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Segurança | **Prioridade:** P0 | **Escopo:** M
@@ -1948,12 +2024,13 @@ Realizar revisão focada e validação dos achados; esta organização não é a
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-069
 
 [Abrir card no Trello](https://trello.com/c/BhYrrItU/70-p0-ec-069-aplicar-modelo-aprovado-%C3%A0-gera%C3%A7%C3%A3o-a4)
 
 ### Aplicar modelo aprovado à geração A4
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Declarações | **Prioridade:** P0 | **Escopo:** M
@@ -1975,12 +2052,13 @@ Converter minuta em modelo homologado para integrado, mantendo duas assinaturas 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-070
 
 [Abrir card no Trello](https://trello.com/c/FVrqY6eX/71-p1-ec-070-confirmar-dados-e-modelo-do-subsequente)
 
 ### Confirmar dados e modelo do subsequente
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Declarações | **Prioridade:** P1 | **Escopo:** M
@@ -1988,20 +2066,19 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 **Janela sugerida:** Depois (não é prazo ou compromisso)
 **Dependências:** EC-046, EC-047
 
-Modelo de dados prevê SUBSEQUENTE; geração atual o recusa.
+Referência DOCX DECLARAÇÃO VÍNCULO SUBSEQUENTE 2026.2 recebida em 09/10 e inspecionada sem reproduzir dados pessoais. A4 com texto de curso/módulo; texto/layout próprios, diferentes do integrado. Cadastro prevê SUBSEQUENTE, mas emissão atual o recusa. A equipe informou DS/ADM 3 módulos, Enfermagem 4 e 6 meses por módulo; confirmar calendário e campos com a escola.
 
 **Critérios de aceite**
-- [ ] Escola define módulo/período/curso e texto correto.
-- [ ] Obter amostra sanitizada e critérios separados sem reutilização indevida do integrado.
+- [ ] Validar referência 2026.2, campos, signatários e calendário; documentar decisões e divergências com a secretaria.
+- [ ] Preparar versão sintética separada; não copiar série/horários do integrado nem considerar placeholders de QR como aprovação.
 
 **Verificação:** Revisar modelo e casos com secretaria.
 
-**Evidência / arquivos prováveis:** EducationMode em apps/portal/prisma/schema.prisma
+**Evidência / arquivos prováveis:** docs/planejamento/contexto-secretaria-2026-10-09.md; EducationMode em apps/portal/prisma/schema.prisma
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-071
 
@@ -2009,17 +2086,19 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 
 ### Implementar declaração do subsequente
 
+**Lista:** A FAZER
+
 **Estado:** A FAZER
 **Área:** Declarações | **Prioridade:** P1 | **Escopo:** M
 **Responsável sugerido:** Erick | **Revisão:** TH
 **Janela sugerida:** Depois (não é prazo ou compromisso)
-**Dependências:** EC-070, EC-069
+**Dependências:** EC-070, EC-069, EC-108
 
-Adicionar caminho somente depois de modelo confirmado.
+Implementar texto/layout próprios a partir do modelo subsequente validado, selecionando curso, módulo e período vigentes. Preservar o integrado. Impressão/assinatura manuscrita/carimbo continuam a decisão atual.
 
 **Critérios de aceite**
-- [ ] Selecionar matrícula subsequente gera texto/modalidade corretos.
-- [ ] Lote misto não confunde ano do integrado com módulo do subsequente.
+- [ ] Matrícula subsequente gera curso, módulo/período e texto corretos; integrado mantém seu caminho.
+- [ ] Teste individual e lote com modalidades diferentes não confunde série e módulo; validação de calendário e conferência obrigatória.
 
 **Verificação:** Testar PDF individual/lote com dados sintéticos.
 
@@ -2027,14 +2106,15 @@ Adicionar caminho somente depois de modelo confirmado.
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-072
 
 [Abrir card no Trello](https://trello.com/c/1txQxndX/73-p1-ec-072-definir-retirada-cancelamento-corre%C3%A7%C3%A3o-e-novo-pedido)
 
 ### Definir retirada, cancelamento, correção e novo pedido
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Declarações | **Prioridade:** P1 | **Escopo:** M
@@ -2056,12 +2136,13 @@ Hoje só REQUESTED/IN_PREPARATION/READY_FOR_PICKUP; não inventar fechamento da 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-073
 
 [Abrir card no Trello](https://trello.com/c/Zv2HzQcP/74-p1-ec-073-implementar-transi%C3%A7%C3%B5es-de-atendimento-aprovadas)
 
 ### Implementar transições de atendimento aprovadas
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Declarações | **Prioridade:** P1 | **Escopo:** M
@@ -2083,12 +2164,13 @@ Adicionar somente estados aprovados para entrega/correção/cancelamento.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-074
 
 [Abrir card no Trello](https://trello.com/c/7qawgwbM/75-p1-ec-074-testar-impress%C3%A3o-e-casos-extremos-do-lote)
 
 ### Testar impressão e casos extremos do lote
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Testes | **Prioridade:** P1 | **Escopo:** M
@@ -2110,12 +2192,13 @@ Complementar testes existentes com fidelidade e impressão A4.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-075
 
 [Abrir card no Trello](https://trello.com/c/qEJSqIZM/76-p1-ec-075-decidir-guarda-e-vers%C3%A3o-do-documento-final)
 
 ### Decidir guarda e versão do documento final
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Declarações | **Prioridade:** P1 | **Escopo:** M
@@ -2137,12 +2220,13 @@ Definir se guarda PDF preenchido/assinado, prazo, acesso e vínculo à solicita�
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-076
 
 [Abrir card no Trello](https://trello.com/c/8GOHwnXh/77-p0-ec-076-receber-textos-e-assets-oficiais-do-site)
 
 ### Receber textos e assets oficiais do site
+
+**Lista:** A FAZER
 
 **Estado:** DEPENDE DA ESCOLA
 **Área:** Site | **Prioridade:** P0 | **Escopo:** M
@@ -2164,12 +2248,13 @@ Conteúdo institucional e outras imagens estão pendentes; o chat relata faixa g
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-077
 
 [Abrir card no Trello](https://trello.com/c/ZFm6200q/78-p1-ec-077-publicar-conte%C3%BAdo-aprovado-na-interface)
 
 ### Publicar conteúdo aprovado na interface
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Site | **Prioridade:** P1 | **Escopo:** M
@@ -2191,12 +2276,13 @@ Atualizar só seções aprovadas; não criar CMS/notícias sem demanda.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-078
 
 [Abrir card no Trello](https://trello.com/c/3pqaoIwa/79-p1-ec-078-revisar-acessibilidade-e-responsividade-das-jornadas)
 
 ### Revisar acessibilidade e responsividade das jornadas
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Design | **Prioridade:** P1 | **Escopo:** M
@@ -2218,12 +2304,13 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-079
 
 [Abrir card no Trello](https://trello.com/c/A4YgseMA/80-p1-ec-079-medir-desempenho-com-metas-realistas)
 
 ### Medir desempenho com metas realistas
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Desempenho | **Prioridade:** P1 | **Escopo:** M
@@ -2245,12 +2332,13 @@ Neon é remoto; medições antigas não são garantia atual.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-080
 
 [Abrir card no Trello](https://trello.com/c/gswelWqy/81-p1-ec-080-criar-imagens-docker-para-site-e-portal)
 
 ### Criar imagens Docker para site e portal
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Infraestrutura | **Prioridade:** P1 | **Escopo:** M
@@ -2272,12 +2360,13 @@ Preparar build reproduzível do monorepo para VPS, sem executar deploy nesta eta
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-081
 
 [Abrir card no Trello](https://trello.com/c/jIelS5TW/82-p1-ec-081-orquestrar-aplica%C3%A7%C3%B5es-e-volumes-na-vps)
 
 ### Orquestrar aplicações e volumes na VPS
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Infraestrutura | **Prioridade:** P1 | **Escopo:** M
@@ -2285,7 +2374,7 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 **Janela sugerida:** Depois (não é prazo ou compromisso)
 **Dependências:** EC-080, EC-050
 
-Definir serviços, rede privada, persistência aprovada e limite de recursos; não incluir outros projetos no monorepo.
+Definir serviços, rede privada, persistência aprovada e limite de recursos; não incluir outros projetos no monorepo. Hospedagem planejada: Hostinger KVM4 por 24 meses, ainda não contratada; ajustar recursos/volumes ao ambiente efetivamente adquirido.
 
 **Critérios de aceite**
 - [ ] Configuração separa site/portal e banco conforme decisão de hosting.
@@ -2297,14 +2386,15 @@ Definir serviços, rede privada, persistência aprovada e limite de recursos; n�
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-082
 
 [Abrir card no Trello](https://trello.com/c/szE1K6A5/83-p0-ec-082-configurar-dns-proxy-reverso-e-https)
 
 ### Configurar DNS, proxy reverso e HTTPS
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Infraestrutura | **Prioridade:** P0 | **Escopo:** M
@@ -2326,12 +2416,13 @@ Encaminhar site e portal por domínio aprovado e proteger APIs privadas.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-083
 
 [Abrir card no Trello](https://trello.com/c/fnvi0JPN/84-p0-ec-083-preparar-acessos-e-atualiza%C3%A7%C3%B5es-da-vps)
 
 ### Preparar acessos e atualizações da VPS
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Infraestrutura | **Prioridade:** P0 | **Escopo:** M
@@ -2339,7 +2430,7 @@ Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram con
 **Janela sugerida:** Depois (não é prazo ou compromisso)
 **Dependências:** EC-050
 
-Após contratação/autorização, definir acesso dos dois e responsável institucional.
+Após contratação/autorização, definir acesso dos dois e responsável institucional. Aplicar futuramente na VPS Hostinger KVM4 escolhida, com contas individuais de TH/Erick e acesso mínimo; não provisionar agora.
 
 **Critérios de aceite**
 - [ ] SSH por chave, menor privilégio, firewall e atualizações documentados.
@@ -2351,14 +2442,15 @@ Após contratação/autorização, definir acesso dos dois e responsável instit
 
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
-Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
-
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
 ## EC-084
 
 [Abrir card no Trello](https://trello.com/c/1IpDtHt4/85-p0-ec-084-definir-backup-e-demonstrar-restaura%C3%A7%C3%A3o)
 
 ### Definir backup e demonstrar restauração
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Infraestrutura | **Prioridade:** P0 | **Escopo:** M
@@ -2380,12 +2472,13 @@ Incluir banco, configuração e documentos se guarda for aprovada.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-085
 
 [Abrir card no Trello](https://trello.com/c/0wvpsVr6/86-p1-ec-085-disponibilizar-homologa%C3%A7%C3%A3o-isolada)
 
 ### Disponibilizar homologação isolada
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Infraestrutura | **Prioridade:** P1 | **Escopo:** M
@@ -2407,12 +2500,13 @@ Testar atualizações antes de publicar; production build atual não permite log
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-086
 
 [Abrir card no Trello](https://trello.com/c/CCQDmFMJ/87-p1-ec-086-construir-e-versionar-artefato-de-release-no-ci)
 
 ### Construir e versionar artefato de release no CI
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** CI/CD | **Prioridade:** P1 | **Escopo:** M
@@ -2434,12 +2528,13 @@ Promover artefato por commit/digest em vez de rebuild diferente a cada ambiente.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-087
 
 [Abrir card no Trello](https://trello.com/c/rXgurHlM/88-p0-ec-087-criar-deploy-automatizado-com-aprova%C3%A7%C3%A3o-e-rollback)
 
 ### Criar deploy automatizado com aprovação e rollback
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** CI/CD | **Prioridade:** P0 | **Escopo:** M
@@ -2461,12 +2556,13 @@ Automação primeiro em homologação; produção requer condições institucion
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-088
 
 [Abrir card no Trello](https://trello.com/c/jvs1rP4t/89-p0-ec-088-definir-opera%C3%A7%C3%A3o-segura-de-migra%C3%A7%C3%B5es-na-release)
 
 ### Definir operação segura de migrações na release
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** CI/CD | **Prioridade:** P0 | **Escopo:** M
@@ -2488,12 +2584,13 @@ Migrações com efeito persistente têm procedimento próprio; desfazer containe
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-089
 
 [Abrir card no Trello](https://trello.com/c/j20VZGVG/90-p0-ec-089-monitorar-disponibilidade-e-erros-sem-expor-dados)
 
 ### Monitorar disponibilidade e erros sem expor dados
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Infraestrutura | **Prioridade:** P0 | **Escopo:** M
@@ -2515,12 +2612,13 @@ Definir alertas úteis e responsável; não logar credenciais, payloads de aluno
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-090
 
 [Abrir card no Trello](https://trello.com/c/aAFKwfJ0/91-p1-ec-090-documentar-incidentes-suporte-e-manuten%C3%A7%C3%A3o)
 
 ### Documentar incidentes, suporte e manutenção
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Infraestrutura | **Prioridade:** P1 | **Escopo:** M
@@ -2542,12 +2640,13 @@ Ensinar ambos e responsável institucional a operar sem depender do chat.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-091
 
 [Abrir card no Trello](https://trello.com/c/F9lAyKvr/92-p0-ec-091-habilitar-acesso-de-produ%C3%A7%C3%A3o-ap%C3%B3s-aprova%C3%A7%C3%A3o)
 
 ### Habilitar acesso de produção após aprovação
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Acesso | **Prioridade:** P0 | **Escopo:** M
@@ -2569,12 +2668,13 @@ Há bloqueios explícitos fora de development; não trocar NODE_ENV por developm
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-092
 
 [Abrir card no Trello](https://trello.com/c/YIuxD0mF/93-p0-ec-092-realizar-piloto-assistido-e-aprovar-mvp)
 
 ### Realizar piloto assistido e aprovar MVP
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Gestão | **Prioridade:** P0 | **Escopo:** M
@@ -2596,12 +2696,13 @@ MVP: aluno solicita, secretaria prepara/imprime e confirma disponibilidade; assi
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-093
 
 [Abrir card no Trello](https://trello.com/c/odK8cGOn/94-p0-ec-093-lan%C3%A7ar-mvp-e-revisar-opera%C3%A7%C3%A3o)
 
 ### Lançar MVP e revisar operação
+
+**Lista:** A FAZER
 
 **Estado:** A FAZER
 **Área:** Gestão | **Prioridade:** P0 | **Escopo:** M
@@ -2623,12 +2724,13 @@ Publicar somente após piloto e gates; data depende da escola e capacidade da du
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-094
 
 [Abrir card no Trello](https://trello.com/c/w385E0ct/95-p2-ec-094-aprovar-escopo-e-privacidade-da-consulta-por-qr)
 
 ### Aprovar escopo e privacidade da consulta por QR
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO — DESCOBERTA
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2650,12 +2752,13 @@ Há interesse confirmado no chat; não há aprovação institucional nem impleme
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-095
 
 [Abrir card no Trello](https://trello.com/c/8OMUZmIQ/96-p2-ec-095-persistir-registro-imut%C3%A1vel-e-cancelamento-do-documento)
 
 ### Persistir registro imutável e cancelamento do documento
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO CONDICIONAL
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2677,12 +2780,13 @@ Condicionado à aprovação da consulta; preserva dados da emissão, não dados 
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-096
 
 [Abrir card no Trello](https://trello.com/c/xeF0r8iy/97-p2-ec-096-implementar-qr-e-consulta-de-documento)
 
 ### Implementar QR e consulta de documento
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO CONDICIONAL
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2704,12 +2808,13 @@ Implementar apenas os dados e nível de acesso aprovados.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-097
 
 [Abrir card no Trello](https://trello.com/c/IYQScpRu/98-p2-ec-097-revalidar-assinatura-eletr%C3%B4nica-e-integra%C3%A7%C3%A3o-govbr)
 
 ### Revalidar assinatura eletrônica e integração GOV.BR
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO — DESCOBERTA
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2731,12 +2836,13 @@ Histórico pesquisou assinador manual, integração em lote, domínio institucio
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-098
 
 [Abrir card no Trello](https://trello.com/c/FB5GfALn/99-p2-ec-098-detalhar-e-implementar-m%C3%A9todo-de-assinatura-aprovado)
 
 ### Detalhar e implementar método de assinatura aprovado
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO CONDICIONAL
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2758,12 +2864,13 @@ Dividir em cards menores após escolher método e receber aprovação/credenciai
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-099
 
 [Abrir card no Trello](https://trello.com/c/eAyBCDA2/100-p2-ec-099-levantar-regras-do-hist%C3%B3rico-escolar)
 
 ### Levantar regras do histórico escolar
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO — DESCOBERTA
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2785,12 +2892,13 @@ Visão do projeto, sem regras de emissão; não copiar fluxo de declaração aut
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-100
 
 [Abrir card no Trello](https://trello.com/c/n2Igdk4Y/101-p2-ec-100-levantar-arquivo-e-v%C3%ADnculo-de-dados-do-sistec)
 
 ### Levantar arquivo e vínculo de dados do SISTEC
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO — DESCOBERTA
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2812,12 +2920,13 @@ SISTEC é fonte a estudar/importar; nenhuma integração atual.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-101
 
 [Abrir card no Trello](https://trello.com/c/pAJq4Gry/102-p2-ec-101-levantar-requisitos-de-diploma-e-futura-emiss%C3%A3o)
 
 ### Levantar requisitos de diploma e futura emissão
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO — DESCOBERTA
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2839,12 +2948,13 @@ Documento sensível com requisitos próprios ainda não definidos.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-102
 
 [Abrir card no Trello](https://trello.com/c/lrtpe91V/103-p2-ec-102-levantar-importa%C3%A7%C3%A3o-de-notas-e-acesso-pedag%C3%B3gico)
 
 ### Levantar importação de notas e acesso pedagógico
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO — DESCOBERTA
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2866,12 +2976,13 @@ Ideia: importar planilha após fechamento de notas; nenhuma regra ou modelo impl
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-103
 
 [Abrir card no Trello](https://trello.com/c/v3EpOz8V/104-p2-ec-103-definir-indicadores-e-apoio-ao-conselho-de-classe)
 
 ### Definir indicadores e apoio ao Conselho de Classe
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO — DESCOBERTA
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2893,12 +3004,13 @@ Exemplo de três disciplinas foi citado no resumo, não regra validada de classi
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
 
-
 ## EC-104
 
 [Abrir card no Trello](https://trello.com/c/OytJX7PS/105-p2-ec-104-especificar-api-autorizada-para-outros-projetos)
 
 ### Especificar API autorizada para outros projetos
+
+**Lista:** A FAZER
 
 **Estado:** FUTURO — DESCOBERTA
 **Área:** Futuro | **Prioridade:** P2 | **Escopo:** M
@@ -2919,3 +3031,199 @@ Gamificação/eleição permanecem fora do repo e com login próprio. Integraç�
 **Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
 
 Base levantada em 09/10/2026 no snapshot 3fb180c. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
+
+## EC-105
+
+[Abrir card no Trello](https://trello.com/c/6RM3wxDU/106-p1-ec-105-importar-e-atualizar-alunos-do-integrado)
+
+### Importar e atualizar alunos do integrado
+
+**Lista:** A FAZER
+
+**Estado:** A FAZER
+**Área:** Dados | **Prioridade:** P1 | **Escopo:** M
+**Responsável sugerido:** Erick | **Revisão:** TH
+**Janela sugerida:** A selecionar (não é prazo ou compromisso)
+**Dependências:** EC-056, EC-057
+
+Entrada explícita para integrado, usando contrato aprovado e atualização por matrícula/vigência. É um fluxo novo de planilha; o importador JSON histórico permanece distinto.
+
+**Critérios de aceite**
+- [ ] Prévia identifica inclusões, atualizações e divergências do integrado sem escrever em matrículas do subsequente.
+- [ ] Reimportação não duplica; ausência no arquivo não apaga histórico; não altera senha/e-mail/papel ou habilita primeiro acesso silenciosamente.
+
+**Verificação:** Integração em banco descartável: inclusão, atualização, repetição, entrada inválida e rollback com dados sintéticos.
+
+**Evidência / arquivos prováveis:** apps/portal/src/lib/student-import.ts; futura área de importação
+
+**Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
+
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
+
+## EC-106
+
+[Abrir card no Trello](https://trello.com/c/VU00Iepm/107-p1-ec-106-importar-e-atualizar-alunos-do-subsequente)
+
+### Importar e atualizar alunos do subsequente
+
+**Lista:** A FAZER
+
+**Estado:** A FAZER
+**Área:** Dados | **Prioridade:** P1 | **Escopo:** M
+**Responsável sugerido:** Erick | **Revisão:** TH
+**Janela sugerida:** A selecionar (não é prazo ou compromisso)
+**Dependências:** EC-056, EC-057, EC-108
+
+Segunda entrada explícita para subsequente, separando curso, turma, módulo e período letivo. Obter contrato/amostra dessa modalidade antes de implementar.
+
+**Critérios de aceite**
+- [ ] Prévia e confirmação atualizam somente os vínculos subsequentes previstos no contrato; preservar matrícula integrada do mesmo aluno se houver.
+- [ ] Reimportação idempotente, conflito/transferência tratado sem apagar histórico; não cria contas nem importa credenciais.
+
+**Verificação:** Integração em banco descartável com cursos de 3 e 4 módulos, atualização de período e colisão entre modalidades.
+
+**Evidência / arquivos prováveis:** apps/portal/prisma/schema.prisma; futura área de importação
+
+**Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
+
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
+
+## EC-107
+
+[Abrir card no Trello](https://trello.com/c/cUMfHnfP/108-p1-ec-107-especificar-e-implementar-exporta%C3%A7%C3%A3o-autorizada-por-modalidade)
+
+### Especificar e implementar exportação autorizada por modalidade
+
+**Lista:** A FAZER
+
+**Estado:** DEPENDE DA ESCOLA
+**Área:** Dados | **Prioridade:** P1 | **Escopo:** M
+**Responsável sugerido:** Erick | **Revisão:** TH
+**Janela sugerida:** A selecionar (não é prazo ou compromisso)
+**Dependências:** EC-047, EC-049, EC-053
+
+Demanda de exportação registrada pela equipe: definir primeiro finalidade, destinatários, colunas e formato; não presumir acesso do aluno a listas escolares. Depois entregar uma fatia da exportação aprovada.
+
+**Critérios de aceite**
+- [ ] Escola confirma campos mínimos, formato, filtros integrado/subsequente, papéis e retenção antes da implementação.
+- [ ] Servidor autoriza download, isola modalidade/período e impede fórmulas executáveis se formato escolhido for planilha/CSV.
+
+**Verificação:** Casos positivo/negativo de autorização, filtros e caracteres perigosos com dados sintéticos; arquivo abre no consumidor aprovado.
+
+**Evidência / arquivos prováveis:** futura área de exportação; docs/planejamento/contexto-secretaria-2026-10-09.md
+
+**Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
+
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
+
+## EC-108
+
+[Abrir card no Trello](https://trello.com/c/cosZuWUu/109-p1-ec-108-configurar-m%C3%B3dulos-e-calend%C3%A1rio-dos-cursos-subsequentes)
+
+### Configurar módulos e calendário dos cursos subsequentes
+
+**Lista:** A FAZER
+
+**Estado:** A FAZER
+**Área:** Dados | **Prioridade:** P1 | **Escopo:** M
+**Responsável sugerido:** Erick | **Revisão:** TH
+**Janela sugerida:** A selecionar (não é prazo ou compromisso)
+**Dependências:** EC-047, EC-070
+
+Informação recebida: DS e ADM com 3 módulos; Enfermagem com 4; cada módulo com 6 meses. Modelar configuração por curso/oferta/período a partir do calendário oficial, incluindo exceções e mudanças. Comentário sobre duas turmas de DS não é limite fixo do sistema.
+
+**Critérios de aceite**
+- [ ] Confirmar calendário e regras com a escola; registrar configuração versionada e modalidade sem assumir que todas as turmas seguem a mesma oferta.
+- [ ] Suportar quantidades distintas de módulos, datas e transições sem hardcode de 2 turmas ou de 3 módulos para todo curso.
+
+**Verificação:** Testar ofertas sintéticas de DS/ADM/Enfermagem e mudanças de período; aprovação institucional registrada.
+
+**Evidência / arquivos prováveis:** apps/portal/prisma/schema.prisma; docs/planejamento/contexto-secretaria-2026-10-09.md
+
+**Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
+
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
+
+## EC-109
+
+[Abrir card no Trello](https://trello.com/c/1Zh4EfSY/110-p1-ec-109-automatizar-regress%C3%A3o-dos-dois-fluxos-de-importa%C3%A7%C3%A3o)
+
+### Automatizar regressão dos dois fluxos de importação
+
+**Lista:** A FAZER
+
+**Estado:** A FAZER
+**Área:** Testes | **Prioridade:** P1 | **Escopo:** M
+**Responsável sugerido:** TH | **Revisão:** Erick
+**Janela sugerida:** A selecionar (não é prazo ou compromisso)
+**Dependências:** EC-032, EC-105, EC-106
+
+Cobrir os novos adaptadores integrado/subsequente no CI, com fixtures que reproduzam estrutura aprovada sem copiar registros do arquivo recebido. Complementa EC-037, que cobre o importador JSON atual.
+
+**Critérios de aceite**
+- [ ] Automatizar formato inválido, duplicação, colisão de modalidade, atualização, idempotência e rollback em PostgreSQL descartável.
+- [ ] Comprovar falha do job ao introduzir um erro controlado; dados reais, acesso de produção e falso resultado verde não entram no pipeline.
+
+**Verificação:** Guardar comando/execução CI que passou e controle negativo que falhou pelo motivo esperado.
+
+**Evidência / arquivos prováveis:** futuros testes de importação; futuro .github/workflows/
+
+**Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
+
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
+
+## EC-110
+
+[Abrir card no Trello](https://trello.com/c/Wrp2ZBgs/111-p1-ec-110-padronizar-contexto-compartilhado-entre-th-e-erick)
+
+### Padronizar contexto compartilhado entre TH e Erick
+
+**Lista:** A FAZER
+
+**Estado:** A FAZER
+**Área:** Gestão | **Prioridade:** P1 | **Escopo:** M
+**Responsável sugerido:** TH | **Revisão:** Erick
+**Janela sugerida:** A selecionar (não é prazo ou compromisso)
+**Dependências:** EC-027
+
+A dupla usa chats separados. Decisões de produto ficam no repositório; estado de execução no Trello. Cada pedido a agente informa card, branch, commit base e escopo para evitar ação a partir de contexto antigo.
+
+**Critérios de aceite**
+- [ ] Usar modelo de passagem de contexto com ID, commit, arquivos, decisões, testes e pendências.
+- [ ] Validar com a dupla uma troca de tarefa e conflito em arquivo compartilhado; revisar antes de integrar e atualizar AGENTS quando a decisão mudar.
+
+**Verificação:** Executar uma troca de contexto entre os devs e revisar os registros, sem enviar dados de alunos a chats.
+
+**Evidência / arquivos prováveis:** docs/planejamento/git-e-colaboracao.md; AGENTS.md
+
+**Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
+
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.
+
+## EC-111
+
+[Abrir card no Trello](https://trello.com/c/4qOAEKbM/112-p2-ec-111-levantar-requisitos-do-sistema-de-certificados)
+
+### Levantar requisitos do sistema de certificados
+
+**Lista:** A FAZER
+
+**Estado:** FUTURO — DESCOBERTA
+**Área:** Produto | **Prioridade:** P2 | **Escopo:** M
+**Responsável sugerido:** Erick | **Revisão:** TH
+**Janela sugerida:** Depois (não é prazo ou compromisso)
+**Dependências:** EC-026, EC-049
+
+TH pediu branch de certificados. Ainda não há regras, público, fontes ou modelo informado; levantar antes de implementar, sem confundir certificado, diploma, histórico e declaração de vínculo.
+
+**Critérios de aceite**
+- [ ] Confirmar com a escola tipos de certificado, elegibilidade, dados, responsáveis e processo de entrega/assinatura.
+- [ ] Registrar modelo sintético, fronteiras do módulo, critérios e novas fatias de implementação após aprovação.
+
+**Verificação:** Revisão dos requisitos/modelo com a escola e com TH; nenhuma emissão oficial presumida.
+
+**Evidência / arquivos prováveis:** futura documentação de requisitos de certificados; docs/planejamento/git-e-colaboracao.md
+
+**Regras da dupla:** um dono por card em execução, branch própria, combinar mudanças nos mesmos arquivos e revisão do outro dev. Não registrar dados pessoais, credenciais ou documentos reais no Trello.
+
+Base levantada em 09/10/2026 no snapshot 3fb180c e atualizada com contexto da equipe/secretaria. Os itens históricos foram conferidos por código/documentação, não representam produção homologada.

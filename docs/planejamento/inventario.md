@@ -81,3 +81,11 @@ Esta entrega verifica estrutura documental, IDs/dependências, critérios, camin
 
 
 Publicação confirmada pelo conector: 105 novos cards no PRODUCT BACKLOG; 110 no quadro incluindo os cinco explicativos anteriores. IDs, listas, títulos e descrições conferidos sem divergências. Links individuais em `tasks/backlog.md`, `tasks/cards.json`, `tasks/cards.csv` e `tasks/trello-publicacao.json`.
+
+## Contexto adicional de 09/10 e organização atual
+
+Ver [contexto sanitizado da secretaria](contexto-secretaria-2026-10-09.md) e [Git/colaboração](git-e-colaboracao.md). A exportação XLS recebida tem 46 registros e somente matrícula/nome/nascimento; modalidade/turma/curso não estão disponíveis nela. Não foi importada. O importador JSON existente insere sem duplicar e não atualiza existentes. Novos fluxos integrado/subsequente, exportação e configuração de módulos continuam tarefas futuras.
+
+Referência DOCX subsequente 2026.2 recebida; modelos diferentes confirmados pela equipe. Adequação, aprovação institucional e emissão oficial permanecem pendentes. A escolha de hospedagem planejada é Hostinger KVM4 por 24 meses, ainda não contratada. O inventário técnico do snapshot permanece histórico; nenhum recurso de aplicação foi implementado nesta revisão.
+
+TH pediu históricos FEITO DEV em CONCLUÍDO e todas as pendências conhecidas em A FAZER. A base cresce de 104 para 111 cards de trabalho (25 históricos e 86 pendências). O guia EC-000 foi encontrado arquivado nesta leitura e sua referência é preservada.
