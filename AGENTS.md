@@ -12,6 +12,8 @@
 
 ## Etapa atual
 
+- Organização de 09/10/2026: Trello é o tracker da dupla; plano em `tasks/plan.md`, inventário em `docs/planejamento/inventario.md` e base inicial em `tasks/cards.json`/`tasks/backlog.md`. Por pedido de TH, todos os cards, inclusive histórico FEITO DEV, começam no PRODUCT BACKLOG. TH lidera inicialmente DevOps/segurança e Erick produto/backend, ambos podendo atuar em tudo, com um dono por card, branches e revisão cruzada. CI/CD/Docker ainda são tarefas futuras; não habilitar produção por causa deste planejamento.
+
 - O protótipo contém o site institucional, login, cadastro e a página inicial do portal. A rota `/` consulta a sessão no servidor e redireciona visitantes sem sessão para `/login`.
 - O cadastro e login de desenvolvimento consultam PostgreSQL/Neon e usam sessão persistida no banco. O acesso usa Prisma 7; schema/migrações ficam em `apps/portal/prisma` e seed de três alunos sintéticos em `apps/portal/scripts/seed.ts`; sem `DATABASE_URL` não há consulta. Produção ainda não permite criar contas nem autenticar.
 - A página inicial do portal exige autenticação. Login e cadastro são entradas acessíveis sem sessão; informações e serviços internos são privados.

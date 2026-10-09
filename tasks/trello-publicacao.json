@@ -1,0 +1,759 @@
+{
+  "board": "https://trello.com/b/gOjNklJZ/ete-conectada",
+  "list": "PRODUCT BACKLOG",
+  "expectedNewCards": 105,
+  "status": "publicado e conferido por leitura do quadro",
+  "verification": {
+    "totalCards": 110,
+    "newCards": 105,
+    "historicalCards": 25,
+    "futureCards": 79,
+    "guideCards": 1,
+    "originalTemplateCards": 5,
+    "listCounts": {
+      "PRODUCT BACKLOG": 106,
+      "SPRINT BACKLOG | A FAZER": 1,
+      "EM ANDAMENTO": 1,
+      "FASE DE TESTE": 1,
+      "CONCLUÍDO": 1
+    },
+    "issues": []
+  },
+  "cards": [
+    {
+      "id": "EC-000",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9152d2fa3d24e9dd1771e",
+      "url": "https://trello.com/c/hy2OepBb/1-ec-000-guia-da-dupla-kanban-sprints-e-crit%C3%A9rios-de-conclus%C3%A3o",
+      "title": "EC-000 — Guia da dupla: Kanban, sprints e critérios de conclusão",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-001",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91551aef384096c565404",
+      "url": "https://trello.com/c/ABr85ZdO/2-feito-dev-ec-001-estruturar-monoreposit%C3%B3rio-nextjs-com-duas-aplica%C3%A7%C3%B5es",
+      "title": "[FEITO DEV] EC-001 — Estruturar monorepositório Next.js com duas aplicações",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-002",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915531478de77292b320c",
+      "url": "https://trello.com/c/cIvGDqBQ/3-feito-dev-ec-002-documentar-arquitetura-opera%C3%A7%C3%A3o-e-decis%C3%B5es-da-equipe",
+      "title": "[FEITO DEV] EC-002 — Documentar arquitetura, operação e decisões da equipe",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-003",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915555c5ae950c3859114",
+      "url": "https://trello.com/c/3gmIunHQ/4-feito-dev-ec-003-consolidar-identidade-ete-pernambuco-e-estilos-compartilhados",
+      "title": "[FEITO DEV] EC-003 — Consolidar identidade ETE/Pernambuco e estilos compartilhados",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-004",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91557f0eb175c0e18d15e",
+      "url": "https://trello.com/c/ny4wuscA/5-feito-dev-ec-004-criar-site-institucional-p%C3%BAblico",
+      "title": "[FEITO DEV] EC-004 — Criar site institucional público",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-005",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9155865d82f25751c27dc",
+      "url": "https://trello.com/c/ChroKhn8/6-feito-dev-ec-005-corrigir-navega%C3%A7%C3%A3o-entre-aplica%C3%A7%C3%B5es-e-acesso-pela-rede-local",
+      "title": "[FEITO DEV] EC-005 — Corrigir navegação entre aplicações e acesso pela rede local",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-006",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91559b75502586927147f",
+      "url": "https://trello.com/c/I5JyeD8n/7-feito-dev-ec-006-integrar-prisma-7-com-postgresql-neon",
+      "title": "[FEITO DEV] EC-006 — Integrar Prisma 7 com PostgreSQL/Neon",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-007",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9155bd1710ddd3c063815",
+      "url": "https://trello.com/c/RgqQF5T8/8-feito-dev-ec-007-versionar-migra%C3%A7%C3%B5es-de-alunos-acesso-e-solicita%C3%A7%C3%B5es",
+      "title": "[FEITO DEV] EC-007 — Versionar migrações de alunos, acesso e solicitações",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-008",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9155db05614fc5246075a",
+      "url": "https://trello.com/c/W5hXnmFV/9-feito-dev-ec-008-preparar-seed-de-tr%C3%AAs-alunos-sint%C3%A9ticos",
+      "title": "[FEITO DEV] EC-008 — Preparar seed de três alunos sintéticos",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-009",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91560585d042228e12eab",
+      "url": "https://trello.com/c/rIeP8NDR/10-feito-dev-ec-009-implementar-importa%C3%A7%C3%A3o-por-lista-branca-e-matr%C3%ADcula",
+      "title": "[FEITO DEV] EC-009 — Implementar importação por lista branca e matrícula",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-010",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91561c24b12896bcb0699",
+      "url": "https://trello.com/c/7GQ4bbVb/11-feito-dev-ec-010-implementar-primeiro-acesso-com-matr%C3%ADcula-e-nascimento",
+      "title": "[FEITO DEV] EC-010 — Implementar primeiro acesso com matrícula e nascimento",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-011",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91563d1a0a89e69969a2c",
+      "url": "https://trello.com/c/GKFntRa2/12-feito-dev-ec-011-validar-cpf-e-credenciais-na-cria%C3%A7%C3%A3o-de-conta",
+      "title": "[FEITO DEV] EC-011 — Validar CPF e credenciais na criação de conta",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-012",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9156422cfc3365cda8145",
+      "url": "https://trello.com/c/QX34xtZP/13-feito-dev-ec-012-armazenar-senhas-com-scrypt",
+      "title": "[FEITO DEV] EC-012 — Armazenar senhas com scrypt",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-013",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91566c024d8886f795dd2",
+      "url": "https://trello.com/c/yOaI5GXm/14-feito-dev-ec-013-confirmar-e-mail-com-token-de-uso-%C3%BAnico",
+      "title": "[FEITO DEV] EC-013 — Confirmar e-mail com token de uso único",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-014",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91568a8d13e96ebe45233",
+      "url": "https://trello.com/c/TYsbOIw0/15-feito-dev-ec-014-corrigir-retomada-de-cadastro-pendente",
+      "title": "[FEITO DEV] EC-014 — Corrigir retomada de cadastro pendente",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-015",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9156a5de43df50424f1e0",
+      "url": "https://trello.com/c/JwC63Cad/16-feito-dev-ec-015-implementar-login-por-cpf-ou-e-mail-em-desenvolvimento",
+      "title": "[FEITO DEV] EC-015 — Implementar login por CPF ou e-mail em desenvolvimento",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-016",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9156ba6889892ac711112",
+      "url": "https://trello.com/c/7gJfcP5D/17-feito-dev-ec-016-persistir-sess%C3%B5es-e-revog%C3%A1-las-no-logout",
+      "title": "[FEITO DEV] EC-016 — Persistir sessões e revogá-las no logout",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-017",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9156d1e8569524303223d",
+      "url": "https://trello.com/c/5S8vnZba/18-feito-dev-ec-017-proteger-p%C3%A1gina-inicial-e-apresentar-menu-de-servi%C3%A7os",
+      "title": "[FEITO DEV] EC-017 — Proteger página inicial e apresentar menu de serviços",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-018",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9156e29ce756b1a887bd6",
+      "url": "https://trello.com/c/vMJb3XD5/19-feito-dev-ec-018-reduzir-consultas-de-sess%C3%A3o-e-diagnosticar-login",
+      "title": "[FEITO DEV] EC-018 — Reduzir consultas de sessão e diagnosticar login",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-019",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915701fb19772b85b9d7a",
+      "url": "https://trello.com/c/4kOt8AvK/20-feito-dev-ec-019-persistir-pedido-de-declara%C3%A7%C3%A3o-e-acompanhamento-pelo-aluno",
+      "title": "[FEITO DEV] EC-019 — Persistir pedido de declaração e acompanhamento pelo aluno",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-020",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91572180dcb373925d3f3",
+      "url": "https://trello.com/c/5SGlv5tQ/21-feito-dev-ec-020-criar-atendimento-protegido-pelo-papel-secretary",
+      "title": "[FEITO DEV] EC-020 — Criar atendimento protegido pelo papel secretary",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-021",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9158776838f8563873634",
+      "url": "https://trello.com/c/ugh0D99Q/22-feito-dev-ec-021-gerar-minuta-a4-individual-e-em-lotes-de-at%C3%A9-100",
+      "title": "[FEITO DEV] EC-021 — Gerar minuta A4 individual e em lotes de até 100",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-022",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91589cfa023b74716ae1b",
+      "url": "https://trello.com/c/7DU8Bav8/23-feito-dev-ec-022-separar-gera%C3%A7%C3%A3o-do-pdf-e-libera%C3%A7%C3%A3o-para-retirada",
+      "title": "[FEITO DEV] EC-022 — Separar geração do PDF e liberação para retirada",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-023",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9158bfa451518be1f795c",
+      "url": "https://trello.com/c/1eciDlom/24-feito-dev-ec-023-remover-perfil-e-fotos-do-front-e-backend-ativos",
+      "title": "[FEITO DEV] EC-023 — Remover perfil e fotos do front e backend ativos",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-024",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9158cd6dde91ab9e86adf",
+      "url": "https://trello.com/c/0qBUHrlQ/25-feito-dev-ec-024-preparar-modelos-e-pesquisas-de-declara%C3%A7%C3%A3o-qr",
+      "title": "[FEITO DEV] EC-024 — Preparar modelos e pesquisas de declaração/QR",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-025",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9158ed0865e6ac68dfb2b",
+      "url": "https://trello.com/c/EbntmBhv/26-feito-dev-ec-025-organizar-trabalho-acumulado-em-sete-commits",
+      "title": "[FEITO DEV] EC-025 — Organizar trabalho acumulado em sete commits",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-026",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9158f29eb12138279703a",
+      "url": "https://trello.com/c/HKDfuYpw/27-p1-ec-026-revisar-invent%C3%A1rio-e-priorizar-primeira-sprint",
+      "title": "[P1] EC-026 — Revisar inventário e priorizar primeira sprint",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-027",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915913ae5ae40f3a3bc3b",
+      "url": "https://trello.com/c/zklVaWMp/28-p1-ec-027-definir-padr%C3%A3o-de-branch-e-pull-request-por-card",
+      "title": "[P1] EC-027 — Definir padrão de branch e pull request por card",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-028",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915933e4a57bdf90b0955",
+      "url": "https://trello.com/c/NaOGVMf1/29-p1-ec-028-criar-ci-de-instala%C3%A7%C3%A3o-e-build-dos-dois-workspaces",
+      "title": "[P1] EC-028 — Criar CI de instalação e build dos dois workspaces",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-029",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9159586990386f6227744",
+      "url": "https://trello.com/c/pKUUOBWJ/30-p1-ec-029-adicionar-comandos-de-tipos-lint-e-formata%C3%A7%C3%A3o",
+      "title": "[P1] EC-029 — Adicionar comandos de tipos, lint e formatação",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-030",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91596f34953bddc1c0fba",
+      "url": "https://trello.com/c/T531jv9k/31-p1-ec-030-cobrir-valida%C3%A7%C3%B5es-puras-de-primeiro-acesso",
+      "title": "[P1] EC-030 — Cobrir validações puras de primeiro acesso",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-031",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91598ab73337a6bab5c50",
+      "url": "https://trello.com/c/BATBoYt8/32-p0-ec-031-impedir-testes-e-seeds-no-banco-errado",
+      "title": "[P0] EC-031 — Impedir testes e seeds no banco errado",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-032",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915997edcbdcda41880eb",
+      "url": "https://trello.com/c/HMYNNrrg/33-p1-ec-032-criar-postgresql-descart%C3%A1vel-e-aplicar-migra%C3%A7%C3%B5es-no-ci",
+      "title": "[P1] EC-032 — Criar PostgreSQL descartável e aplicar migrações no CI",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-033",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9159b658a7d049484da29",
+      "url": "https://trello.com/c/IkSWG056/34-p1-ec-033-automatizar-testes-existentes-de-cadastro-e-declara%C3%A7%C3%A3o",
+      "title": "[P1] EC-033 — Automatizar testes existentes de cadastro e declaração",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-034",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9159cbb5ba035cd58807a",
+      "url": "https://trello.com/c/aD7HOKM5/35-p1-ec-034-proteger-main-com-revis%C3%A3o-e-checks-obrigat%C3%B3rios",
+      "title": "[P1] EC-034 — Proteger main com revisão e checks obrigatórios",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-035",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9159e5e1829c532b0e23b",
+      "url": "https://trello.com/c/gdtbFuDY/36-p1-ec-035-cobrir-senha-e-hash-malformado-com-testes-puros",
+      "title": "[P1] EC-035 — Cobrir senha e hash malformado com testes puros",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-036",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915a80b6459fc690798f6",
+      "url": "https://trello.com/c/tC0H63hT/37-p1-ec-036-cobrir-campos-e-frequ%C3%AAncia-da-declara%C3%A7%C3%A3o-em-testes-puros",
+      "title": "[P1] EC-036 — Cobrir campos e frequência da declaração em testes puros",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-037",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915aa18a8f706fd2b94e9",
+      "url": "https://trello.com/c/YMmrYUDF/38-p1-ec-037-cobrir-importa%C3%A7%C3%A3o-idempotente-e-rollback",
+      "title": "[P1] EC-037 — Cobrir importação idempotente e rollback",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-038",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915ac9998b910fa09edb6",
+      "url": "https://trello.com/c/EuAGerw9/39-p0-ec-038-ampliar-regress%C3%A3o-de-sess%C3%A3o-e-autoriza%C3%A7%C3%A3o",
+      "title": "[P0] EC-038 — Ampliar regressão de sessão e autorização",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-039",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915ae360d0f2e72cea43a",
+      "url": "https://trello.com/c/5PCPaJvl/40-p1-ec-039-criar-testes-de-navegador-das-jornadas-principais",
+      "title": "[P1] EC-039 — Criar testes de navegador das jornadas principais",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-040",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915b03bb8d02c8522bdfa",
+      "url": "https://trello.com/c/P7dFAHmk/41-p0-ec-040-testar-bloqueios-atuais-em-build-de-produ%C3%A7%C3%A3o",
+      "title": "[P0] EC-040 — Testar bloqueios atuais em build de produção",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-041",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915b2f90a366453fd3ef1",
+      "url": "https://trello.com/c/ZcW0Em00/42-p1-ec-041-definir-triagem-de-depend%C3%AAncias-e-automatizar-alertas",
+      "title": "[P1] EC-041 — Definir triagem de dependências e automatizar alertas",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-042",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915b43c10611647b83dfd",
+      "url": "https://trello.com/c/NGPLXC4D/43-p1-ec-042-adicionar-an%C3%A1lise-de-c%C3%B3digo-e-segredos-ao-ci",
+      "title": "[P1] EC-042 — Adicionar análise de código e segredos ao CI",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-043",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915b5c01937b2c1b44e92",
+      "url": "https://trello.com/c/ErzpHzMr/44-p0-ec-043-revisar-seguran%C3%A7a-dos-workflows",
+      "title": "[P0] EC-043 — Revisar segurança dos workflows",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-044",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915b7adf0cdb50d7a6b7c",
+      "url": "https://trello.com/c/iZtDZgvB/45-p0-ec-044-definir-titularidade-e-recupera%C3%A7%C3%A3o-com-a-escola",
+      "title": "[P0] EC-044 — Definir titularidade e recuperação com a escola",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-045",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915b95ff09dbcab88fcde",
+      "url": "https://trello.com/c/JGSzvo19/46-p0-ec-045-confirmar-pap%C3%A9is-de-secretaria-e-gest%C3%A3o",
+      "title": "[P0] EC-045 — Confirmar papéis de secretaria e gestão",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-046",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915bb387f0935819e2588",
+      "url": "https://trello.com/c/OfX42eXE/47-p0-ec-046-validar-modelo-e-signat%C3%A1rios-da-declara%C3%A7%C3%A3o",
+      "title": "[P0] EC-046 — Validar modelo e signatários da declaração",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-047",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915bc092400012a9d6151",
+      "url": "https://trello.com/c/4paFPNpY/48-p0-ec-047-obter-dicion%C3%A1rio-e-exporta%C3%A7%C3%A3o-autorizada-de-dados-escolares",
+      "title": "[P0] EC-047 — Obter dicionário e exportação autorizada de dados escolares",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-048",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915bdbd4e0cdc2a2e8ebe",
+      "url": "https://trello.com/c/pBgB7stA/49-p0-ec-048-confirmar-finalidade-e-fonte-da-frequ%C3%AAncia",
+      "title": "[P0] EC-048 — Confirmar finalidade e fonte da frequência",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-049",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915bf7a03dbeb99885e29",
+      "url": "https://trello.com/c/TDffSOCc/50-p0-ec-049-definir-pol%C3%ADtica-de-acesso-reten%C3%A7%C3%A3o-e-suporte-a-dados-pessoais",
+      "title": "[P0] EC-049 — Definir política de acesso, retenção e suporte a dados pessoais",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-050",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915c2c90737dcb7c123e2",
+      "url": "https://trello.com/c/WEzDxun3/51-p0-ec-050-confirmar-dom%C3%ADnio-hospedagem-e-respons%C3%A1vel-institucional",
+      "title": "[P0] EC-050 — Confirmar domínio, hospedagem e responsável institucional",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-051",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915d4bc161e4960fb57f7",
+      "url": "https://trello.com/c/8uEbZedI/52-p0-ec-051-definir-contas-de-servidores-e-revoga%C3%A7%C3%A3o-de-privil%C3%A9gios",
+      "title": "[P0] EC-051 — Definir contas de servidores e revogação de privilégios",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-052",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915d65b171a50ac627cdd",
+      "url": "https://trello.com/c/tw0mdESE/53-p1-ec-052-persistir-dados-complementares-aprovados-do-aluno",
+      "title": "[P1] EC-052 — Persistir dados complementares aprovados do aluno",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-053",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915d88c1b296b6388e7f3",
+      "url": "https://trello.com/c/F2nX729f/54-p0-ec-053-registrar-situa%C3%A7%C3%A3o-e-vig%C3%AAncia-da-matr%C3%ADcula",
+      "title": "[P0] EC-053 — Registrar situação e vigência da matrícula",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-054",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915d96b8d1d571f6aa6ac",
+      "url": "https://trello.com/c/2Ofbkiv5/55-p0-ec-054-cadastrar-configura%C3%A7%C3%A3o-institucional-aprovada",
+      "title": "[P0] EC-054 — Cadastrar configuração institucional aprovada",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-055",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915db9188d9bdd4edbe47",
+      "url": "https://trello.com/c/uXCqyZeL/56-p1-ec-055-especificar-importa%C3%A7%C3%A3o-de-planilha-oficial-da-secretaria",
+      "title": "[P1] EC-055 — Especificar importação de planilha oficial da secretaria",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-056",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915dc034ae26e7b604df5",
+      "url": "https://trello.com/c/Ob3ibKwF/57-p1-ec-056-implementar-pr%C3%A9via-e-importa%C3%A7%C3%A3o-da-planilha-aprovada",
+      "title": "[P1] EC-056 — Implementar prévia e importação da planilha aprovada",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-057",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915deec6784122d1c5889",
+      "url": "https://trello.com/c/kANEeXw1/58-p1-ec-057-sincronizar-novas-turmas-e-altera%C3%A7%C3%B5es-sem-apagar-hist%C3%B3rico",
+      "title": "[P1] EC-057 — Sincronizar novas turmas e alterações sem apagar histórico",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-058",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915df5fa3fc14fcc81fcd",
+      "url": "https://trello.com/c/Ipvojz2m/59-p0-ec-058-implementar-verifica%C3%A7%C3%A3o-de-titularidade-aprovada",
+      "title": "[P0] EC-058 — Implementar verificação de titularidade aprovada",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-059",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915e21bc35279066b90da",
+      "url": "https://trello.com/c/mAbVjRwS/60-p0-ec-059-implementar-recupera%C3%A7%C3%A3o-de-acesso-aprovada",
+      "title": "[P0] EC-059 — Implementar recuperação de acesso aprovada",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-060",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915e37bf4bc97efa39869",
+      "url": "https://trello.com/c/vfH0Jnjb/61-p0-ec-060-limitar-tentativas-de-login-e-primeiro-acesso",
+      "title": "[P0] EC-060 — Limitar tentativas de login e primeiro acesso",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-061",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915e4298a4024636cb610",
+      "url": "https://trello.com/c/bFUV89zR/62-p0-ec-061-limitar-corpo-e-custo-de-processamento-nas-rotas-de-acesso",
+      "title": "[P0] EC-061 — Limitar corpo e custo de processamento nas rotas de acesso",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-062",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915e64b3244c4717b8d0f",
+      "url": "https://trello.com/c/lVPipoS3/63-p0-ec-062-padronizar-prote%C3%A7%C3%A3o-de-origem-e-url-de-confirma%C3%A7%C3%A3o",
+      "title": "[P0] EC-062 — Padronizar proteção de origem e URL de confirmação",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-063",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915e78690c285b38dfb40",
+      "url": "https://trello.com/c/6u19Qun4/64-p0-ec-063-configurar-cookie-e-sess%C3%A3o-para-https",
+      "title": "[P0] EC-063 — Configurar cookie e sessão para HTTPS",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-064",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915e92343501d94cf757a",
+      "url": "https://trello.com/c/UvRJyKIL/65-p1-ec-064-aplicar-cabe%C3%A7alhos-de-seguran%C3%A7a-e-cache-privado",
+      "title": "[P1] EC-064 — Aplicar cabeçalhos de segurança e cache privado",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-065",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915eb2dd68772c6c792d0",
+      "url": "https://trello.com/c/639rsiTE/66-p0-ec-065-configurar-remetente-e-envio-de-e-mail-real",
+      "title": "[P0] EC-065 — Configurar remetente e envio de e-mail real",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-066",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915f47fe6d015021e75b1",
+      "url": "https://trello.com/c/BD4JVyMb/67-p0-ec-066-testar-falhas-e-garantir-aus%C3%AAncia-de-link-de-teste-em-produ%C3%A7%C3%A3o",
+      "title": "[P0] EC-066 — Testar falhas e garantir ausência de link de teste em produção",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-067",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915f57d3017a7f6463a1e",
+      "url": "https://trello.com/c/43NNikRd/68-p0-ec-067-registrar-a%C3%A7%C3%B5es-sens%C3%ADveis-com-auditoria-m%C3%ADnima",
+      "title": "[P0] EC-067 — Registrar ações sensíveis com auditoria mínima",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-068",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915f7f22bffe11af15c54",
+      "url": "https://trello.com/c/IAfgAs3x/69-p0-ec-068-revisar-seguran%C3%A7a-antes-de-habilitar-produ%C3%A7%C3%A3o",
+      "title": "[P0] EC-068 — Revisar segurança antes de habilitar produção",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-069",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915f9bdf4a14194186bd6",
+      "url": "https://trello.com/c/BhYrrItU/70-p0-ec-069-aplicar-modelo-aprovado-%C3%A0-gera%C3%A7%C3%A3o-a4",
+      "title": "[P0] EC-069 — Aplicar modelo aprovado à geração A4",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-070",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915fb79556eb95b0358bb",
+      "url": "https://trello.com/c/FVrqY6eX/71-p1-ec-070-confirmar-dados-e-modelo-do-subsequente",
+      "title": "[P1] EC-070 — Confirmar dados e modelo do subsequente",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-071",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915fcb6ae9cb88b83b3ad",
+      "url": "https://trello.com/c/f9XsncBo/72-p1-ec-071-implementar-declara%C3%A7%C3%A3o-do-subsequente",
+      "title": "[P1] EC-071 — Implementar declaração do subsequente",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-072",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac915fe8d36b8cd03d8a91c",
+      "url": "https://trello.com/c/1txQxndX/73-p1-ec-072-definir-retirada-cancelamento-corre%C3%A7%C3%A3o-e-novo-pedido",
+      "title": "[P1] EC-072 — Definir retirada, cancelamento, correção e novo pedido",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-073",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9160076ee5618e846c2c1",
+      "url": "https://trello.com/c/Zv2HzQcP/74-p1-ec-073-implementar-transi%C3%A7%C3%B5es-de-atendimento-aprovadas",
+      "title": "[P1] EC-073 — Implementar transições de atendimento aprovadas",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-074",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91601034ae26e7b606969",
+      "url": "https://trello.com/c/7qawgwbM/75-p1-ec-074-testar-impress%C3%A3o-e-casos-extremos-do-lote",
+      "title": "[P1] EC-074 — Testar impressão e casos extremos do lote",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-075",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916024550ababf6712eb5",
+      "url": "https://trello.com/c/qEJSqIZM/76-p1-ec-075-decidir-guarda-e-vers%C3%A3o-do-documento-final",
+      "title": "[P1] EC-075 — Decidir guarda e versão do documento final",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-076",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91604d3f40024caf7ea4c",
+      "url": "https://trello.com/c/8GOHwnXh/77-p0-ec-076-receber-textos-e-assets-oficiais-do-site",
+      "title": "[P0] EC-076 — Receber textos e assets oficiais do site",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-077",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916061988474f61873dea",
+      "url": "https://trello.com/c/ZFm6200q/78-p1-ec-077-publicar-conte%C3%BAdo-aprovado-na-interface",
+      "title": "[P1] EC-077 — Publicar conteúdo aprovado na interface",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-078",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91607ff88860d6d2055a3",
+      "url": "https://trello.com/c/3pqaoIwa/79-p1-ec-078-revisar-acessibilidade-e-responsividade-das-jornadas",
+      "title": "[P1] EC-078 — Revisar acessibilidade e responsividade das jornadas",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-079",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916094a9660208056585e",
+      "url": "https://trello.com/c/A4YgseMA/80-p1-ec-079-medir-desempenho-com-metas-realistas",
+      "title": "[P1] EC-079 — Medir desempenho com metas realistas",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-080",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9160a05a75ee063a2097f",
+      "url": "https://trello.com/c/gswelWqy/81-p1-ec-080-criar-imagens-docker-para-site-e-portal",
+      "title": "[P1] EC-080 — Criar imagens Docker para site e portal",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-081",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9161e3946f6356bdcb579",
+      "url": "https://trello.com/c/jIelS5TW/82-p1-ec-081-orquestrar-aplica%C3%A7%C3%B5es-e-volumes-na-vps",
+      "title": "[P1] EC-081 — Orquestrar aplicações e volumes na VPS",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-082",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916203727424d409dfd14",
+      "url": "https://trello.com/c/szE1K6A5/83-p0-ec-082-configurar-dns-proxy-reverso-e-https",
+      "title": "[P0] EC-082 — Configurar DNS, proxy reverso e HTTPS",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-083",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91621a04a3cfbd44b280a",
+      "url": "https://trello.com/c/fnvi0JPN/84-p0-ec-083-preparar-acessos-e-atualiza%C3%A7%C3%B5es-da-vps",
+      "title": "[P0] EC-083 — Preparar acessos e atualizações da VPS",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-084",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9162326a22ad8a93fca76",
+      "url": "https://trello.com/c/1IpDtHt4/85-p0-ec-084-definir-backup-e-demonstrar-restaura%C3%A7%C3%A3o",
+      "title": "[P0] EC-084 — Definir backup e demonstrar restauração",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-085",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91625559221fd0e9cd736",
+      "url": "https://trello.com/c/0wvpsVr6/86-p1-ec-085-disponibilizar-homologa%C3%A7%C3%A3o-isolada",
+      "title": "[P1] EC-085 — Disponibilizar homologação isolada",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-086",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916284f1ec7283bdfca99",
+      "url": "https://trello.com/c/CCQDmFMJ/87-p1-ec-086-construir-e-versionar-artefato-de-release-no-ci",
+      "title": "[P1] EC-086 — Construir e versionar artefato de release no CI",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-087",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9162a99fa5173541c6fe8",
+      "url": "https://trello.com/c/rXgurHlM/88-p0-ec-087-criar-deploy-automatizado-com-aprova%C3%A7%C3%A3o-e-rollback",
+      "title": "[P0] EC-087 — Criar deploy automatizado com aprovação e rollback",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-088",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9162b06f47d8d041c89da",
+      "url": "https://trello.com/c/jvs1rP4t/89-p0-ec-088-definir-opera%C3%A7%C3%A3o-segura-de-migra%C3%A7%C3%B5es-na-release",
+      "title": "[P0] EC-088 — Definir operação segura de migrações na release",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-089",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9162e29c058fc03984670",
+      "url": "https://trello.com/c/j20VZGVG/90-p0-ec-089-monitorar-disponibilidade-e-erros-sem-expor-dados",
+      "title": "[P0] EC-089 — Monitorar disponibilidade e erros sem expor dados",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-090",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9163033bd4d584af94b40",
+      "url": "https://trello.com/c/aAFKwfJ0/91-p1-ec-090-documentar-incidentes-suporte-e-manuten%C3%A7%C3%A3o",
+      "title": "[P1] EC-090 — Documentar incidentes, suporte e manutenção",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-091",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91632d9fa9b53f9297e39",
+      "url": "https://trello.com/c/F9lAyKvr/92-p0-ec-091-habilitar-acesso-de-produ%C3%A7%C3%A3o-ap%C3%B3s-aprova%C3%A7%C3%A3o",
+      "title": "[P0] EC-091 — Habilitar acesso de produção após aprovação",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-092",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916347296b87906551ea2",
+      "url": "https://trello.com/c/YIuxD0mF/93-p0-ec-092-realizar-piloto-assistido-e-aprovar-mvp",
+      "title": "[P0] EC-092 — Realizar piloto assistido e aprovar MVP",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-093",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91635cb7d32348e34c13f",
+      "url": "https://trello.com/c/odK8cGOn/94-p0-ec-093-lan%C3%A7ar-mvp-e-revisar-opera%C3%A7%C3%A3o",
+      "title": "[P0] EC-093 — Lançar MVP e revisar operação",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-094",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91637c0f6db0ebb5f213c",
+      "url": "https://trello.com/c/w385E0ct/95-p2-ec-094-aprovar-escopo-e-privacidade-da-consulta-por-qr",
+      "title": "[P2] EC-094 — Aprovar escopo e privacidade da consulta por QR",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-095",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91639f9b7a3c6f64c2e36",
+      "url": "https://trello.com/c/8OMUZmIQ/96-p2-ec-095-persistir-registro-imut%C3%A1vel-e-cancelamento-do-documento",
+      "title": "[P2] EC-095 — Persistir registro imutável e cancelamento do documento",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-096",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9164a51696af34d8a6b4c",
+      "url": "https://trello.com/c/xeF0r8iy/97-p2-ec-096-implementar-qr-e-consulta-de-documento",
+      "title": "[P2] EC-096 — Implementar QR e consulta de documento",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-097",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9164bec27b1ebbdba4835",
+      "url": "https://trello.com/c/IYQScpRu/98-p2-ec-097-revalidar-assinatura-eletr%C3%B4nica-e-integra%C3%A7%C3%A3o-govbr",
+      "title": "[P2] EC-097 — Revalidar assinatura eletrônica e integração GOV.BR",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-098",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9164d1d0644c571c6499d",
+      "url": "https://trello.com/c/FB5GfALn/99-p2-ec-098-detalhar-e-implementar-m%C3%A9todo-de-assinatura-aprovado",
+      "title": "[P2] EC-098 — Detalhar e implementar método de assinatura aprovado",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-099",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9164e4de76dee4bdf06f2",
+      "url": "https://trello.com/c/eAyBCDA2/100-p2-ec-099-levantar-regras-do-hist%C3%B3rico-escolar",
+      "title": "[P2] EC-099 — Levantar regras do histórico escolar",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-100",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac9164fa50d61ba236ea6e0",
+      "url": "https://trello.com/c/n2Igdk4Y/101-p2-ec-100-levantar-arquivo-e-v%C3%ADnculo-de-dados-do-sistec",
+      "title": "[P2] EC-100 — Levantar arquivo e vínculo de dados do SISTEC",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-101",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac91651ab557a5b6d018360",
+      "url": "https://trello.com/c/pAJq4Gry/102-p2-ec-101-levantar-requisitos-de-diploma-e-futura-emiss%C3%A3o",
+      "title": "[P2] EC-101 — Levantar requisitos de diploma e futura emissão",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-102",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916532ee780aad7059f20",
+      "url": "https://trello.com/c/lrtpe91V/103-p2-ec-102-levantar-importa%C3%A7%C3%A3o-de-notas-e-acesso-pedag%C3%B3gico",
+      "title": "[P2] EC-102 — Levantar importação de notas e acesso pedagógico",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-103",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916b704749e6894f7ace3",
+      "url": "https://trello.com/c/v3EpOz8V/104-p2-ec-103-definir-indicadores-e-apoio-ao-conselho-de-classe",
+      "title": "[P2] EC-103 — Definir indicadores e apoio ao Conselho de Classe",
+      "list": "PRODUCT BACKLOG"
+    },
+    {
+      "id": "EC-104",
+      "cardId": "ari:cloud:trello::card/workspace/664dd95e817ab562ce015a01/6ac916b810b895bc17796503",
+      "url": "https://trello.com/c/OytJX7PS/105-p2-ec-104-especificar-api-autorizada-para-outros-projetos",
+      "title": "[P2] EC-104 — Especificar API autorizada para outros projetos",
+      "list": "PRODUCT BACKLOG"
+    }
+  ]
+}

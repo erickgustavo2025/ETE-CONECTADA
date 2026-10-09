@@ -9,6 +9,10 @@ Protótipo inicial com duas aplicações no mesmo repositório:
 
 Este projeto está em desenvolvimento. Cadastro, login e sessões estão desabilitados em produção. O modelo de declaração precisa de validação da escola/GRE antes da emissão oficial; assinatura eletrônica e consulta por QR Code ainda não estão implementadas.
 
+## Planejamento e Trello
+
+O [plano da dupla](tasks/plan.md), o [inventário do projeto](docs/planejamento/inventario.md) e os [cards com critérios de aceite](tasks/backlog.md) organizam o histórico e as próximas etapas de produto, testes, DevOps e DevSecOps. O andamento é acompanhado no [Trello ETE CONECTADA](https://trello.com/b/gOjNklJZ/ete-conectada); os arquivos são a base da carga inicial. CI/CD, Docker e liberação de produção estão no planejamento, sem implementação nesta etapa.
+
 ## Rodar localmente
 
 Use Node.js 24 LTS (`.nvmrc`). Instale as dependências com `npm install` e abra dois terminais:
