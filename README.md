@@ -9,13 +9,19 @@ Protótipo inicial com duas aplicações no mesmo repositório:
 
 Este projeto está em desenvolvimento. Cadastro, login e sessões estão desabilitados em produção. O modelo de declaração precisa de validação da escola/GRE antes da emissão oficial; assinatura eletrônica e consulta por QR Code ainda não estão implementadas.
 
-## Planejamento e Trello
+## Colaboração e próximos passos
 
-O [plano da dupla](tasks/plan.md), o [inventário do projeto](docs/planejamento/inventario.md) e os [cards com critérios de aceite](tasks/backlog.md) organizam o histórico e as próximas etapas de produto, testes, DevOps e DevSecOps. O andamento é acompanhado no [Trello ETE CONECTADA](https://trello.com/b/gOjNklJZ/ete-conectada); os arquivos são a base da carga inicial. CI/CD, Docker e liberação de produção estão no planejamento, sem implementação nesta etapa.
+O andamento é acompanhado no [Trello ETE CONECTADA](https://trello.com/b/gOjNklJZ/ete-conectada): Product Backlog guarda planejamento e dependências; A Fazer contém apenas a seleção pronta da sprint; Em Andamento inclui desenvolvimento/revisão; Fase de Teste verifica critérios; Concluído guarda entregas verificadas e registros históricos FEITO DEV. Estes registros de desenvolvimento não representam produção homologada.
+
+TH e Erick podem atuar em todas as áreas, com um dono por card e revisão do outro dev. Preferir branches curtas por card, PRs pequenas e testes pertinentes antes do merge em main. Combinar mudanças em Prisma/migrações, configurações raiz e componentes compartilhados. Push de uma branch não realiza merge ou deploy.
+
+A primeira seleção prioriza proteger os testes contra o banco errado e verificar a demonstração de solicitação/atendimento de declaração com contas sintéticas. Fluxo de PR, CI de build e testes puros entram na sequência conforme capacidade e dependências. GitHub Actions, Docker, CD e liberação de produção ainda não estão implementados. A escolha planejada da equipe é VPS Hostinger KVM4 por 24 meses, ainda não contratada.
+
+Importação/atualização por planilha terá dois caminhos, integrado e subsequente; exportação e configuração de módulos dependem de contrato/dados aprovados. O importador existente lê backup JSON, não aceita o XLS recebido e não atualiza registros existentes. Certificados, histórico e diploma precisam de requisitos próprios; não são funcionalidades prontas.
 
 ## Rodar localmente
 
-Use Node.js 24 LTS (`.nvmrc`). Instale as dependências com `npm install` e abra dois terminais:
+Use Node.js 24 LTS (`.nvmrc`). Instale as dependências pelo lockfile com `npm ci` e abra dois terminais:
 
 ```bash
 npm run dev:site
@@ -47,6 +53,18 @@ Os modelos A4 ficam em `output/pdf/`. A reprodução alinhada preserva a referê
 
 Com o portal rodando, `TEST_BASE_URL=http://localhost:3001 npm run test:declarations` verifica autorização, isolamento, campos obrigatórios, frequência, seleção por turma, limites/duplicação do lote e PDF com registros fictícios temporários removidos ao terminar. Não usa dados dos alunos importados. O exemplo em `output/pdf/declaracao-vinculo-exemplo-integrado.pdf` também é inteiramente fictício.
 
+## Verificações disponíveis
+
+```bash
+npm run build
+# Com portal rodando e banco isolado de desenvolvimento/teste:
+npm run test:registration
+npm run test:declarations
+npm run test:db --workspace @ete-conectada/portal
+```
+
+O build verifica os dois apps. Os testes HTTP/banco exigem portal em desenvolvimento e criam/removem registros sintéticos; confirme o destino do banco antes de executá-los. As proteções automáticas de identidade/opt-in do banco de teste ainda são uma tarefa futura. Não existe comando raiz de teste unitário, lint ou typecheck dedicado nesta versão. Não declarar testes como aprovados sem executar e registrar resultado.
+
 ## Prisma
 
 O modelo está em `apps/portal/prisma/schema.prisma`; as consultas usam `getDb()` em `apps/portal/src/lib/db.ts`. Exemplo: `getDb().student.findUnique({ where: { cpf } })`. Os campos TypeScript usam camelCase, mapeados para os nomes existentes no PostgreSQL.
@@ -59,6 +77,6 @@ Consulte `apps/portal/prisma/README.md` para migrações, seed e Prisma Studio.
 
 Não envie `.env.local`, credenciais, backups de alunos, reuniões, dependências ou arquivos gerados do Next.js/Prisma. O `.gitignore` mantém esses itens fora do histórico. Os arquivos `.env.example` contêm somente exemplos de configuração.
 
-Em `output/pdf`, somente os quatro modelos de referência/revisão e o exemplo fictício listados no `.gitignore` podem ser versionados. Declarações preenchidas com dados reais devem permanecer fora do repositório.
+Em `output/pdf`, somente os arquivos de referência/revisão e o exemplo fictício listados no `.gitignore` podem ser versionados. Declarações preenchidas com dados reais devem permanecer fora do repositório.
 
-Contexto novo: [secretaria em 09/10](docs/planejamento/contexto-secretaria-2026-10-09.md) e [branches/colaboração](docs/planejamento/git-e-colaboracao.md). A planilha recebida não é aceita pelo importador JSON atual; os dois fluxos de importação/atualização por modalidade e a exportação estão no backlog.
+Planejamento de sprint, backlog e instruções locais de agentes ficam fora do rastreamento desta versão. O Trello acompanha a execução da dupla; README e documentação técnica de uso permanecem versionados. Não ignore todos os arquivos `.md`, pois documentação técnica também faz parte do projeto.

@@ -36,3 +36,9 @@ Thumbs.db
 !/output/pdf/declaracao-vinculo-referencia.pdf
 !/output/pdf/declaracao-vinculo-modelo.pdf
 !/output/pdf/declaracao-vinculo-exemplo-integrado.pdf
+
+# Gestão local da dupla; README e documentação técnica continuam versionados
+/AGENTS.md
+/sprint.md
+/tasks/
+/docs/planejamento/
