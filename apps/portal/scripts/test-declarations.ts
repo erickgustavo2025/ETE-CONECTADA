@@ -1,9 +1,10 @@
-import { config } from "dotenv";
 import assert from "node:assert/strict";
 import { randomBytes, randomInt, createHash } from "node:crypto";
-import { writeFile } from "node:fs/promises";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { PDFDocument } from "pdf-lib";
-import { getDb } from "../src/lib/db";
+import { openTestEnvironment, reportTestFailure } from "./test-environment";
 import { parseStudentBackup } from "../src/lib/student-import";
 import { hashPassword } from "../src/lib/password";
 import {
@@ -11,12 +12,9 @@ import {
   DeclarationValidationError,
 } from "../src/lib/declarations";
 
-config({ path: ".env.local", quiet: true });
 async function main() {
-  if (process.env.NODE_ENV === "production")
-    throw new Error("Teste disponível apenas em desenvolvimento.");
-  const db = getDb();
-  const base = process.env.TEST_BASE_URL || "http://localhost:3001";
+  const environment = await openTestEnvironment({ http: true });
+  const { db, base } = environment;
   const suffix = randomBytes(8).toString("hex");
   const created: string[] = [];
   const cookie = async (studentId: string, role: "student" | "secretary") => {
@@ -406,8 +404,8 @@ async function main() {
     assert.equal(prepared.status, "IN_PREPARATION");
     assert.ok(prepared.generatedAt && prepared.preparedById);
     assert.equal(prepared.readyAt, null);
-    if (process.env.TEST_PDF_OUTPUT)
-      await writeFile(process.env.TEST_PDF_OUTPUT, pdf);
+    const artifacts = await mkdtemp(join(tmpdir(), 'ete-declarations-test-'));
+    await writeFile(join(artifacts, 'declaracao.pdf'), pdf, { flag: 'wx' });
     const batchClass = `Turma fictícia ${suffix}`;
     await db.enrollment.update({
       where: { id: student.enrollments[0].id },
@@ -548,8 +546,8 @@ async function main() {
       assert.equal(Math.round(page.getWidth()), 595);
       assert.equal(Math.round(page.getHeight()), 842);
     }
-    if (process.env.TEST_BATCH_PDF_OUTPUT)
-      await writeFile(process.env.TEST_BATCH_PDF_OUTPUT, bulkPdf);
+    await writeFile(join(artifacts, 'lote.pdf'), bulkPdf, { flag: 'wx' });
+    console.log('PDFs sintéticos para conferência:', artifacts);
     assert.equal(
       (
         await db.declarationRequest.findUniqueOrThrow({
@@ -660,18 +658,10 @@ async function main() {
       "OK: solicitações persistidas e concorrentes, isolamento de alunos, preparação sem liberar retirada, confirmação e auditoria da retirada, autorização/origem, fotos e PDF do aluno removidos, frequência e lote A4.",
     );
   } finally {
-    if (created.length)
-      await db.student.deleteMany({ where: { id: { in: created } } });
-    await db.$disconnect();
+    try {
+      if (created.length)
+        await db.student.deleteMany({ where: { id: { in: created } } });
+    } finally { await environment.close(); }
   }
 }
-main().catch((error) => {
-  console.error(
-    "Falha na verificação de declarações.",
-    error?.stack
-      ?.split("\n")
-      .find((line: string) => line.includes("scripts/test-declarations.ts")) ||
-      "Confira a conexão.",
-  );
-  process.exitCode = 1;
-});
+main().catch(reportTestFailure);

@@ -1,14 +1,11 @@
-import { config } from 'dotenv';
 import assert from 'node:assert/strict';
 import { randomBytes, randomInt } from 'node:crypto';
-import { getDb } from '../src/lib/db';
+import { openTestEnvironment, reportTestFailure } from './test-environment';
 
-config({ path: '.env.local', quiet: true });
 
 async function main() {
-  if (process.env.NODE_ENV === 'production') throw new Error('Use somente o banco de desenvolvimento.');
-  const db = getDb();
-  const base = process.env.TEST_BASE_URL ?? 'http://localhost:3001';
+  const environment = await openTestEnvironment({ http: true });
+  const { db, base } = environment;
   const digits = Array.from({ length: 9 }, () => randomInt(10));
   for (let n = 9; n < 11; n++) {
     const check = digits.reduce((sum, digit, i) => sum + digit * (n + 1 - i), 0) * 10 % 11;
@@ -71,9 +68,10 @@ async function main() {
     assert.equal((await post('/api/login', { identifier: replacement.email, password: replacement.password })).status, 200);
     console.log('OK: matrícula/nascimento, CPF validado no servidor, senha mínima e confirmação, segunda tela sem conta, retomada pendente, proteção das credenciais, renovação, expiração, confirmação única e login CPF/e-mail.');
   } finally {
-    if (studentId || secondStudentId) await db.student.deleteMany({ where: { id: { in: [studentId, secondStudentId].filter((id): id is string => !!id) } } });
-    await db.$disconnect();
+    try {
+      if (studentId || secondStudentId) await db.student.deleteMany({ where: { id: { in: [studentId, secondStudentId].filter((id): id is string => !!id) } } });
+    } finally { await environment.close(); }
   }
 }
 
-main().catch(error => { console.error(error instanceof Error ? error.message : 'Falha no teste de cadastro.'); process.exitCode = 1; });
+main().catch(reportTestFailure);

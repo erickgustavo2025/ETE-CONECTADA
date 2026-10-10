@@ -5,10 +5,9 @@ O portal usa PostgreSQL (Neon). Configure `DATABASE_URL` em `apps/portal/.env.lo
 ```sh
 npm install
 npm run db:migrate --workspace @ete-conectada/portal
-npm run db:seed --workspace @ete-conectada/portal
 ```
 
-`db:migrate` aplica as migrações pendentes em ordem, incluindo a tabela de sessões. `db:seed` pode ser executado novamente sem duplicar os estudantes; ele cria a conta de teste ativa apenas se ela ainda não existir, preservando senhas existentes. Os três registros são inteiramente fictícios. Os CPFs foram gerados para passar no cálculo de dígitos verificadores, mas são dados sintéticos de teste.
+`db:migrate` aplica as migrações pendentes em ordem, incluindo a tabela de sessões. Para seed e testes, prepare outro PostgreSQL local descartável conforme [testes isolados](../../../docs/testes-isolados.md); esses scripts não usam o Neon configurado em `.env.local`. `db:seed` pode ser executado novamente sem duplicar os estudantes; ele cria a conta de teste ativa apenas se ela ainda não existir, preservando senhas existentes. Os três registros são inteiramente fictícios. Os CPFs foram gerados para passar no cálculo de dígitos verificadores, mas são dados sintéticos de teste.
 
 | Matrícula sintética | CPF sintético para a segunda etapa | Nascimento | Acesso de teste |
 | --- | --- | --- | --- |
@@ -16,7 +15,7 @@ npm run db:seed --workspace @ete-conectada/portal
 | `9900002` | `63820517480` | 03/11/2007 | `aluno.teste@eteconectada.invalid` / `Teste@12345`, se a senha não tiver sido alterada |
 | `9900003` | `29471638500` | 26/08/2009 | Primeiro acesso, se ainda não houver conta ativa |
 
-O seed preserva contas, senhas e estados já existentes. Não use CPF no primeiro formulário: use matrícula e nascimento. No modal, informe CPF válido, e-mail, senha com pelo menos 8 caracteres e confirmação. O CPF já informado permanece vinculado mesmo se o link de e-mail expirar. Login aceita CPF ou e-mail.
+O seed preserva contas, senhas e estados já existentes no banco descartável; colisões com aluno ou matrícula divergente cancelam a transação. Não use CPF no primeiro formulário: use matrícula e nascimento. No modal, informe CPF válido, e-mail, senha com pelo menos 8 caracteres e confirmação. O CPF já informado permanece vinculado mesmo se o link de e-mail expirar. Login aceita CPF ou e-mail.
 
 ## Importação de alunos
 
@@ -58,7 +57,7 @@ npm run db:studio --workspace @ete-conectada/portal
 npm run test:db --workspace @ete-conectada/portal
 ```
 
-`test:db` exige o portal rodando na porta 3001 (ou `TEST_BASE_URL`). Cria um aluno sintético temporário e remove somente esse aluno ao terminar. Não envia e-mails. Verifica concorrência na reivindicação, confirmação única, login CPF/e-mail, sessão e logout.
+`test:db` exige configuração e identidade do banco descartável. Inicia seu próprio portal em loopback/porta livre, com e-mail desativado, e encerra o processo ao terminar. `TEST_BASE_URL` não é aceito. Cria um aluno sintético temporário e remove somente esse aluno ao terminar. Verifica concorrência na reivindicação, confirmação única, login CPF/e-mail, sessão e logout.
 
 O runtime limita o pool a cinco conexões com espera de conexão de 15 segundos. Credenciais ficam exclusivamente em `.env.local`.
 
