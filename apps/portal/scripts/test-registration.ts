@@ -30,6 +30,11 @@ async function main() {
   };
   const verify = (token: string) => post('/api/registration/verify', { token });
   try {
+    // Antes da hidratação, o navegador usa o método HTML nativo. Nunca enviar senha na URL.
+    const loginMarkup = await (await fetch(`${base}/login`)).text();
+    const loginForm = loginMarkup.match(/<form\b[^>]*>/i)?.[0];
+    assert.ok(loginForm, 'Login deve renderizar um formulário.');
+    assert.match(loginForm, /\bmethod="post"/i, 'Login sem JavaScript deve usar POST para não expor credenciais na URL.');
     const student = await db.student.create({ data: { schoolRegistration: identity.schoolRegistration, birthDate: new Date(`${identity.birthDate}T00:00:00Z`), fullName: 'Teste temporário de retomada' } });
     studentId = student.id;
     assert.equal((await check()).body.result, 'eligible');
