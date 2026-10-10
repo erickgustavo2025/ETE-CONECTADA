@@ -5,6 +5,8 @@ Protótipo inicial com duas aplicações no mesmo repositório:
 - `apps/site`: site público da ETE Advogado José David Gil Rodrigues.
 - `apps/portal`: portal autenticado da escola, com primeiro acesso e solicitações de declaração.
 
+`shared/` contém estilos, fontes, arte institucional e navegação usados pelas duas aplicações; faz parte do código necessário para executá-las. `.nvmrc` indica Node.js 24 para padronizar o ambiente. `package.json` define dependências/comandos e `package-lock.json` fixa as versões instaladas.
+
 ## Estado atual
 
 Este projeto está em desenvolvimento. Cadastro, login e sessões estão desabilitados em produção. O modelo de declaração precisa de validação da escola/GRE antes da emissão oficial; assinatura eletrônica e consulta por QR Code ainda não estão implementadas.
@@ -79,4 +81,4 @@ Não envie `.env.local`, credenciais, backups de alunos, reuniões, dependência
 
 Em `output/pdf`, somente os arquivos de referência/revisão e o exemplo fictício listados no `.gitignore` podem ser versionados. Declarações preenchidas com dados reais devem permanecer fora do repositório.
 
-Planejamento de sprint, backlog e instruções locais de agentes ficam fora do rastreamento desta versão. O Trello acompanha a execução da dupla; README e documentação técnica de uso permanecem versionados. Não ignore todos os arquivos `.md`, pois documentação técnica também faz parte do projeto.
+Planejamento de sprint, backlog, instruções locais de agentes, `DESIGN.md` e `premium-ui.json` ficam fora do rastreamento desta versão. Os dois últimos guardam contexto visual/configuração de auditoria local e não são dependências da aplicação. O Trello acompanha a execução da dupla; README e documentação técnica de uso permanecem versionados. Não ignore todos os arquivos `.md`, pois documentação técnica também faz parte do projeto.
