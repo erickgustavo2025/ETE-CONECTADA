@@ -38,14 +38,13 @@ Crie uma branch de desenvolvimento no Neon e copie `apps/portal/.env.example` pa
 
 ```bash
 npm run db:migrate --workspace @ete-conectada/portal
-npm run db:seed --workspace @ete-conectada/portal
 ```
 
-Os três alunos sintéticos, matrícula, CPF e nascimento para testar estão em [apps/portal/prisma/README.md](apps/portal/prisma/README.md). Em banco novo, dois ficam sem conta e um recebe uma conta ativa para testar o login; reexecutar o seed preserva contas e senhas existentes. Cadastro e login consultam o banco pelo servidor. Sem `DATABASE_URL`, o formulário informa que a consulta está indisponível.
+O seed e os testes agora exigem PostgreSQL local descartável com opt-in e identidade conferida; não executam no Neon da escola. Veja a preparação em [Testes isolados](docs/testes-isolados.md). Os três alunos sintéticos, matrícula, CPF e nascimento para testar estão em [apps/portal/prisma/README.md](apps/portal/prisma/README.md). Em banco novo, dois ficam sem conta e um recebe uma conta ativa para testar o login; reexecutar o seed preserva contas e senhas existentes. Cadastro e login consultam o banco pelo servidor. Sem `DATABASE_URL`, o formulário informa que a consulta está indisponível.
 
 O envio do link de confirmação exige `RESEND_API_KEY` e `EMAIL_FROM`. Em desenvolvimento, sem provedor de e-mail, o link é mostrado na tela para testar a ativação no banco. Esse modo não existe em produção. O login de desenvolvimento cria uma sessão persistida no banco com cookie HTTP-only; a rota `/` consulta a sessão no servidor e o botão Sair a revoga. A declaração de vínculo já está no menu; histórico e diploma continuam informativos. A equipe confirmou matrícula/nascimento no primeiro acesso de desenvolvimento, CPF no modal e confirmação de e-mail. Esse fluxo não comprova titularidade por si só; a implantação em produção continua pendente da definição de proteção e recuperação com a escola.
 
-Fechar a segunda etapa antes de enviar os dados não cria uma conta. Se a conta estiver aguardando confirmação, o primeiro acesso permite retomar com o mesmo CPF, e-mail e senha e gerar outro link; o link anterior é invalidado. Após expirar (30 minutos), o cadastro de desenvolvimento permite escolher novos dados de acesso, mantendo o CPF já vinculado. Contas ativas continuam usando o login. Com o portal rodando, `npm run test:registration --workspace @ete-conectada/portal` verifica esses casos com um aluno temporário removido ao terminar. O teste deve usar o link de desenvolvimento, sem provedor de e-mail, e aceita `TEST_BASE_URL` para outra porta.
+Fechar a segunda etapa antes de enviar os dados não cria uma conta. Se a conta estiver aguardando confirmação, o primeiro acesso permite retomar com o mesmo CPF, e-mail e senha e gerar outro link; o link anterior é invalidado. Após expirar (30 minutos), o cadastro de desenvolvimento permite escolher novos dados de acesso, mantendo o CPF já vinculado. Contas ativas continuam usando o login. `npm run test:registration` verifica esses casos com registros temporários removidos ao terminar. O teste inicia seu próprio portal em loopback/porta livre, usando o banco descartável conferido e sem provedor de e-mail. `TEST_BASE_URL` não é aceito.
 
 ## Declaração de vínculo
 
@@ -53,25 +52,26 @@ Os modelos A4 ficam em `output/pdf/`. A reprodução alinhada preserva a referê
 
 `npm run students:import -- /caminho/Backup.alunos.json` importa alunos pela matrícula com acesso bloqueado por padrão. A liberação em desenvolvimento foi autorizada para este teste. O backup e dados pessoais permanecem fora do repositório. Para atribuir secretaria a uma conta ativa autorizada, use `npm run access:secretary -- email-da-conta`.
 
-Com o portal rodando, `TEST_BASE_URL=http://localhost:3001 npm run test:declarations` verifica autorização, isolamento, campos obrigatórios, frequência, seleção por turma, limites/duplicação do lote e PDF com registros fictícios temporários removidos ao terminar. Não usa dados dos alunos importados. O exemplo em `output/pdf/declaracao-vinculo-exemplo-integrado.pdf` também é inteiramente fictício.
+No ambiente descartável preparado, `npm run test:declarations` inicia um portal temporário e verifica autorização, isolamento, campos obrigatórios, frequência, seleção por turma, limites/duplicação do lote e PDF com registros fictícios temporários removidos ao terminar. Não usa dados dos alunos importados. O exemplo em `output/pdf/declaracao-vinculo-exemplo-integrado.pdf` também é inteiramente fictício.
 
 ## Verificações disponíveis
 
 ```bash
 npm run build
-# Com portal rodando e banco isolado de desenvolvimento/teste:
+npm run test:guards
+# Após preparar o banco descartável conforme docs/testes-isolados.md:
 npm run test:registration
 npm run test:declarations
 npm run test:db --workspace @ete-conectada/portal
 ```
 
-O build verifica os dois apps. Os testes HTTP/banco exigem portal em desenvolvimento e criam/removem registros sintéticos; confirme o destino do banco antes de executá-los. As proteções automáticas de identidade/opt-in do banco de teste ainda são uma tarefa futura. Não existe comando raiz de teste unitário, lint ou typecheck dedicado nesta versão. Não declarar testes como aprovados sem executar e registrar resultado.
+O build verifica os dois apps. `test:guards` verifica as recusas de configuração e identidade sem banco. Seed e testes HTTP exigem `TEST_DATABASE_URL`, `TEST_DATABASE_NAME`, `TEST_DATABASE_ID`, `ALLOW_TEST_DATABASE_WRITES=true` e `NODE_ENV=test` ou `development`. Conferem o marcador real antes de escrever, sem usar `DATABASE_URL` como fallback. Os testes HTTP iniciam e encerram seu próprio portal; a limpeza remove somente fixtures criadas pela execução. Execute-os em sequência, sem outro Next ativo na mesma pasta. O teste de declarações salva PDFs fictícios em um diretório temporário novo, informado no terminal. Ainda não há CI, lint ou comando dedicado de typecheck. Não declarar testes como aprovados sem executar e registrar resultado.
 
 ## Prisma
 
 O modelo está em `apps/portal/prisma/schema.prisma`; as consultas usam `getDb()` em `apps/portal/src/lib/db.ts`. Exemplo: `getDb().student.findUnique({ where: { cpf } })`. Os campos TypeScript usam camelCase, mapeados para os nomes existentes no PostgreSQL.
 
-`npm run dev:portal` e `npm run build` geram o cliente automaticamente. Com o portal em execução, `npm run test:db --workspace @ete-conectada/portal` testa o fluxo com um aluno sintético temporário e o remove ao terminar. Use apenas banco de desenvolvimento.
+`npm run dev:portal` e `npm run build` geram o cliente automaticamente. `npm run test:db --workspace @ete-conectada/portal` testa o fluxo com um aluno sintético temporário e o remove ao terminar. Ele exige o banco descartável e inicia seu próprio portal, conforme [testes isolados](docs/testes-isolados.md).
 
 Consulte `apps/portal/prisma/README.md` para migrações, seed e Prisma Studio.
 

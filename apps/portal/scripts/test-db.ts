@@ -1,15 +1,12 @@
-import { config } from "dotenv";
 import assert from "node:assert/strict";
 import { randomBytes, randomInt, createHash } from "node:crypto";
-import { getDb } from "../src/lib/db";
+import { openTestEnvironment, reportTestFailure } from "./test-environment";
 import { claimAccount, verifyAccount } from "../src/lib/account-registration";
 import { hashPassword } from "../src/lib/password";
-config({ path: ".env.local", quiet: true });
 
 async function main() {
-  if (process.env.NODE_ENV === "production")
-    throw new Error("Teste sintético indisponível em produção.");
-  const db = getDb();
+  const environment = await openTestEnvironment({ http: true });
+  const { db, base } = environment;
   let studentId: string | undefined;
   const cpfDigits = Array.from({ length: 9 }, () => randomInt(10));
   for (let n = 9; n < 11; n++) {
@@ -27,7 +24,6 @@ async function main() {
     randomBytes(32).toString("base64url"),
   ];
   const hash = (v: string) => createHash("sha256").update(v).digest("hex");
-  const base = process.env.TEST_BASE_URL ?? "http://localhost:3001";
   async function post(path: string, data: unknown, cookie?: string) {
     return fetch(`${base}${path}`, {
       method: "POST",
@@ -142,14 +138,12 @@ async function main() {
       "OK: concorrência, confirmação única, login CPF/e-mail, senha inválida, sessão e logout.",
     );
   } finally {
-    // Exclui exclusivamente o aluno criado por esta execução; FKs removem seus dados dependentes.
-    if (studentId) {
-      await db.student.delete({ where: { id: studentId } });
-    }
-    await db.$disconnect();
+    try {
+      // Exclui exclusivamente o aluno criado por esta execução; FKs removem seus dados dependentes.
+      if (studentId) {
+        await db.student.delete({ where: { id: studentId } });
+      }
+    } finally { await environment.close(); }
   }
 }
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : "Falha no teste");
-  process.exitCode = 1;
-});
+main().catch(reportTestFailure);
