@@ -116,11 +116,15 @@ export async function openTestEnvironment({ http = false } = {}) {
   let portal: Awaited<ReturnType<typeof startPortal>> | undefined;
   const controller = new AbortController();
   let closing: Promise<void> | undefined;
-  const close = () => closing ??= (async () => {
-    controller.abort();
-    process.off('SIGINT', interrupted); process.off('SIGTERM', interrupted);
-    try { if (portal) await stopPortal(portal.child); } finally { await db.$disconnect(); }
-  })();
+  const close = async () => {
+    closing ??= (async () => {
+      controller.abort();
+      process.off('SIGINT', interrupted); process.off('SIGTERM', interrupted);
+      if (portal) await stopPortal(portal.child);
+    })();
+    // A limpeza de fixtures após um sinal pode reabrir Prisma; desconecta em toda chamada.
+    try { await closing; } finally { await db.$disconnect(); }
+  };
   const interrupted = () => { void close().finally(() => { process.exitCode = 130; }); };
   process.once('SIGINT', interrupted); process.once('SIGTERM', interrupted);
   try {
