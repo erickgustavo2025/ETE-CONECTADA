@@ -68,7 +68,12 @@ export default function LoginForm() {
               <p>Entre com seu CPF ou e-mail e senha.</p>
             </div>
             <div className="auth-card-body">
-              <form noValidate className="auth-form" onSubmit={handleSubmit}>
+              <form
+                method="post"
+                noValidate
+                className="auth-form"
+                onSubmit={handleSubmit}
+              >
                 <label htmlFor="identifier">CPF ou e-mail</label>
                 <input
                   {...validation.field("identifier")}
