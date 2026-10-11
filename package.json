@@ -13,6 +13,7 @@
     "test:registration": "npm run test:registration --workspace @ete-conectada/portal",
     "test:declarations": "npm run test:declarations --workspace @ete-conectada/portal",
     "test:guards": "npm run test:guards --workspace @ete-conectada/portal",
+    "test:schema": "npm run test:schema --workspace @ete-conectada/portal",
     "test:unit": "npm run test:unit --workspace @ete-conectada/portal",
     "audit:dependencies": "npm audit --audit-level=high"
   }

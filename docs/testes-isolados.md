@@ -4,7 +4,7 @@ Seed, `test:db`, `test:registration` e `test:declarations` escrevem registros si
 
 ## Preparar o banco
 
-Use Node.js 24, `npm ci` e um PostgreSQL **novo e descartável**, acessível exclusivamente em loopback. A instalação do PostgreSQL é uma pré-condição; este documento não provisiona VPS, Docker, CI ou produção. O exemplo usa porta 55432 e um usuário local de teste. Adapte somente para a sua instância descartável.
+Use Node.js 24, `npm ci` e um PostgreSQL **novo e descartável**, acessível exclusivamente em loopback. Para execução local, a instalação do PostgreSQL é uma pré-condição. O exemplo usa porta 55432 e um usuário local de teste. Adapte somente para a sua instância descartável. O CI provisiona sua própria instância, conforme a seção abaixo; não provisiona VPS nem produção.
 
 Crie o banco e uma identidade própria (UUID gerado, por exemplo, com `node -e 'console.log(require("node:crypto").randomUUID())'`). Em `psql`, conectado ao PostgreSQL descartável:
 
@@ -45,6 +45,7 @@ O seed mantém três alunos fictícios e uma conta de teste. Reexecução preser
 
 ```bash
 npm run test:guards
+npm run test:schema
 npm run test:db --workspace @ete-conectada/portal
 npm run test:registration
 npm run test:declarations
@@ -60,3 +61,13 @@ Ao terminar (inclusive por falha), os scripts tentam excluir somente os IDs cria
 `test:declarations` salva `declaracao.pdf` e `lote.pdf` sintéticos em um diretório novo `ete-declarations-test-*` na pasta temporária do sistema, com criação exclusiva dos arquivos. O caminho é informado para conferência visual; remova esse diretório após a conferência. `TEST_PDF_OUTPUT` e `TEST_BATCH_PDF_OUTPUT` são recusados para não sobrescrever arquivos existentes. Nenhum PDF real deve entrar nesse ambiente.
 
 Testes aprovados verificam o protótipo em desenvolvimento; não homologam o modelo da escola, não validam titularidade do primeiro acesso nem liberam autenticação/emissão em produção.
+
+## Migrações no GitHub Actions
+
+O job **Migrações em PostgreSQL descartável** do workflow CI roda em PRs para `main` e pushes para `main`/`feature/**`. Cada job inicia um contêiner oficial PostgreSQL 16, fixado por digest, com nome de banco e senha aleatórios, porta livre publicada somente em `127.0.0.1` e armazenamento em memória. Não monta diretório do projeto, volume persistente ou arquivo `.env`, nem recebe credenciais do Neon/escola. A preparação confirma banco vazio e grava um UUID no comentário usado pela guarda. Senha/URL são mascaradas nos logs do Actions; as variáveis de teste ficam apenas no ambiente do job.
+
+Depois da preparação, executa `db:validate`, `db:migrate`, `db:status` e `test:schema`. Reexecuta `db:migrate` e `test:schema` para comprovar ausência de migrações pendentes. A etapa `always()` remove somente o contêiner criado para aquele run/attempt, inclusive após falha; se o runner for encerrado abruptamente, a VM hospedada e seu armazenamento descartável também não são reutilizados.
+
+`test:schema` é somente leitura e exige a mesma identidade/opt-in dos demais testes. Confere histórico/checksums das migrações, tabelas e colunas esperadas, campos essenciais, enums, FKs, índices únicos e CHECKs do banco. Inclui `retired_profile_photos`, preservada como arquivo histórico, e o índice parcial de solicitação aberta. A conferência explícita cobre regras SQL fora do modelo Prisma; não usa um diff que proponha apagar esse arquivo. Ao mudar o contrato do banco, revise também esse teste. A documentação [Prisma migrate diff](https://docs.prisma.io/docs/cli/v7/migrate/diff) descreve o limite da comparação para recursos não representados no Prisma.
+
+Este job ainda não executa os fluxos HTTP de cadastro/declarações; essa integração pertence ao EC-033. Não exige iniciar a aplicação nem altera as barreiras de acesso em produção.
