@@ -19,13 +19,15 @@ TH e Erick podem atuar em todas as áreas, com um dono por card e revisão do ou
 
 O [guia de contribuição](docs/contribuicao.md) reúne os comandos de branch, publicação e revisão. Use o [template de PR](.github/PULL_REQUEST_TEMPLATE.md) para registrar problema, solução, verificações e link do card.
 
-A base já inclui proteção dos testes contra o banco errado e o fluxo de solicitação/atendimento de declaração ensaiado com contas sintéticas. O workflow [CI](.github/workflows/ci.yml) instala pelo lockfile e compila os dois apps em PRs para `main` e pushes em `main`/`feature/**`, usando Node 24 e sem credenciais do banco. A liberação em produção, Docker, CD e a proteção de merge ainda seguem seus cards próprios. A escolha planejada da equipe é VPS Hostinger KVM4 por 24 meses, ainda não contratada.
+A base já inclui proteção dos testes contra o banco errado e o fluxo de solicitação/atendimento de declaração ensaiado com contas sintéticas. O workflow [CI](.github/workflows/ci.yml) instala pelo lockfile sem scripts de instalação de dependências e compila os dois apps em PRs para `main` e pushes em `main`/`feature/**`, usando Node 24 e sem credenciais do banco. A liberação em produção, Docker, CD e a proteção de merge ainda seguem seus cards próprios. A escolha planejada da equipe é VPS Hostinger KVM4 por 24 meses, ainda não contratada.
+
+[Dependabot](.github/dependabot.yml) propõe atualizações semanais de npm e GitHub Actions, sem merge automático. A [auditoria de dependências](.github/workflows/dependency-audit.yml) consulta o lockfile semanalmente ou por execução manual e falha diante de alertas altos/críticos. A triagem de 11/10/2026 reduziu 11 pacotes afetados para quatro, todos na cadeia Prisma; os alertas restantes continuam visíveis. Decisões, alcance e reavaliação estão em [Triagem de dependências](docs/seguranca/dependencias.md). As automações passam a valer após integração em `main`; as opções de segurança disponíveis no repositório privado precisam de conferência administrativa.
 
 Importação/atualização por planilha terá dois caminhos, integrado e subsequente; exportação e configuração de módulos dependem de contrato/dados aprovados. O importador existente lê backup JSON, não aceita o XLS recebido e não atualiza registros existentes. Certificados, histórico e diploma precisam de requisitos próprios; não são funcionalidades prontas.
 
 ## Rodar localmente
 
-Use Node.js 24 LTS (`.nvmrc`). Instale as dependências pelo lockfile com `npm ci` e abra dois terminais:
+Use Node.js 24 LTS (`.nvmrc`). Instale as dependências pelo lockfile com `npm ci --ignore-scripts` e abra dois terminais. Os comandos de desenvolvimento/build geram Prisma Client explicitamente; a instalação não precisa executar scripts das dependências.
 
 ```bash
 npm run dev:site
@@ -61,6 +63,7 @@ No ambiente descartável preparado, `npm run test:declarations` inicia um portal
 ```bash
 npm run build
 npm run test:guards
+npm run audit:dependencies
 # Após preparar o banco descartável conforme docs/testes-isolados.md:
 npm run test:registration
 npm run test:declarations
