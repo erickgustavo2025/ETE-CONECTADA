@@ -40,9 +40,9 @@ jobs:
         run: npm run build
 
   migrations:
-    name: Migrações em PostgreSQL descartável
+    name: Migrações e integração em PostgreSQL descartável
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       TEST_DB_CONTAINER: ete-test-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
@@ -62,6 +62,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Preparar banco novo e identificado
+        id: database
         run: bash .github/scripts/start-test-db.sh
 
       - name: Validar modelo e aplicar migrações
@@ -75,6 +76,19 @@ jobs:
         run: |
           npm run db:migrate --workspace @ete-conectada/portal
           npm run test:schema
+
+      - name: Gerar cliente Prisma para os testes
+        id: generate
+        run: npm run db:generate --workspace @ete-conectada/portal
+
+      - name: Testar cadastro, declaração e banco em sequência
+        run: npm run test:integration
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Conferir limpeza dos registros sintéticos
+        if: always() && steps.database.outcome == 'success' && steps.generate.outcome == 'success'
+        run: npm run test:cleanup
 
       - name: Remover somente o banco desta execução
         if: always()

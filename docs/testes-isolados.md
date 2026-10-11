@@ -46,9 +46,9 @@ O seed mantém três alunos fictícios e uma conta de teste. Reexecução preser
 ```bash
 npm run test:guards
 npm run test:schema
-npm run test:db --workspace @ete-conectada/portal
-npm run test:registration
-npm run test:declarations
+npm run test:integration
+# Somente em banco NOVO, sem seed ou outros dados:
+npm run test:cleanup
 npm run build
 ```
 
@@ -64,10 +64,16 @@ Testes aprovados verificam o protótipo em desenvolvimento; não homologam o mod
 
 ## Migrações no GitHub Actions
 
-O job **Migrações em PostgreSQL descartável** do workflow CI roda em PRs para `main` e pushes para `main`/`feature/**`. Cada job inicia um contêiner oficial PostgreSQL 16, fixado por digest, com nome de banco e senha aleatórios, porta livre publicada somente em `127.0.0.1` e armazenamento em memória. Não monta diretório do projeto, volume persistente ou arquivo `.env`, nem recebe credenciais do Neon/escola. A preparação confirma banco vazio e grava um UUID no comentário usado pela guarda. Senha/URL são mascaradas nos logs do Actions; as variáveis de teste ficam apenas no ambiente do job.
+O job **Migrações e integração em PostgreSQL descartável** do workflow CI roda em PRs para `main` e pushes para `main`/`feature/**`. Cada job inicia um contêiner oficial PostgreSQL 16, fixado por digest, com nome de banco e senha aleatórios, porta livre publicada somente em `127.0.0.1` e armazenamento em memória. Não monta diretório do projeto, volume persistente ou arquivo `.env`, nem recebe credenciais do Neon/escola. A preparação confirma banco vazio e grava um UUID no comentário usado pela guarda. Senha/URL são mascaradas nos logs do Actions; as variáveis de teste ficam apenas no ambiente do job.
 
 Depois da preparação, executa `db:validate`, `db:migrate`, `db:status` e `test:schema`. Reexecuta `db:migrate` e `test:schema` para comprovar ausência de migrações pendentes. A etapa `always()` remove somente o contêiner criado para aquele run/attempt, inclusive após falha; se o runner for encerrado abruptamente, a VM hospedada e seu armazenamento descartável também não são reutilizados.
 
 `test:schema` é somente leitura e exige a mesma identidade/opt-in dos demais testes. Confere histórico/checksums das migrações, tabelas e colunas esperadas, campos essenciais, enums, FKs, índices únicos e CHECKs do banco. Inclui `retired_profile_photos`, preservada como arquivo histórico, e o índice parcial de solicitação aberta. A conferência explícita cobre regras SQL fora do modelo Prisma; não usa um diff que proponha apagar esse arquivo. Ao mudar o contrato do banco, revise também esse teste. A documentação [Prisma migrate diff](https://docs.prisma.io/docs/cli/v7/migrate/diff) descreve o limite da comparação para recursos não representados no Prisma.
 
-Este job ainda não executa os fluxos HTTP de cadastro/declarações; essa integração pertence ao EC-033. Não exige iniciar a aplicação nem altera as barreiras de acesso em produção.
+## Integração no GitHub Actions
+
+O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: cadastro → declaração → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Cada script usa o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
+
+Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos arquivadas. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
+
+A remoção do contêiner segue com `always()`, independentemente do resultado da conferência de limpeza. Registros residuais são sinalizados, não apagados para disfarçar a falha. PDFs sintéticos temporários e processos restantes em encerramentos abruptos são descartados junto com a VM hospedada. As saídas dos testes ficam nos logs do Actions, sem tokens, senhas ou connection strings; não se publicam PDFs como artifacts. O job não depende de servidor, seed, e-mail ou banco da escola.
