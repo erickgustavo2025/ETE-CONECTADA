@@ -19,7 +19,7 @@ TH e Erick podem atuar em todas as áreas, com um dono por card e revisão do ou
 
 O [guia de contribuição](docs/contribuicao.md) reúne os comandos de branch, publicação e revisão. Use o [template de PR](.github/PULL_REQUEST_TEMPLATE.md) para registrar problema, solução, verificações e link do card.
 
-A primeira seleção prioriza proteger os testes contra o banco errado e verificar a demonstração de solicitação/atendimento de declaração com contas sintéticas. Fluxo de PR, CI de build e testes puros entram na sequência conforme capacidade e dependências. GitHub Actions, Docker, CD e liberação de produção ainda não estão implementados. A escolha planejada da equipe é VPS Hostinger KVM4 por 24 meses, ainda não contratada.
+A base já inclui proteção dos testes contra o banco errado e o fluxo de solicitação/atendimento de declaração ensaiado com contas sintéticas. O workflow [CI](.github/workflows/ci.yml) instala pelo lockfile e compila os dois apps em PRs para `main` e pushes em `main`/`feature/**`, usando Node 24 e sem credenciais do banco. A liberação em produção, Docker, CD e a proteção de merge ainda seguem seus cards próprios. A escolha planejada da equipe é VPS Hostinger KVM4 por 24 meses, ainda não contratada.
 
 Importação/atualização por planilha terá dois caminhos, integrado e subsequente; exportação e configuração de módulos dependem de contrato/dados aprovados. O importador existente lê backup JSON, não aceita o XLS recebido e não atualiza registros existentes. Certificados, histórico e diploma precisam de requisitos próprios; não são funcionalidades prontas.
 
@@ -67,7 +67,7 @@ npm run test:declarations
 npm run test:db --workspace @ete-conectada/portal
 ```
 
-O build verifica os dois apps. `test:guards` verifica as recusas de configuração e identidade sem banco. Seed e testes HTTP exigem `TEST_DATABASE_URL`, `TEST_DATABASE_NAME`, `TEST_DATABASE_ID`, `ALLOW_TEST_DATABASE_WRITES=true` e `NODE_ENV=test` ou `development`. Conferem o marcador real antes de escrever, sem usar `DATABASE_URL` como fallback. Os testes HTTP iniciam e encerram seu próprio portal; a limpeza remove somente fixtures criadas pela execução. Execute-os em sequência, sem outro Next ativo na mesma pasta. O teste de declarações salva PDFs fictícios em um diretório temporário novo, informado no terminal. Ainda não há CI, lint ou comando dedicado de typecheck. Não declarar testes como aprovados sem executar e registrar resultado.
+O build verifica os dois apps. `test:guards` verifica as recusas de configuração e identidade sem banco. Seed e testes HTTP exigem `TEST_DATABASE_URL`, `TEST_DATABASE_NAME`, `TEST_DATABASE_ID`, `ALLOW_TEST_DATABASE_WRITES=true` e `NODE_ENV=test` ou `development`. Conferem o marcador real antes de escrever, sem usar `DATABASE_URL` como fallback. Os testes HTTP iniciam e encerram seu próprio portal; a limpeza remove somente fixtures criadas pela execução. Execute-os em sequência, sem outro Next ativo na mesma pasta. O teste de declarações salva PDFs fictícios em um diretório temporário novo, informado no terminal. O CI desta etapa executa instalação e build; testes automatizados no workflow, lint e comando dedicado de typecheck entram nos cards seguintes. Não declarar testes como aprovados sem executar e registrar resultado.
 
 ## Prisma
 
