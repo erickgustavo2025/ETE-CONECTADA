@@ -1,100 +1,131 @@
-# ETE CONECTADA
+# ETE Conectada
 
-Protótipo inicial com duas aplicações no mesmo repositório:
+O ETE Conectada reúne o site institucional e o portal da ETE Advogado José David Gil Rodrigues. Pelo portal, o aluno solicita sua declaração de vínculo e acompanha o atendimento, enquanto a secretaria confere os dados e prepara o documento para retirada.
 
-- `apps/site`: site público da ETE Advogado José David Gil Rodrigues.
-- `apps/portal`: portal autenticado da escola, com primeiro acesso e solicitações de declaração.
+O projeto está em desenvolvimento. Cadastro e login funcionam apenas nesse ambiente; a escola e a GRE ainda precisam validar o modelo e quem assina as declarações antes da emissão oficial.
 
-`shared/` contém estilos, fontes, arte institucional e navegação usados pelas duas aplicações; faz parte do código necessário para executá-las. `.nvmrc` indica Node.js 24 para padronizar o ambiente. `package.json` define dependências/comandos e `package-lock.json` fixa as versões instaladas.
+## O que já funciona
 
-## Estado atual
+- Site institucional com acesso ao portal.
+- Primeiro acesso com matrícula e nascimento, cadastro de CPF, e-mail e senha, confirmação de e-mail e login.
+- Solicitação de declaração pelo aluno e acompanhamento do pedido.
+- Atendimento pela secretaria, com busca por aluno ou turma e geração de PDF individual ou em lote.
 
-Este projeto está em desenvolvimento. Cadastro, login e sessões estão desabilitados em produção. O modelo de declaração precisa de validação da escola/GRE antes da emissão oficial; assinatura eletrônica e consulta por QR Code ainda não estão implementadas.
+O código está organizado assim:
 
-## Colaboração e próximos passos
+| Pasta | Conteúdo |
+| --- | --- |
+| `apps/site` | Site público da escola |
+| `apps/portal` | Portal dos alunos e da secretaria |
+| `shared` | Estilos, fontes e elementos visuais usados pelos dois apps |
 
-O andamento é acompanhado no [Trello ETE CONECTADA](https://trello.com/b/gOjNklJZ/ete-conectada): Product Backlog guarda planejamento e dependências; A Fazer contém apenas a seleção pronta da sprint; Em Andamento inclui desenvolvimento/revisão; Fase de Teste verifica critérios; Concluído guarda entregas verificadas e registros históricos FEITO DEV. Estes registros de desenvolvimento não representam produção homologada.
-
-TH e Erick podem atuar em todas as áreas, com um dono por card e revisão do outro dev. Preferir branches curtas por card, PRs pequenas e testes pertinentes antes do merge em main. Combinar mudanças em Prisma/migrações, configurações raiz e componentes compartilhados. Push de uma branch não realiza merge ou deploy.
-
-O [guia de contribuição](docs/contribuicao.md) reúne os comandos de branch, publicação e revisão. Use o [template de PR](.github/PULL_REQUEST_TEMPLATE.md) para registrar problema, solução, verificações e link do card.
-
-A base já inclui proteção dos testes contra o banco errado e o fluxo de solicitação/atendimento de declaração ensaiado com contas sintéticas. O workflow [CI](.github/workflows/ci.yml) instala pelo lockfile sem scripts de instalação de dependências e compila os dois apps em PRs para `main` e pushes em `main`/`feature/**`, usando Node 24 e sem credenciais do banco. A liberação em produção, Docker, CD e a proteção de merge ainda seguem seus cards próprios. A escolha planejada da equipe é VPS Hostinger KVM4 por 24 meses, ainda não contratada.
-
-[Dependabot](.github/dependabot.yml) propõe atualizações semanais de npm e GitHub Actions, sem merge automático. A [auditoria de dependências](.github/workflows/dependency-audit.yml) consulta o lockfile semanalmente ou por execução manual e falha diante de alertas altos/críticos. A triagem de 11/10/2026 reduziu 11 pacotes afetados para quatro, todos na cadeia Prisma; os alertas restantes continuam visíveis. Decisões, alcance e reavaliação estão em [Triagem de dependências](docs/seguranca/dependencias.md). As automações passam a valer após integração em `main`; as opções de segurança disponíveis no repositório privado precisam de conferência administrativa.
-
-Importação/atualização por planilha terá dois caminhos, integrado e subsequente; exportação e configuração de módulos dependem de contrato/dados aprovados. O importador existente lê backup JSON, não aceita o XLS recebido e não atualiza registros existentes. Certificados, histórico e diploma precisam de requisitos próprios; não são funcionalidades prontas.
+As aplicações usam Next.js e TypeScript. O portal usa PostgreSQL, com Prisma para as consultas e migrações.
 
 ## Rodar localmente
 
-Use Node.js 24 LTS (`.nvmrc`). Instale as dependências pelo lockfile com `npm ci --ignore-scripts` e abra dois terminais. Os comandos de desenvolvimento/build geram Prisma Client explicitamente; a instalação não precisa executar scripts das dependências.
+Use Node.js 24, conforme a versão indicada em `.nvmrc`. Se você usa nvm, execute `nvm use` na raiz do projeto. Com o repositório clonado, instale as dependências:
 
 ```bash
-npm run dev:site
-npm run dev:portal
+npm ci --ignore-scripts
 ```
 
-O site abre em `http://localhost:3000` e o portal em `http://localhost:3001/login`. Para acessar de outro aparelho na mesma rede, defina `NEXT_PUBLIC_LAN_HOST` com o IP desta máquina em `apps/site/.env.local` e `apps/portal/.env.local` (ex.: `192.168.1.120`) e reinicie os dois servidores. Em desenvolvimento, após carregar a página, os links entre as aplicações preservam o host usado no navegador e mudam apenas a porta (3000/3001); NEXT_PUBLIC_LAN_HOST fornece o endereço inicial e a configuração de acesso local. As chamadas da API usam o host da própria página. “Acessar portal” aponta para `/`: com sessão abre a página inicial; sem sessão redireciona para login. Uma sessão válida também redireciona `/login` para `/`. Após entrar com uma conta de teste, a página inicial privada abre em `/`.
+### Configurar o banco do portal
 
-## Banco Neon e acessos de teste
+Use um banco de desenvolvimento. No Neon, crie uma branch própria para isso. Crie `apps/portal/.env.local` a partir de [`.env.example`](apps/portal/.env.example) e preencha `DATABASE_URL` com a conexão desse banco. `DIRECT_URL` é opcional e permite usar uma conexão direta nos comandos do Prisma.
 
-Crie uma branch de desenvolvimento no Neon e copie `apps/portal/.env.example` para `apps/portal/.env.local`. Coloque a connection string em `DATABASE_URL`. O acesso usa Prisma 7 com o adaptador PostgreSQL. Para migrações, `DIRECT_URL` pode conter a conexão direta do Neon; se omitida, usa `DATABASE_URL`. Depois rode:
+Aplique as migrações nesse banco:
 
 ```bash
 npm run db:migrate --workspace @ete-conectada/portal
 ```
 
-O seed e os testes agora exigem PostgreSQL local descartável com opt-in e identidade conferida; não executam no Neon da escola. Veja a preparação em [Testes isolados](docs/testes-isolados.md). Os três alunos sintéticos, matrícula, CPF e nascimento para testar estão em [apps/portal/prisma/README.md](apps/portal/prisma/README.md). Em banco novo, dois ficam sem conta e um recebe uma conta ativa para testar o login; reexecutar o seed preserva contas e senhas existentes. Cadastro e login consultam o banco pelo servidor. Sem `DATABASE_URL`, o formulário informa que a consulta está indisponível.
+Os comandos de desenvolvimento e build geram o cliente Prisma automaticamente. Mais detalhes sobre o banco, as migrações e o Prisma Studio estão no [guia do banco](apps/portal/prisma/README.md).
 
-O envio do link de confirmação exige `RESEND_API_KEY` e `EMAIL_FROM`. Em desenvolvimento, sem provedor de e-mail, o link é mostrado na tela para testar a ativação no banco. Esse modo não existe em produção. O login de desenvolvimento cria uma sessão persistida no banco com cookie HTTP-only; a rota `/` consulta a sessão no servidor e o botão Sair a revoga. A declaração de vínculo já está no menu; histórico e diploma continuam informativos. A equipe confirmou matrícula/nascimento no primeiro acesso de desenvolvimento, CPF no modal e confirmação de e-mail. Esse fluxo não comprova titularidade por si só; a implantação em produção continua pendente da definição de proteção e recuperação com a escola.
+### Abrir as aplicações
 
-Fechar a segunda etapa antes de enviar os dados não cria uma conta. Se a conta estiver aguardando confirmação, o primeiro acesso permite retomar com o mesmo CPF, e-mail e senha e gerar outro link; o link anterior é invalidado. Após expirar (30 minutos), o cadastro de desenvolvimento permite escolher novos dados de acesso, mantendo o CPF já vinculado. Contas ativas continuam usando o login. `npm run test:registration` verifica esses casos com registros temporários removidos ao terminar. O teste inicia seu próprio portal em loopback/porta livre, usando o banco descartável conferido e sem provedor de e-mail. `TEST_BASE_URL` não é aceito.
+Abra dois terminais na raiz do projeto:
+
+```bash
+# Terminal 1
+npm run dev:site
+```
+
+```bash
+# Terminal 2
+npm run dev:portal
+```
+
+- Site: [localhost:3000](http://localhost:3000)
+- Portal: [localhost:3001/login](http://localhost:3001/login)
+
+Para acessar pelo celular ou por outro computador na mesma rede, configure `NEXT_PUBLIC_LAN_HOST` com o IP da sua máquina em `apps/site/.env.local` e `apps/portal/.env.local`, por exemplo `192.168.1.120`. Reinicie os servidores e abra esse endereço com a porta do app.
+
+### Experimentar o primeiro acesso
+
+O aluno informa matrícula e nascimento; depois, CPF, e-mail, senha e confirmação da senha. A conta é ativada pelo link de confirmação. O login aceita CPF ou e-mail.
+
+Para enviar o link por e-mail, configure `RESEND_API_KEY` e `EMAIL_FROM`. Sem essas variáveis, o link aparece na tela apenas em desenvolvimento, permitindo experimentar a ativação.
+
+Há três alunos fictícios para os testes. A preparação do banco local descartável está no [guia de testes isolados](docs/testes-isolados.md), e as matrículas e acessos estão no [guia do banco](apps/portal/prisma/README.md). O seed e os testes usam esse banco separado, em vez do Neon configurado para a aplicação.
 
 ## Declaração de vínculo
 
-Os modelos A4 ficam em `output/pdf/`. A reprodução alinhada preserva a referência fornecida; a proposta com campos variáveis e duas assinaturas precisa de revisão institucional. Pesquisa, fontes legais e próximos passos estão em [docs/declaracao-vinculo/viabilidade.md](docs/declaracao-vinculo/viabilidade.md). Na página `/declaracao`, o aluno apenas solicita a declaração e acompanha o atendimento; não há download de PDF pelo aluno. O fluxo é solicitada → em preparação após geração do PDF pela secretaria → pronta para retirada após confirmação explícita de impressão, assinaturas e carimbos. Uma matrícula pode ter somente uma solicitação aberta; clicar novamente retorna o pedido existente. A área `/secretaria/declaracoes` exige o papel `secretary`; nela é possível buscar por nome/matrícula, filtrar por turma, selecionar alunos ou turma inteira e gerar um PDF de até 100 páginas (uma declaração por aluno), depois de conferir todos os selecionados. A frequência é individual, com percentual de 0 a 100 e período de apuração válido; pode ser omitida para uma declaração apenas de vínculo. Nomes dos signatários podem ser preenchidos ou identificados pelo carimbo no papel. Campos preenchidos e lote ficam apenas na memória da tela, sem alterar o cadastro importado; ao sair, são perdidos. O modelo continua sujeito à validação da escola/GRE; não há documento oficialmente emitido, assinatura eletrônica ou consulta por QR code. Subsequente existe no modelo de dados e sua referência DOCX 2026.2 foi recebida; sua declaração própria ainda aguarda adequação/validação e implementação.
+A área da secretaria exige uma conta com esse acesso. O atendimento funciona em três etapas:
 
-`npm run students:import -- /caminho/Backup.alunos.json` importa alunos pela matrícula com acesso bloqueado por padrão. A liberação em desenvolvimento foi autorizada para este teste. O backup e dados pessoais permanecem fora do repositório. Para atribuir secretaria a uma conta ativa autorizada, use `npm run access:secretary -- email-da-conta`.
+1. O aluno faz o pedido em `/declaracao` e acompanha a situação pelo portal.
+2. A secretaria confere os dados em `/secretaria/declaracoes` e gera o PDF. O pedido passa para **Em preparação**.
+3. Depois da impressão, das assinaturas e dos carimbos, a secretaria confirma que o documento está **Pronto para retirada**.
 
-No ambiente descartável preparado, `npm run test:declarations` inicia um portal temporário e verifica autorização, isolamento, campos obrigatórios, frequência, seleção por turma, limites/duplicação do lote e PDF com registros fictícios temporários removidos ao terminar. Não usa dados dos alunos importados. O exemplo em `output/pdf/declaracao-vinculo-exemplo-integrado.pdf` também é inteiramente fictício.
+A liberação para retirada depende da confirmação da secretaria, depois de preparar o documento no papel. Se o aluno repetir o pedido enquanto houver uma solicitação aberta, o portal mostra a mesma solicitação.
+
+A secretaria pode gerar até 100 declarações por lote, uma por aluno. Quando incluir frequência, precisa informar o percentual e o período de apuração. Os dados complementares preenchidos no editor ficam na tela e são perdidos ao sair; eles não alteram o cadastro dos alunos.
+
+A versão atual prepara o documento para impressão e assinatura no papel. Os [modelos e o exemplo fictício](output/pdf/) estão disponíveis para revisão. O modelo próprio do subsequente, assinatura eletrônica e consulta por QR Code ainda fazem parte do trabalho futuro. A pesquisa sobre a emissão está em [Declaração de vínculo](docs/declaracao-vinculo/viabilidade.md).
+
+O [guia do banco](apps/portal/prisma/README.md) também explica a importação de alunos pelo backup JSON e a concessão de acesso à secretaria.
 
 ## Verificações disponíveis
 
-```bash
-npm run build
-npm run test:guards
-npm run test:schema # Exige o banco descartável já migrado e identificado
-npm run audit:dependencies
-# Após preparar o banco descartável conforme docs/testes-isolados.md:
-npm run test:integration
-# Só para banco NOVO, sem seed nem registros preexistentes:
-npm run test:cleanup
-```
-
-O build verifica os dois apps. `test:guards` verifica as recusas de configuração e identidade sem banco. `test:schema` confere o contrato SQL e o histórico das migrações, somente em banco descartável identificado e sem escrever registros. Seed e testes HTTP exigem `TEST_DATABASE_URL`, `TEST_DATABASE_NAME`, `TEST_DATABASE_ID`, `ALLOW_TEST_DATABASE_WRITES=true` e `NODE_ENV=test` ou `development`. Conferem o marcador real antes de escrever, sem usar `DATABASE_URL` como fallback. Os testes HTTP iniciam e encerram seu próprio portal; a limpeza remove somente fixtures criadas pela execução. Execute-os em sequência, sem outro Next ativo na mesma pasta. O teste de declarações salva PDFs fictícios em um diretório temporário novo, informado no terminal.
-
-O CI executa instalação/build e um job separado de migrações e integração em PostgreSQL 16 descartável: banco vazio com identidade própria, aplicação das migrações, validação/status, conferência do schema e reexecução sem pendências. Gera Prisma e executa cadastro → declaração → banco em sequência, com portais temporários próprios e e-mail desabilitado. Confere ausência de registros sintéticos inclusive após falha e remove o contêiner ao terminar. O banco usa credenciais aleatórias e porta exclusiva em loopback. Consulte [testes isolados](docs/testes-isolados.md). Unitários no workflow, lint e comando dedicado de typecheck seguem os respectivos cards. Não declarar testes como aprovados sem executar e registrar resultado.
-
-## Prisma
-
-O modelo está em `apps/portal/prisma/schema.prisma`; as consultas usam `getDb()` em `apps/portal/src/lib/db.ts`. Exemplo: `getDb().student.findUnique({ where: { cpf } })`. Os campos TypeScript usam camelCase, mapeados para os nomes existentes no PostgreSQL.
-
-`npm run dev:portal` e `npm run build` geram o cliente automaticamente. `npm run test:db --workspace @ete-conectada/portal` testa o fluxo com um aluno sintético temporário e o remove ao terminar. Ele exige o banco descartável e inicia seu próprio portal, conforme [testes isolados](docs/testes-isolados.md).
-
-Consulte `apps/portal/prisma/README.md` para migrações, seed e Prisma Studio.
-
-## Arquivos locais e publicação
-
-Não envie `.env.local`, credenciais, backups de alunos, reuniões, dependências ou arquivos gerados do Next.js/Prisma. O `.gitignore` mantém esses itens fora do histórico. Os arquivos `.env.example` contêm somente exemplos de configuração.
-
-Em `output/pdf`, somente os arquivos de referência/revisão e o exemplo fictício listados no `.gitignore` podem ser versionados. Declarações preenchidas com dados reais devem permanecer fora do repositório.
-
-Planejamento de sprint, backlog, instruções locais de agentes, `DESIGN.md` e `premium-ui.json` ficam fora do rastreamento desta versão. Os dois últimos guardam contexto visual/configuração de auditoria local e não são dependências da aplicação. O Trello acompanha a execução da dupla; README e documentação técnica de uso permanecem versionados. Não ignore todos os arquivos `.md`, pois documentação técnica também faz parte do projeto.
-
-## Testes unitários de primeiro acesso e senha
+Estes comandos podem ser executados sem banco:
 
 ```bash
 npm run test:unit
+npm run test:guards
+npm run build
+npm run audit:dependencies
 ```
 
-A suíte usa o runner nativo do Node.js 24 e o `tsx` já instalado. Verifica CPF sintético e dígitos verificadores, matrícula de 7/8 dígitos, normalização e limite do e-mail, datas impossíveis/bissextas e nascimento futuro. O relógio é fixado no teste de hoje/futuro. Também verifica hashes scrypt com referência independente, senha correta/incorreta, sal aleatório, hashes malformados e preservação de senhas com 8/128 caracteres, Unicode, espaços e caractere nulo. Os limites de tamanho continuam sendo exigidos pela API de cadastro; a função de hash não redefine essa regra. Não carrega `.env`, não exige `DATABASE_URL` e não inicia banco, servidor ou envio de e-mail. Os testes validam o contrato atual das funções; titularidade e regras institucionais seguem os requisitos próprios.
+Os unitários verificam as regras do primeiro acesso e das senhas. As guardas verificam a recusa de configurações de teste inadequadas. O build compila os dois apps, e a auditoria aponta vulnerabilidades nas dependências. Os alertas conhecidos e sua avaliação estão na [triagem de dependências](docs/seguranca/dependencias.md).
+
+Para testar o banco e os fluxos completos, siga primeiro a preparação do [ambiente de testes isolados](docs/testes-isolados.md):
+
+```bash
+npm run test:schema
+npm run test:integration
+# Somente em banco novo, sem seed ou outros registros:
+npm run test:cleanup
+```
+
+Os testes de integração executam cadastro, declaração e banco em sequência, com dados fictícios. Eles iniciam e encerram seu próprio portal; execute-os sem outro Next ativo na mesma pasta. `test:cleanup` confere se o banco novo ficou vazio.
+
+O [GitHub Actions](.github/workflows/ci.yml) já compila os apps, aplica as migrações e executa a integração em PostgreSQL temporário. Isso acontece nos PRs para `main` e nos pushes para `main` ou `feature/...`. O banco de cada execução é removido ao terminar.
+
+O [Dependabot](.github/dependabot.yml) propõe atualizações semanais, que são revisadas antes do merge. A [auditoria de dependências](.github/workflows/dependency-audit.yml) também roda semanalmente e pode ser iniciada manualmente.
+
+## Como colaborar
+
+As tarefas estão no [Trello ETE CONECTADA](https://trello.com/b/gOjNklJZ/ete-conectada). Escolhemos uma tarefa por vez, trabalhamos em uma branch própria e abrimos um PR para revisão antes de integrar à `main`. Se a mudança envolver banco, dependências ou código compartilhado, combinamos os arquivos com o outro dev antes de começar.
+
+O [guia de contribuição](docs/contribuicao.md) mostra os comandos e o processo de revisão. O [template de PR](.github/PULL_REQUEST_TEMPLATE.md) ajuda a explicar o que mudou e como foi verificado.
+
+## O que vem depois
+
+- Importar, atualizar e exportar planilhas, com caminhos próprios para integrado e subsequente. O importador atual lê backup JSON e preserva os registros existentes.
+- Adequar e validar os modelos de declaração com a escola.
+- Definir com a escola a proteção do primeiro acesso e a recuperação de contas antes de liberar o portal em produção.
+- Concluir as verificações de qualidade, a proteção da `main` e a preparação de Docker, hospedagem e publicação.
+- Levantar os requisitos de certificados, histórico e diploma.
+
+## Arquivos e dados
+
+Configurações e credenciais ficam em `.env.local`. Backups de alunos, planilhas, documentos preenchidos com dados reais e arquivos de reunião ficam fora do Git. Em `output/pdf`, mantemos apenas as referências e o exemplo fictício permitidos pelo `.gitignore`.
