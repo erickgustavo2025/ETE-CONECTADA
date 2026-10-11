@@ -16,7 +16,7 @@
     "predev": "prisma generate",
     "test:db": "tsx scripts/test-db.ts",
     "test:guards": "node --import tsx scripts/test-test-environment.ts",
-    "test:unit": "node --import tsx scripts/test-registration-validation.ts",
+    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts",
     "test:registration": "tsx scripts/test-registration.ts",
     "diagnose:login": "node --import tsx scripts/diagnose-login.ts",
     "students:import": "node --import tsx scripts/import-students.ts",

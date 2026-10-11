@@ -88,10 +88,10 @@ Em `output/pdf`, somente os arquivos de referência/revisão e o exemplo fictíc
 
 Planejamento de sprint, backlog, instruções locais de agentes, `DESIGN.md` e `premium-ui.json` ficam fora do rastreamento desta versão. Os dois últimos guardam contexto visual/configuração de auditoria local e não são dependências da aplicação. O Trello acompanha a execução da dupla; README e documentação técnica de uso permanecem versionados. Não ignore todos os arquivos `.md`, pois documentação técnica também faz parte do projeto.
 
-## Testes de validação do primeiro acesso
+## Testes unitários de primeiro acesso e senha
 
 ```bash
 npm run test:unit
 ```
 
-A suíte usa o runner nativo do Node.js 24 e o `tsx` já instalado. Verifica CPF sintético e dígitos verificadores, matrícula de 7/8 dígitos, normalização e limite do e-mail, datas impossíveis/bissextas e nascimento futuro. O relógio é fixado no teste de hoje/futuro. Não carrega `.env`, não exige `DATABASE_URL` e não inicia banco, servidor ou envio de e-mail. Os testes validam o contrato atual das funções; titularidade e regras institucionais seguem os requisitos próprios.
+A suíte usa o runner nativo do Node.js 24 e o `tsx` já instalado. Verifica CPF sintético e dígitos verificadores, matrícula de 7/8 dígitos, normalização e limite do e-mail, datas impossíveis/bissextas e nascimento futuro. O relógio é fixado no teste de hoje/futuro. Também verifica hashes scrypt com referência independente, senha correta/incorreta, sal aleatório, hashes malformados e preservação de senhas com 8/128 caracteres, Unicode, espaços e caractere nulo. Os limites de tamanho continuam sendo exigidos pela API de cadastro; a função de hash não redefine essa regra. Não carrega `.env`, não exige `DATABASE_URL` e não inicia banco, servidor ou envio de e-mail. Os testes validam o contrato atual das funções; titularidade e regras institucionais seguem os requisitos próprios.
