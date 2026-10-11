@@ -66,14 +66,14 @@ npm run test:guards
 npm run test:schema # Exige o banco descartável já migrado e identificado
 npm run audit:dependencies
 # Após preparar o banco descartável conforme docs/testes-isolados.md:
-npm run test:registration
-npm run test:declarations
-npm run test:db --workspace @ete-conectada/portal
+npm run test:integration
+# Só para banco NOVO, sem seed nem registros preexistentes:
+npm run test:cleanup
 ```
 
 O build verifica os dois apps. `test:guards` verifica as recusas de configuração e identidade sem banco. `test:schema` confere o contrato SQL e o histórico das migrações, somente em banco descartável identificado e sem escrever registros. Seed e testes HTTP exigem `TEST_DATABASE_URL`, `TEST_DATABASE_NAME`, `TEST_DATABASE_ID`, `ALLOW_TEST_DATABASE_WRITES=true` e `NODE_ENV=test` ou `development`. Conferem o marcador real antes de escrever, sem usar `DATABASE_URL` como fallback. Os testes HTTP iniciam e encerram seu próprio portal; a limpeza remove somente fixtures criadas pela execução. Execute-os em sequência, sem outro Next ativo na mesma pasta. O teste de declarações salva PDFs fictícios em um diretório temporário novo, informado no terminal.
 
-O CI executa instalação/build e um job separado de migrações em PostgreSQL 16 descartável: banco vazio com identidade própria, aplicação das migrações, validação/status, conferência do schema e reexecução sem pendências. O contêiner usa credenciais aleatórias, porta exclusiva em loopback e é removido ao terminar. Consulte [testes isolados](docs/testes-isolados.md). Os fluxos HTTP no CI, lint e comando dedicado de typecheck entram nos cards seguintes. Não declarar testes como aprovados sem executar e registrar resultado.
+O CI executa instalação/build e um job separado de migrações e integração em PostgreSQL 16 descartável: banco vazio com identidade própria, aplicação das migrações, validação/status, conferência do schema e reexecução sem pendências. Gera Prisma e executa cadastro → declaração → banco em sequência, com portais temporários próprios e e-mail desabilitado. Confere ausência de registros sintéticos inclusive após falha e remove o contêiner ao terminar. O banco usa credenciais aleatórias e porta exclusiva em loopback. Consulte [testes isolados](docs/testes-isolados.md). Unitários no workflow, lint e comando dedicado de typecheck seguem os respectivos cards. Não declarar testes como aprovados sem executar e registrar resultado.
 
 ## Prisma
 
