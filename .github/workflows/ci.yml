@@ -38,3 +38,47 @@ jobs:
 
       - name: Compilar portal e site
         run: npm run build
+
+  migrations:
+    name: Migrações em PostgreSQL descartável
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TEST_DB_CONTAINER: ete-test-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci --ignore-scripts
+
+      - name: Preparar banco novo e identificado
+        run: bash .github/scripts/start-test-db.sh
+
+      - name: Validar modelo e aplicar migrações
+        run: |
+          npm run db:validate --workspace @ete-conectada/portal
+          npm run db:migrate --workspace @ete-conectada/portal
+          npm run db:status --workspace @ete-conectada/portal
+          npm run test:schema
+
+      - name: Conferir reexecução sem migrações pendentes
+        run: |
+          npm run db:migrate --workspace @ete-conectada/portal
+          npm run test:schema
+
+      - name: Remover somente o banco desta execução
+        if: always()
+        run: |
+          if docker container inspect "$TEST_DB_CONTAINER" >/dev/null 2>&1; then
+            docker rm --force "$TEST_DB_CONTAINER"
+          fi
