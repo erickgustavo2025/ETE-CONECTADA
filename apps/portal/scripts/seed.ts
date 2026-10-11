@@ -2,6 +2,9 @@ import { openTestEnvironment, reportTestFailure, TestEnvironmentError } from './
 import { hashPassword } from '../src/lib/password';
 
 async function main() {
+const args = process.argv.slice(2);
+if (args.some(arg => arg !== '--demo') || args.length > 1) throw new TestEnvironmentError('Use seed sem argumentos ou com --demo.');
+const demo = args.includes('--demo');
 const environment = await openTestEnvironment();
 const { db } = environment;
 const students = [
@@ -32,8 +35,25 @@ try {
     await tx.account.upsert({ where: { studentId: student.id }, update: {}, create: {
       studentId: student.id, email: 'aluno.teste@eteconectada.invalid', passwordHash, status: 'active',
     } });
+    if (demo) {
+      const secretary = await tx.student.findUniqueOrThrow({ where: { cpf: students[0].cpf } });
+      const fixtures = [
+        { studentId: student.id, email: 'aluno.teste@eteconectada.invalid', role: 'student' },
+        { studentId: secretary.id, email: 'secretaria.demo@eteconectada.invalid', role: 'secretary' },
+      ];
+      for (const fixture of fixtures) {
+        const existing = await tx.account.findFirst({ where: { OR: [{ studentId: fixture.studentId }, { email: fixture.email }] } });
+        if (existing && (existing.studentId !== fixture.studentId || existing.email !== fixture.email
+          || existing.role !== fixture.role || existing.status !== 'active')) {
+          throw new TestEnvironmentError('Conta de demonstração difere da fixture; nenhuma senha ou permissão foi alterada.');
+        }
+        if (!existing) await tx.account.create({ data: { ...fixture, passwordHash, status: 'active' } });
+      }
+    }
   }, { timeout: 30000 });
-  console.log('Seed concluído: três alunos sintéticos; contas existentes preservadas.');
+  console.log(demo
+    ? 'Demonstração preparada: aluno e secretaria sintéticos; contas e senhas existentes preservadas.'
+    : 'Seed concluído: três alunos sintéticos; contas existentes preservadas.');
 } finally { await environment.close(); }
 
 }
