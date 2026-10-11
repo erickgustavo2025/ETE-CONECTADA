@@ -17,6 +17,8 @@ O andamento é acompanhado no [Trello ETE CONECTADA](https://trello.com/b/gOjNkl
 
 TH e Erick podem atuar em todas as áreas, com um dono por card e revisão do outro dev. Preferir branches curtas por card, PRs pequenas e testes pertinentes antes do merge em main. Combinar mudanças em Prisma/migrações, configurações raiz e componentes compartilhados. Push de uma branch não realiza merge ou deploy.
 
+O [guia de contribuição](docs/contribuicao.md) reúne os comandos de branch, publicação e revisão. Use o [template de PR](.github/PULL_REQUEST_TEMPLATE.md) para registrar problema, solução, verificações e link do card.
+
 A primeira seleção prioriza proteger os testes contra o banco errado e verificar a demonstração de solicitação/atendimento de declaração com contas sintéticas. Fluxo de PR, CI de build e testes puros entram na sequência conforme capacidade e dependências. GitHub Actions, Docker, CD e liberação de produção ainda não estão implementados. A escolha planejada da equipe é VPS Hostinger KVM4 por 24 meses, ainda não contratada.
 
 Importação/atualização por planilha terá dois caminhos, integrado e subsequente; exportação e configuração de módulos dependem de contrato/dados aprovados. O importador existente lê backup JSON, não aceita o XLS recebido e não atualiza registros existentes. Certificados, histórico e diploma precisam de requisitos próprios; não são funcionalidades prontas.
