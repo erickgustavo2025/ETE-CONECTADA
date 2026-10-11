@@ -17,6 +17,8 @@ npm run db:migrate --workspace @ete-conectada/portal
 
 O seed preserva contas, senhas e estados já existentes no banco descartável; colisões com aluno ou matrícula divergente cancelam a transação. Não use CPF no primeiro formulário: use matrícula e nascimento. No modal, informe CPF válido, e-mail, senha com pelo menos 8 caracteres e confirmação. O CPF já informado permanece vinculado mesmo se o link de e-mail expirar. Login aceita CPF ou e-mail.
 
+Para manter também um acesso fictício de secretaria, use `npm run db:demo` no banco local identificado. Preparação e credenciais iniciais estão em [acessos fixos de demonstração](../../../docs/testes-isolados.md#acessos-fixos-para-demonstração-local). O comando preserva senhas e recusa contas com papel/estado divergente.
+
 ## Importação de alunos
 
 `students` guarda nome, nascimento, matrícula e CPF opcional. `enrollments` distingue INTEGRADO e SUBSEQUENTE, turma, série, sigla do curso e período letivo opcional. O backup fornecido não contém CPF, filiação, naturalidade nem ano/período letivo. A sigla ADM/DS é preservada sem inventar o nome oficial do curso.

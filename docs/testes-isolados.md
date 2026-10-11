@@ -77,3 +77,31 @@ O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera exp
 Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos arquivadas. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
 
 A remoção do contêiner segue com `always()`, independentemente do resultado da conferência de limpeza. Registros residuais são sinalizados, não apagados para disfarçar a falha. PDFs sintéticos temporários e processos restantes em encerramentos abruptos são descartados junto com a VM hospedada. As saídas dos testes ficam nos logs do Actions, sem tokens, senhas ou connection strings; não se publicam PDFs como artifacts. O job não depende de servidor, seed, e-mail ou banco da escola.
+
+## Acessos fixos para demonstração local
+
+Para explorar as telas, use um banco local separado dos testes automáticos e dos dados da escola. Prepare um banco novo e identificado como acima, aplique as migrações e execute na raiz:
+
+```bash
+npm run db:demo
+# Neste mesmo terminal, com as variáveis do banco de demonstração:
+export DATABASE_URL="$TEST_DATABASE_URL"
+export DIRECT_URL="$TEST_DATABASE_URL"
+export NODE_ENV=development
+export RESEND_API_KEY=
+export EMAIL_FROM=
+npm run dev:portal
+```
+
+Se já houver um portal rodando nesta pasta, encerre-o antes de iniciar outro. Abra `http://localhost:3001/login`. Estes acessos são inteiramente fictícios:
+
+| Papel | E-mail | Senha inicial |
+| --- | --- | --- |
+| Aluno (Lucas) | `aluno.teste@eteconectada.invalid` | `Teste@12345` |
+| Secretaria (Ana) | `secretaria.demo@eteconectada.invalid` | `Teste@12345` |
+
+O aluno acessa `/declaracao`; a secretaria acessa `/secretaria/declaracoes`. Use perfis separados do navegador ou saia de uma conta antes de entrar na outra.
+
+`db:demo` usa as mesmas guardas do seed: somente loopback, nome e UUID identificados, opt-in explícito e ambiente test/development. Não cria acesso em Neon nem em produção. As contas permanecem após encerrar o portal e não são removidas pelos testes automáticos; a persistência entre reinícios depende de manter o armazenamento do PostgreSQL. Não rode `test:cleanup` neste banco, pois ele exige banco vazio.
+
+Reexecutar o comando preserva senhas existentes. Conta com e-mail, papel ou estado divergente cancela toda a transação; não promove uma conta existente nem redefine sua senha. A senha da tabela só vale para uma conta criada pelo comando e ainda não modificada. O seed normal mantém Marina e Ana disponíveis para primeiro acesso quando não têm conta; `db:demo` ocupa a conta de Ana para demonstrar a secretaria.

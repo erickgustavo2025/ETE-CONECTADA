@@ -17,6 +17,7 @@
     "test:integration": "npm run test:registration && npm run test:declarations && npm run test:db --workspace @ete-conectada/portal",
     "test:cleanup": "npm run test:cleanup --workspace @ete-conectada/portal",
     "test:unit": "npm run test:unit --workspace @ete-conectada/portal",
-    "audit:dependencies": "npm audit --audit-level=high"
+    "audit:dependencies": "npm audit --audit-level=high",
+    "db:demo": "npm run db:demo --workspace @ete-conectada/portal"
   }
 }
