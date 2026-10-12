@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import PasswordInput from "@/components/password-input";
-import { useFormValidation } from "@/components/use-form-validation";
-import AuthSide from "@/components/auth-side";
-import PortalFrame from "@/components/portal-frame";
-import { normalizeCpf } from "@/lib/registration";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import Link from 'next/link';
+import PasswordInput from '@/components/password-input';
+import { useFormValidation } from '@/components/use-form-validation';
+import AuthSide from '@/components/auth-side';
+import PortalFrame from '@/components/portal-frame';
+import { normalizeCpf } from '@/lib/registration';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 type Identity = { schoolRegistration: string; birthDate: string };
 
 export default function CadastroPage() {
-  const identityValidation = useFormValidation("identity-error");
-  const accountValidation = useFormValidation("account-error");
+  const identityValidation = useFormValidation('identity-error');
+  const accountValidation = useFormValidation('account-error');
   const [identity, setIdentity] = useState<Identity | null>(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [loginHint, setLoginHint] = useState(false);
   const [busy, setBusy] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalNotice, setModalNotice] = useState("");
-  const [verificationUrl, setVerificationUrl] = useState("");
+  const [modalNotice, setModalNotice] = useState('');
+  const [verificationUrl, setVerificationUrl] = useState('');
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cpfRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -48,44 +48,44 @@ export default function CadastroPage() {
     if (busy || !identityValidation.validate(event.currentTarget)) return;
     const data = new FormData(event.currentTarget);
     const current = {
-      schoolRegistration: String(data.get("schoolRegistration") || ""),
-      birthDate: String(data.get("birthDate") || ""),
+      schoolRegistration: String(data.get('schoolRegistration') || ''),
+      birthDate: String(data.get('birthDate') || ''),
     };
-    setMessage("");
+    setMessage('');
     setLoginHint(false);
     setBusy(true);
     try {
-      const response = await fetch("/api/registration/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/registration/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(current),
       });
       const result = await response.json();
       if (!response.ok)
         throw new Error(
-          result.error || "Não foi possível consultar o cadastro.",
+          result.error || 'Não foi possível consultar o cadastro.',
         );
-      if (result.result === "created") {
-        setMessage("Esta conta já está ativa. Acesse a página de login.");
+      if (result.result === 'created') {
+        setMessage('Esta conta já está ativa. Acesse a página de login.');
         setLoginHint(true);
-      } else if (result.result === "eligible" || result.result === "pending") {
+      } else if (result.result === 'eligible' || result.result === 'pending') {
         setIdentity(current);
-        setVerificationUrl("");
+        setVerificationUrl('');
         setModalNotice(
-          result.result === "pending"
-            ? "Seu cadastro ainda não foi confirmado. Use o mesmo CPF, e-mail e senha para gerar um novo link. Se o link anterior expirou, você pode escolher novos dados de acesso; mantenha o CPF informado."
-            : "",
+          result.result === 'pending'
+            ? 'Seu cadastro ainda não foi confirmado. Use o mesmo CPF, e-mail e senha para gerar um novo link. Se o link anterior expirou, você pode escolher novos dados de acesso; mantenha o CPF informado.'
+            : '',
         );
         setModalOpen(true);
       } else
         setMessage(
-          "Não foi possível confirmar os dados. Confira as informações ou procure a escola.",
+          'Não foi possível confirmar os dados. Confira as informações ou procure a escola.',
         );
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Não foi possível consultar o cadastro.",
+          : 'Não foi possível consultar o cadastro.',
       );
     } finally {
       setBusy(false);
@@ -98,55 +98,55 @@ export default function CadastroPage() {
       return;
     const form = event.currentTarget;
     const data = new FormData(form);
-    const cpf = normalizeCpf(data.get("cpf"));
+    const cpf = normalizeCpf(data.get('cpf'));
     if (!cpf) {
       accountValidation.reject(
-        "cpf",
-        "Informe um CPF válido. Confira os 11 dígitos.",
+        'cpf',
+        'Informe um CPF válido. Confira os 11 dígitos.',
         form,
       );
       return;
     }
-    const password = String(data.get("newPassword") || "");
+    const password = String(data.get('newPassword') || '');
     setBusy(true);
-    setModalNotice("");
+    setModalNotice('');
     try {
-      const response = await fetch("/api/registration/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/registration/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...identity,
           cpf,
-          email: data.get("email"),
+          email: data.get('email'),
           password,
-          confirmPassword: data.get("confirmPassword"),
+          confirmPassword: data.get('confirmPassword'),
         }),
       });
       const result = await response.json();
       if (!response.ok) {
-        if (typeof result.field === "string") {
+        if (typeof result.field === 'string') {
           accountValidation.reject(result.field, result.error, form);
           return;
         }
-        throw new Error(result.error || "Não foi possível iniciar o cadastro.");
+        throw new Error(result.error || 'Não foi possível iniciar o cadastro.');
       }
       form.reset();
       setIdentity(null);
-      if (result.result === "email_sent")
+      if (result.result === 'email_sent')
         setModalNotice(
-          "Enviamos um link para seu e-mail. Abra a mensagem e confirme a conta em até 30 minutos. Se precisar, volte ao cadastro para enviar um novo link.",
+          'Enviamos um link para seu e-mail. Abra a mensagem e confirme a conta em até 30 minutos. Se precisar, volte ao cadastro para enviar um novo link.',
         );
       else {
         setVerificationUrl(result.verificationUrl);
         setModalNotice(
-          "Seus dados foram salvos. Como o envio de e-mail ainda não foi configurado, use o link de teste abaixo para confirmar. Se fechar esta tela, volte ao cadastro para gerar outro link.",
+          'Seus dados foram salvos. Como o envio de e-mail ainda não foi configurado, use o link de teste abaixo para confirmar. Se fechar esta tela, volte ao cadastro para gerar outro link.',
         );
       }
     } catch (error) {
       setModalNotice(
         error instanceof Error
           ? error.message
-          : "Não foi possível iniciar o cadastro.",
+          : 'Não foi possível iniciar o cadastro.',
       );
     } finally {
       setBusy(false);
@@ -155,7 +155,7 @@ export default function CadastroPage() {
 
   return (
     <PortalFrame showHomeLink={false}>
-      <main className="auth-shell" id="conteudo">
+      <main className="auth-shell" id="conteudo" tabIndex={-1}>
         <AuthSide mode="cadastro" />
         <div className="auth-main">
           <div className="auth-content registration-content">
@@ -186,7 +186,7 @@ export default function CadastroPage() {
               >
                 <label htmlFor="school-registration">Matrícula</label>
                 <input
-                  {...identityValidation.field("schoolRegistration")}
+                  {...identityValidation.field('schoolRegistration')}
                   id="school-registration"
                   name="schoolRegistration"
                   type="text"
@@ -200,7 +200,7 @@ export default function CadastroPage() {
                 />
                 <label htmlFor="birth-date">Data de nascimento</label>
                 <input
-                  {...identityValidation.field("birthDate")}
+                  {...identityValidation.field('birthDate')}
                   id="birth-date"
                   name="birthDate"
                   type="date"
@@ -218,7 +218,7 @@ export default function CadastroPage() {
                   ref={triggerRef}
                   disabled={busy}
                 >
-                  {busy ? "Consultando…" : "Conferir cadastro"}{" "}
+                  {busy ? 'Consultando…' : 'Conferir cadastro'}{' '}
                   <span aria-hidden="true">↗</span>
                 </button>
               </form>
@@ -231,7 +231,7 @@ export default function CadastroPage() {
                   {message}
                   {loginHint && (
                     <>
-                      {" "}
+                      {' '}
                       <Link href="/login">Ir para login</Link>
                     </>
                   )}
@@ -257,13 +257,13 @@ export default function CadastroPage() {
             <span className="eyebrow">Próxima etapa</span>
             <h2 id="dialog-title">
               {identity
-                ? "Escolha seus dados de acesso"
-                : "Confirme seu e-mail"}
+                ? 'Escolha seus dados de acesso'
+                : 'Confirme seu e-mail'}
             </h2>
             <p id="dialog-description">
               {identity
-                ? "Informe seu CPF, um e-mail e crie uma senha. Depois, confirme o e-mail pelo link recebido para ativar a conta."
-                : "A conta será ativada depois que você confirmar o e-mail."}
+                ? 'Informe seu CPF, um e-mail e crie uma senha. Depois, confirme o e-mail pelo link recebido para ativar a conta.'
+                : 'A conta será ativada depois que você confirmar o e-mail.'}
             </p>
             <form
               method="post"
@@ -275,7 +275,7 @@ export default function CadastroPage() {
                 <>
                   <label htmlFor="registration-cpf">CPF</label>
                   <input
-                    {...accountValidation.field("cpf")}
+                    {...accountValidation.field('cpf')}
                     ref={cpfRef}
                     id="registration-cpf"
                     name="cpf"
@@ -288,7 +288,7 @@ export default function CadastroPage() {
                   />
                   <label htmlFor="registration-email">E-mail</label>
                   <input
-                    {...accountValidation.field("email")}
+                    {...accountValidation.field('email')}
                     id="registration-email"
                     name="email"
                     type="email"
@@ -298,7 +298,7 @@ export default function CadastroPage() {
                   />
                   <label htmlFor="new-password">Nova senha</label>
                   <PasswordInput
-                    {...accountValidation.field("newPassword")}
+                    {...accountValidation.field('newPassword')}
                     id="new-password"
                     name="newPassword"
                     type="password"
@@ -310,7 +310,7 @@ export default function CadastroPage() {
                   />
                   <label htmlFor="confirm-password">Confirme a senha</label>
                   <PasswordInput
-                    {...accountValidation.field("confirmPassword")}
+                    {...accountValidation.field('confirmPassword')}
                     id="confirm-password"
                     name="confirmPassword"
                     type="password"
@@ -330,7 +330,7 @@ export default function CadastroPage() {
                     type="submit"
                     disabled={busy || !identity}
                   >
-                    {busy ? "Salvando…" : "Confirmar dados e enviar link"}{" "}
+                    {busy ? 'Salvando…' : 'Confirmar dados e enviar link'}{' '}
                     <span aria-hidden="true">↗</span>
                   </button>
                 </>

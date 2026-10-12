@@ -1,18 +1,18 @@
-import Image from "next/image";
-import { headers } from "next/headers";
-import CrossAppLink from "../../../shared/navigation/cross-app-link";
-import PernambucoArt from "../../../shared/brand/pernambuco-art";
+import Image from 'next/image';
+import { headers } from 'next/headers';
+import CrossAppLink from '../../../shared/navigation/cross-app-link';
+import PernambucoArt from '../../../shared/brand/pernambuco-art';
 
 const lanHost = process.env.NEXT_PUBLIC_LAN_HOST;
 const configuredLoginUrl =
-  process.env.NODE_ENV === "development"
+  process.env.NODE_ENV === 'development'
     ? lanHost
       ? `http://${lanHost}:3001/login`
       : process.env.NEXT_PUBLIC_PORTAL_LOGIN_URL ||
-        "http://localhost:3001/login"
+        'http://localhost:3001/login'
     : process.env.NEXT_PUBLIC_PORTAL_LOGIN_URL ||
-      "https://portal.eteconectada.com/login";
-const portalUrl = new URL("/", configuredLoginUrl).toString();
+      'https://portal.eteconectada.com/login';
+const portalUrl = new URL('/', configuredLoginUrl).toString();
 
 function StateMarks() {
   return (
@@ -39,21 +39,21 @@ function StateMarks() {
 export default async function Home() {
   // O link já chega com o host certo no HTML, antes da hidratação do navegador.
   const requestHost =
-    process.env.NODE_ENV === "development"
-      ? (await headers()).get("host")
+    process.env.NODE_ENV === 'development'
+      ? (await headers()).get('host')
       : null;
   let entryUrl = portalUrl;
   if (requestHost) {
     try {
       const url = new URL(`http://${requestHost}`);
-      url.port = "3001";
-      url.pathname = "/";
+      url.port = '3001';
+      url.pathname = '/';
       entryUrl = url.toString();
     } catch {
       /* Usa a configuração inicial quando o Host não é válido. */
     }
   }
-  const firstAccessUrl = new URL("/cadastro", entryUrl).toString();
+  const firstAccessUrl = new URL('/cadastro', entryUrl).toString();
   return (
     <div className="site-page">
       <a className="skip-link" href="#conteudo">
@@ -108,7 +108,7 @@ export default async function Home() {
           </nav>
         </div>
       </header>
-      <main id="conteudo">
+      <main id="conteudo" tabIndex={-1}>
         <div className="hero-background">
           <section className="hero container" aria-labelledby="intro-title">
             <div className="hero-copy">

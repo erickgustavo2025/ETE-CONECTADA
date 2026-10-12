@@ -1,44 +1,44 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import Image from "next/image";
-import PasswordInput from "@/components/password-input";
-import { useFormValidation } from "@/components/use-form-validation";
-import AuthSide from "@/components/auth-side";
-import PortalFrame from "@/components/portal-frame";
-import { FormEvent, useState } from "react";
+import Link from 'next/link';
+import Image from 'next/image';
+import PasswordInput from '@/components/password-input';
+import { useFormValidation } from '@/components/use-form-validation';
+import AuthSide from '@/components/auth-side';
+import PortalFrame from '@/components/portal-frame';
+import { FormEvent, useState } from 'react';
 
 export default function LoginForm() {
-  const validation = useFormValidation("login-error");
+  const validation = useFormValidation('login-error');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || !validation.validate(event.currentTarget)) return;
     setBusy(true);
-    setMessage("");
+    setMessage('');
     const data = new FormData(event.currentTarget);
     try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          identifier: data.get("identifier"),
-          password: data.get("password"),
+          identifier: data.get('identifier'),
+          password: data.get('password'),
         }),
       });
       const result = await response.json();
       if (response.ok && result.ok) {
-        window.location.assign("/");
+        window.location.assign('/');
         return;
       }
       setMessage(
         result.error ||
-          "Não foi possível entrar. Confira os dados e tente novamente.",
+          'Não foi possível entrar. Confira os dados e tente novamente.',
       );
     } catch {
-      setMessage("Não foi possível concluir o acesso agora. Tente novamente.");
+      setMessage('Não foi possível concluir o acesso agora. Tente novamente.');
     } finally {
       setBusy(false);
     }
@@ -46,7 +46,7 @@ export default function LoginForm() {
 
   return (
     <PortalFrame showHomeLink={false}>
-      <main className="auth-shell" id="conteudo">
+      <main className="auth-shell" id="conteudo" tabIndex={-1}>
         <AuthSide mode="login" />
         <div className="auth-main">
           <div className="auth-content">
@@ -76,7 +76,7 @@ export default function LoginForm() {
               >
                 <label htmlFor="identifier">CPF ou e-mail</label>
                 <input
-                  {...validation.field("identifier")}
+                  {...validation.field('identifier')}
                   id="identifier"
                   name="identifier"
                   type="text"
@@ -86,7 +86,7 @@ export default function LoginForm() {
                 />
                 <label htmlFor="password">Senha</label>
                 <PasswordInput
-                  {...validation.field("password")}
+                  {...validation.field('password')}
                   id="password"
                   name="password"
                   type="password"
@@ -107,7 +107,7 @@ export default function LoginForm() {
                     width={800}
                     height={800}
                   />
-                  {busy ? "Verificando…" : "Entrar no portal"}
+                  {busy ? 'Verificando…' : 'Entrar no portal'}
                 </button>
                 {message && (
                   <p className="form-note" role="alert">
@@ -120,7 +120,7 @@ export default function LoginForm() {
                 disponível.
               </p>
               <p className="auth-switch">
-                Este é seu primeiro acesso?{" "}
+                Este é seu primeiro acesso?{' '}
                 <Link href="/cadastro">Crie sua conta</Link>
               </p>
             </div>
