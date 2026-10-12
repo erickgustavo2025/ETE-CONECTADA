@@ -14,7 +14,7 @@
     "test:declarations": "npm run test:declarations --workspace @ete-conectada/portal",
     "test:guards": "npm run test:guards --workspace @ete-conectada/portal",
     "test:schema": "npm run test:schema --workspace @ete-conectada/portal",
-    "test:integration": "npm run test:registration && npm run test:declarations && npm run test:session && npm run test:production && npm run test:db --workspace @ete-conectada/portal",
+    "test:integration": "npm run test:import && npm run test:registration && npm run test:declarations && npm run test:session && npm run test:production && npm run test:db --workspace @ete-conectada/portal",
     "test:cleanup": "npm run test:cleanup --workspace @ete-conectada/portal",
     "test:unit": "npm run test:unit --workspace @ete-conectada/portal",
     "audit:dependencies": "npm audit --audit-level=high",
@@ -25,7 +25,8 @@
     "format:check": "node scripts/format.mjs --check",
     "format:check:all": "node scripts/format.mjs --check --all",
     "test:session": "npm run test:session --workspace @ete-conectada/portal",
-    "test:production": "npm run test:production --workspace @ete-conectada/portal"
+    "test:production": "npm run test:production --workspace @ete-conectada/portal",
+    "test:import": "npm run test:import --workspace @ete-conectada/portal"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
