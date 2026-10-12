@@ -1,6 +1,6 @@
-@import "../../../../shared/styles/tokens.css";
-@import "../../../../shared/styles/buttons.css";
-@import "../components/declarations.css";
+@import '../../../../shared/styles/tokens.css';
+@import '../../../../shared/styles/buttons.css';
+@import '../components/declarations.css';
 
 * {
   box-sizing: border-box;
@@ -303,7 +303,7 @@ summary:focus-visible {
   height: 53px;
   margin-bottom: 15px;
   padding: 0 16px;
-  border: 1px solid #cfd9e7;
+  border: 1px solid var(--control-border);
   border-radius: var(--radius-control);
   background: #fbfcfe;
   color: var(--ink);
@@ -314,25 +314,25 @@ summary:focus-visible {
     background 0.18s;
 }
 .auth-form input::placeholder {
-  color: #78879a;
+  color: var(--muted);
 }
 .auth-form input:hover {
-  border-color: #a8bddb;
+  border-color: var(--blue);
 }
 .auth-form input:focus {
   border-color: var(--blue);
   box-shadow: 0 0 0 3px #155bcc12;
   background: var(--white);
 }
-.auth-form button[type="submit"] {
+.auth-form button[type='submit'] {
   margin-top: 8px;
   min-height: 54px;
   width: 100%;
 }
-.auth-form button[type="submit"] > span:last-child {
+.auth-form button[type='submit'] > span:last-child {
   margin-left: 0;
 }
-.auth-form button[type="submit"]:disabled {
+.auth-form button[type='submit']:disabled {
   min-height: 54px;
 }
 .form-note {
@@ -341,7 +341,7 @@ summary:focus-visible {
   line-height: 1.65;
   color: var(--muted);
 }
-.auth-form > .form-note[role="alert"] {
+.auth-form > .form-note[role='alert'] {
   padding: 12px 15px;
   border: 1px solid #efc8d0;
   border-radius: var(--radius-control);
@@ -484,7 +484,7 @@ summary:focus-visible {
   color: var(--red);
   margin: -4px 0 13px;
 }
-.auth-form input[aria-invalid="true"] {
+.auth-form input[aria-invalid='true'] {
   border-color: var(--red);
 }
 .auth-action-icon {

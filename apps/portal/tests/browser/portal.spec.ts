@@ -24,7 +24,9 @@ async function login(
   await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar no portal' }).click();
   await expect(page).toHaveURL(/\/$/);
-  await page.waitForLoadState('networkidle');
+  await expect(
+    page.getByRole('button', { name: 'Abrir menu de serviços' }),
+  ).toBeEnabled();
 }
 
 test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async ({
@@ -207,7 +209,9 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
     await page.getByLabel('Senha', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Entrar no portal' }).click();
     await expect(page).toHaveURL(/\/$/);
-    await page.waitForLoadState('networkidle');
+    await expect(
+      page.getByRole('button', { name: 'Abrir menu de serviços' }),
+    ).toBeEnabled();
     await page.getByRole('button', { name: 'Abrir menu de serviços' }).click();
     await page.getByRole('link', { name: 'Declaração de vínculo' }).click();
     await expect(
@@ -227,6 +231,15 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
     ).toBeVisible();
     await expect(page.getByText(student.fullName!)).toBeVisible();
     await page.getByRole('button', { name: 'Preparar declaração' }).click();
+    for (const width of [320, 640, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true);
+    }
+    await page.setViewportSize({ width: 320, height: 900 });
     await page.getByLabel('Naturalidade (município/UF)').fill('Recife/PE');
     await page
       .getByLabel('Filiação registrada')
@@ -264,7 +277,15 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
     });
     expect(request.status).toBe('IN_PREPARATION');
 
-    await page.getByRole('button', { name: 'Liberar retirada' }).click();
+    const release = page.getByRole('button', { name: 'Liberar retirada' });
+    await release.focus();
+    await release.press('Enter');
+    await expect(
+      page.getByRole('button', { name: 'Ainda não está pronto' }),
+    ).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(release).toBeFocused();
+    await release.press('Enter');
     const confirm = page.getByRole('button', {
       name: 'Confirmar retirada disponível',
     });

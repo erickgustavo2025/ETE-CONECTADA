@@ -24,4 +24,6 @@ Os registros criados são exclusivamente sintéticos, usam endereços `.invalid`
 
 Esses testes verificam o comportamento do protótipo em desenvolvimento. Não homologam o modelo institucional da declaração, a comprovação de titularidade do cadastro ou autenticação/emissão em produção.
 
-O carregador `tsx` já usado nos demais testes preserva os imports ESM do harness durante a execução do Playwright. Após o login, o teste espera a navegação e o carregamento dos recursos da página antes de acionar o menu. O reporter imprime apenas nomes fixos dos casos, status e localização de falha; não publica o contexto completo nem anexos.
+O carregador `tsx` já usado nos demais testes preserva os imports ESM do harness durante a execução do Playwright. Após o login, o teste espera a navegação e o botão do menu habilitado antes de acioná-lo. Os botões de abertura ficam desabilitados até o portal estar pronto para receber a ação. As asserções conferem a interface, sem depender de ausência total de tráfego na rede. O reporter imprime apenas nomes fixos dos casos, status e localização de falha; não publica o contexto completo nem anexos.
+
+A suíte também verifica teclado, rótulos, contraste, modais, estados vazio/erro/carregando e reflow em telas pequenas. O editor e a confirmação de retirada participam do atendimento em 320 pixels. Veja o roteiro de revisão em [Acessibilidade e telas pequenas](acessibilidade.md).

@@ -1,5 +1,5 @@
-@import "../../../shared/styles/tokens.css";
-@import "../../../shared/styles/buttons.css";
+@import '../../../shared/styles/tokens.css';
+@import '../../../shared/styles/buttons.css';
 
 * {
   box-sizing: border-box;
@@ -20,6 +20,9 @@ a {
 a:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 5px;
+}
+.site-header a:focus-visible {
+  outline-color: var(--yellow);
 }
 h1,
 h2,
@@ -138,7 +141,7 @@ main {
   margin: 0 0 26px;
 }
 .school-label::before {
-  content: "";
+  content: '';
   width: 26px;
   height: 3px;
   background: var(--yellow);
