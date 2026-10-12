@@ -119,3 +119,11 @@ O teste cria uma conta e sessão sintéticas e confirma que a sessão é válida
 Confere login/cadastro bloqueados, páginas privadas redirecionadas, APIs privadas negadas mesmo com cookie válido de desenvolvimento e ausência de dados/link/token nas respostas verificadas. Logout remove o cookie sem consultar o banco em produção. A sessão original continua intacta. Servidor, conexões e fixture próprios são encerrados/removidos no `finally`; não habilita acesso nem emissão em produção.
 
 No CI, essa prova roda em sequência depois dos testes de desenvolvimento, recompila apenas o portal e participa da mesma conferência de limpeza. Não recebe arquivos locais, dados reais ou credenciais institucionais.
+
+## Entradas de login e cadastro
+
+As quatro rotas de acesso aceitam objetos JSON de até 4096 bytes (4 KiB), medidos durante a leitura. Corpo maior retorna 413, JSON/tipos inválidos retornam 400 e mídia diferente de `application/json` retorna 415. `Content-Length` permite rejeição antecipada, mas não substitui a contagem real; corpos sem esse cabeçalho também têm limite. Produção continua recusando acesso antes de ler o corpo.
+
+Login e cadastro aceitam senhas de 8 a 128 unidades UTF-16, conforme a regra existente de comprimento JavaScript, sem truncar nem remover espaços. Os campos têm limites antes da normalização: identificador/e-mail 320, matrícula/CPF 32, nascimento 10 e token 50; e-mail normalizado continua limitado a 254 e os formatos existentes continuam validados. Dados fora do contrato são recusados antes de consulta ou scrypt. Esse controle de tamanho não substitui limites de frequência das requisições.
+
+`test:unit` gera o cliente Prisma antes dos testes, sem consultar banco, e inclui `test-access-input.ts`: corpos no limite, UTF-8, stream cancelado, cabeçalhos ausentes/subestimados, arrays/null, tipos e tamanhos de campos. Os handlers reais usam sentinelas instrumentadas para contar tentativas de banco e scrypt; entradas recusadas não podem acioná-las. Controles válidos comprovam que as sentinelas estão ativas, sem consultar banco ou calcular senha nessa prova. O teste HTTP de cadastro confirma recusas também com envio chunked e mantém o fluxo positivo completo no banco descartável.

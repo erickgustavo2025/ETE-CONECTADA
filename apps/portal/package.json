@@ -18,7 +18,7 @@
     "test:schema": "node --import tsx scripts/test-schema.ts",
     "test:cleanup": "node --import tsx scripts/test-cleanup.ts",
     "test:guards": "node --import tsx scripts/test-test-environment.ts",
-    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts",
+    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts",
     "test:registration": "tsx scripts/test-registration.ts",
     "diagnose:login": "node --import tsx scripts/diagnose-login.ts",
     "students:import": "node --import tsx scripts/import-students.ts",
@@ -30,7 +30,8 @@
     "format": "node ../../scripts/format.mjs --write --scope=apps/portal",
     "format:check": "node ../../scripts/format.mjs --check --scope=apps/portal",
     "test:session": "node --import tsx scripts/test-session-authorization.ts",
-    "test:production": "node --import tsx scripts/test-production.ts"
+    "test:production": "node --import tsx scripts/test-production.ts",
+    "pretest:unit": "prisma generate"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
