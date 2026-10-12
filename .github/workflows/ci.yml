@@ -121,7 +121,7 @@ jobs:
         id: generate
         run: npm run db:generate --workspace @ete-conectada/portal
 
-      - name: Testar cadastro, declaração, sessão, produção e banco em sequência
+      - name: Testar importação, cadastro, declaração, sessão, produção e banco em sequência
         run: npm run test:integration
         env:
           NEXT_TELEMETRY_DISABLED: '1'
