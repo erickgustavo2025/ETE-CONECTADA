@@ -1,0 +1,12 @@
+node_modules/
+**/.next/
+**/next-env.d.ts
+**/src/generated/
+package-lock.json
+tasks/
+AGENTS.md
+sprint.md
+DESIGN.md
+premium-ui.json
+docs/planejamento/
+output/

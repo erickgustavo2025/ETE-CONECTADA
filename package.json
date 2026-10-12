@@ -18,6 +18,19 @@
     "test:cleanup": "npm run test:cleanup --workspace @ete-conectada/portal",
     "test:unit": "npm run test:unit --workspace @ete-conectada/portal",
     "audit:dependencies": "npm audit --audit-level=high",
-    "db:demo": "npm run db:demo --workspace @ete-conectada/portal"
+    "db:demo": "npm run db:demo --workspace @ete-conectada/portal",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "eslint apps shared scripts eslint.config.mjs --max-warnings=0",
+    "format": "node scripts/format.mjs --write",
+    "format:check": "node scripts/format.mjs --check",
+    "format:check:all": "node scripts/format.mjs --check --all"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.4.0",
+    "prettier": "3.8.1",
+    "typescript-eslint": "8.71.1"
   }
 }

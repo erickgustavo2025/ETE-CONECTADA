@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "next dev --webpack -p 3000",
     "build": "next build --webpack",
-    "start": "next start -p 3000"
+    "start": "next start -p 3000",
+    "typecheck": "next typegen && tsc --noEmit --incremental false",
+    "lint": "eslint . --max-warnings=0",
+    "format": "node ../../scripts/format.mjs --write --scope=apps/site",
+    "format:check": "node ../../scripts/format.mjs --check --scope=apps/site"
   },
   "dependencies": {
     "next": "16.4.0",

@@ -13,11 +13,11 @@ O projeto está em desenvolvimento. Cadastro e login funcionam apenas nesse ambi
 
 O código está organizado assim:
 
-| Pasta | Conteúdo |
-| --- | --- |
-| `apps/site` | Site público da escola |
-| `apps/portal` | Portal dos alunos e da secretaria |
-| `shared` | Estilos, fontes e elementos visuais usados pelos dois apps |
+| Pasta         | Conteúdo                                                   |
+| ------------- | ---------------------------------------------------------- |
+| `apps/site`   | Site público da escola                                     |
+| `apps/portal` | Portal dos alunos e da secretaria                          |
+| `shared`      | Estilos, fontes e elementos visuais usados pelos dois apps |
 
 As aplicações usam Next.js e TypeScript. O portal usa PostgreSQL, com Prisma para as consultas e migrações.
 
@@ -85,6 +85,8 @@ A versão atual prepara o documento para impressão e assinatura no papel. Os [m
 O [guia do banco](apps/portal/prisma/README.md) também explica a importação de alunos pelo backup JSON e a concessão de acesso à secretaria.
 
 ## Verificações disponíveis
+
+Tipos, lint e formatação: veja os comandos e o escopo no [guia de qualidade](docs/qualidade.md).
 
 Estes comandos podem ser executados sem banco:
 
