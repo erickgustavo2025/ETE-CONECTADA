@@ -72,7 +72,7 @@ Depois da preparação, executa `db:validate`, `db:migrate`, `db:status` e `test
 
 ## Integração no GitHub Actions
 
-O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: cadastro → declaração → sessão/autorização → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Cada script usa o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
+O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: cadastro → declaração → sessão/autorização → produção → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Os testes de desenvolvimento usam o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
 
 Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos arquivadas. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
 
@@ -109,3 +109,13 @@ Reexecutar o comando preserva senhas existentes. Conta com e-mail, papel ou esta
 ## Sessão e autorização
 
 `npm run test:session` usa o mesmo banco descartável identificado e portal próprio. Verifica cookies inválidos/adulterados, expiração, contas pendentes/não reivindicadas, revogação e logout; prova isolamento entre dois alunos e restrição da secretaria, inclusive após mudança do papel no banco. Geração de PDF por secretaria é o controle positivo. Fixtures são removidas em finally; não executar na instância de demonstração ou da escola.
+
+## Bloqueios de produção
+
+`npm run test:production` usa uma cópia/checkout isolado, sem arquivos `.env` na raiz ou no portal. Não execute onde há um Next em uso: o comando compila o portal e substitui seu `.next`. Gere antes o cliente com `npm run db:generate --workspace @ete-conectada/portal`; use as mesmas variáveis e o banco novo identificado dos demais testes.
+
+O teste cria uma conta e sessão sintéticas e confirma que a sessão é válida no banco descartável. Depois compila e inicia seu próprio `next start`, em loopback/porta livre, com `NODE_ENV=production`. Esse subprocesso não recebe credenciais do banco da fixture: `DATABASE_URL` e `DIRECT_URL` apontam para um servidor TCP local que conta e recusa conexões. Qualquer tentativa de consultar o banco durante o build ou as rotas exercitadas reprova a suíte.
+
+Confere login/cadastro bloqueados, páginas privadas redirecionadas, APIs privadas negadas mesmo com cookie válido de desenvolvimento e ausência de dados/link/token nas respostas verificadas. Logout remove o cookie sem consultar o banco em produção. A sessão original continua intacta. Servidor, conexões e fixture próprios são encerrados/removidos no `finally`; não habilita acesso nem emissão em produção.
+
+No CI, essa prova roda em sequência depois dos testes de desenvolvimento, recompila apenas o portal e participa da mesma conferência de limpeza. Não recebe arquivos locais, dados reais ou credenciais institucionais.
