@@ -37,7 +37,7 @@ O template passa a preencher novos PRs depois de integrado à branch padrão, co
 
 ## Revisar e integrar
 
-O outro dev revisa o diff, os critérios do card e as evidências. Registre a revisão no PR; revisão automatizada pode ajudar, mas não representa o aceite do colega. Checagens automáticas e proteção de `main` serão implementadas nos cards próprios.
+O outro dev revisa o diff, os critérios do card e as evidências. Registre a revisão no PR; revisão automatizada pode ajudar, mas não representa o aceite do colega. Os dois checks do CI devem passar no commit atual antes do merge. A [regra de revisão e proteção da main](protecao-main.md) descreve a configuração administrativa e o procedimento enquanto ela não estiver aplicada; CI verde sozinho não bloqueia merges indevidos.
 
 Em Andamento inclui implementação e revisão. Mova o card para Fase de Teste quando a entrega estiver pronta para conferir os critérios. Marque Concluído após verificações, aceite e merge confirmado, registrando PR e commit no card. Push publica commits na branch; merge integra em `main`; a liberação em produção segue validação própria.
 
