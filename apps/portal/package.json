@@ -24,7 +24,11 @@
     "students:import": "node --import tsx scripts/import-students.ts",
     "access:secretary": "node --import tsx scripts/set-secretary.ts",
     "test:declarations": "node --import tsx scripts/test-declarations.ts",
-    "db:demo": "node --import tsx scripts/seed.ts --demo"
+    "db:demo": "node --import tsx scripts/seed.ts --demo",
+    "typecheck": "prisma generate && next typegen && tsc --noEmit --incremental false",
+    "lint": "eslint . --max-warnings=0",
+    "format": "node ../../scripts/format.mjs --write --scope=apps/portal",
+    "format:check": "node ../../scripts/format.mjs --check --scope=apps/portal"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
