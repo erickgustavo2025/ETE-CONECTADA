@@ -80,7 +80,9 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
     });
     students.push(student.id);
     await page.goto(`${base}/login`);
-    await page.waitForLoadState('networkidle');
+    await expect(
+      page.getByRole('heading', { name: 'Acesso ao portal' }),
+    ).toBeVisible();
     await reflow(page);
     await page.keyboard.press('Tab');
     await expect(
@@ -133,7 +135,9 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
     ).toBeGreaterThanOrEqual(4.5);
 
     await page.goto(`${base}/cadastro`);
-    await page.waitForLoadState('networkidle');
+    await expect(
+      page.getByRole('heading', { name: 'Primeiro acesso' }),
+    ).toBeVisible();
     await reflow(page);
     await page.setViewportSize({ width: 320, height: 640 });
     await page.getByLabel('Matrícula').fill(student.schoolRegistration!);
@@ -182,9 +186,12 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
       await page.getByLabel('Senha', { exact: true }).fill(password);
       await page.getByRole('button', { name: 'Entrar no portal' }).click();
       await expect(page).toHaveURL(/\/$/);
-      await page.waitForLoadState('networkidle');
+      await expect(
+        page.getByRole('button', { name: 'Abrir menu de serviços' }),
+      ).toBeVisible();
       await reflow(page);
       const menu = page.getByRole('button', { name: 'Abrir menu de serviços' });
+      await expect(menu).toBeEnabled();
       await menu.focus();
       await page.keyboard.press('Enter');
       await expect(
@@ -204,7 +211,15 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
       await expect(page).toHaveURL(
         role === 'student' ? /\/declaracao$/ : /\/secretaria\/declaracoes$/,
       );
-      await page.waitForLoadState('networkidle');
+      await expect(
+        page.getByRole('heading', {
+          name:
+            role === 'student'
+              ? 'Declaração de vínculo'
+              : 'Declarações de vínculo',
+          exact: true,
+        }),
+      ).toBeVisible();
       await reflow(page);
       if (role === 'student') {
         await expect(page.getByText('Nenhuma solicitação ainda')).toBeVisible();
@@ -243,7 +258,9 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
         await page.unroute('**/api/declaracao/solicitacoes');
       }
       await page.goto(`${base}/`);
-      await page.waitForLoadState('networkidle');
+      await expect(
+        page.getByRole('button', { name: 'Abrir menu de serviços' }),
+      ).toBeVisible();
       await page
         .getByRole('button', { name: 'Abrir menu de serviços' })
         .click();

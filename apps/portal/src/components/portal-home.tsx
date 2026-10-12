@@ -2,7 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import LogoutButton from './logout-button';
 import {
   StateIdentityBar,
@@ -11,6 +17,10 @@ import {
 } from './portal-frame';
 import styles from './portal-home.module.css';
 import PernambucoArt from '../../../../shared/brand/pernambuco-art';
+
+const subscribeToClient = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
 
 type PortalHomeProps = {
   studentName: string | null;
@@ -84,6 +94,11 @@ export default function PortalHome({
   children,
   internalPage = false,
 }: PortalHomeProps) {
+  const ready = useSyncExternalStore(
+    subscribeToClient,
+    clientReady,
+    serverReady,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<number | null>(null);
   const menuRef = useRef<HTMLDialogElement>(null);
@@ -121,6 +136,7 @@ export default function PortalHome({
             aria-label="Abrir menu de serviços"
             aria-expanded={menuOpen}
             aria-controls="portal-menu"
+            disabled={!ready}
           >
             <Image
               src="/icons/menu.png"
@@ -178,6 +194,7 @@ export default function PortalHome({
                   }}
                   aria-expanded={menuOpen}
                   aria-controls="portal-menu"
+                  disabled={!ready}
                 >
                   Abrir serviços <span aria-hidden="true">→</span>
                 </button>

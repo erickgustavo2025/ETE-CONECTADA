@@ -24,7 +24,9 @@ async function login(
   await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar no portal' }).click();
   await expect(page).toHaveURL(/\/$/);
-  await page.waitForLoadState('networkidle');
+  await expect(
+    page.getByRole('button', { name: 'Abrir menu de serviços' }),
+  ).toBeEnabled();
 }
 
 test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async ({
@@ -207,7 +209,9 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
     await page.getByLabel('Senha', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Entrar no portal' }).click();
     await expect(page).toHaveURL(/\/$/);
-    await page.waitForLoadState('networkidle');
+    await expect(
+      page.getByRole('button', { name: 'Abrir menu de serviços' }),
+    ).toBeEnabled();
     await page.getByRole('button', { name: 'Abrir menu de serviços' }).click();
     await page.getByRole('link', { name: 'Declaração de vínculo' }).click();
     await expect(
