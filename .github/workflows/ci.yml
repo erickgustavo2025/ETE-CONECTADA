@@ -6,17 +6,33 @@ on:
   push:
     branches: [main, 'feature/**']
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  workflows:
+    name: Validar workflows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Conferir YAML, expressões e comandos
+        run: bash .github/scripts/check-workflows.sh
+
   build:
     name: Build dos dois apps
+    needs: workflows
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 15
     env:
       NEXT_TELEMETRY_DISABLED: '1'
@@ -31,7 +47,9 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version-file: .nvmrc
-          cache: npm
+          # PRs executam código sob revisão; só pushes alimentam o cache npm.
+          cache: ${{ github.event_name == 'push' && 'npm' || '' }}
+          package-manager-cache: false
           cache-dependency-path: package-lock.json
 
       - name: Instalar dependências
@@ -58,7 +76,10 @@ jobs:
 
   migrations:
     name: Migrações e integração em PostgreSQL descartável
+    needs: workflows
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 15
     env:
       TEST_DB_CONTAINER: ete-test-${{ github.run_id }}-${{ github.run_attempt }}
@@ -72,7 +93,9 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version-file: .nvmrc
-          cache: npm
+          # PRs executam código sob revisão; só pushes alimentam o cache npm.
+          cache: ${{ github.event_name == 'push' && 'npm' || '' }}
+          package-manager-cache: false
           cache-dependency-path: package-lock.json
 
       - name: Instalar dependências
