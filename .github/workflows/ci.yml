@@ -126,6 +126,14 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: '1'
 
+      - name: Instalar Chromium para os testes de navegador
+        run: npm exec --workspace @ete-conectada/portal -- playwright install --with-deps chromium
+
+      - name: Testar jornadas em navegador com dados sintéticos
+        run: npm run test:browser
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
       - name: Conferir limpeza dos registros sintéticos
         if: always() && steps.database.outcome == 'success' && steps.generate.outcome == 'success'
         run: npm run test:cleanup
