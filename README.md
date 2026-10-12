@@ -97,7 +97,7 @@ npm run build
 npm run audit:dependencies
 ```
 
-Os unitários verificam as regras do primeiro acesso e das senhas. As guardas verificam a recusa de configurações de teste inadequadas. O build compila os dois apps, e a auditoria aponta vulnerabilidades nas dependências. Os alertas conhecidos e sua avaliação estão na [triagem de dependências](docs/seguranca/dependencias.md).
+Os unitários verificam as regras do primeiro acesso, das senhas e das entradas de login/cadastro. O cliente Prisma é gerado automaticamente, sem consultar banco. As guardas verificam a recusa de configurações de teste inadequadas. O build compila os dois apps, e a auditoria aponta vulnerabilidades nas dependências. Os alertas conhecidos e sua avaliação estão na [triagem de dependências](docs/seguranca/dependencias.md).
 
 Para testar o banco e os fluxos completos, siga primeiro a preparação do [ambiente de testes isolados](docs/testes-isolados.md):
 
@@ -108,7 +108,7 @@ npm run test:integration
 npm run test:cleanup
 ```
 
-Os testes de integração executam cadastro, declaração e banco em sequência, com dados fictícios. Eles iniciam e encerram seu próprio portal; execute-os sem outro Next ativo na mesma pasta. `test:cleanup` confere se o banco novo ficou vazio.
+Os testes de integração executam cadastro, declaração, sessão, bloqueios de produção e banco em sequência, com dados fictícios. Eles iniciam e encerram seu próprio portal; execute-os sem outro Next ativo na mesma pasta. `test:cleanup` confere se o banco novo ficou vazio.
 
 O [GitHub Actions](.github/workflows/ci.yml) já compila os apps, aplica as migrações e executa a integração em PostgreSQL temporário. Isso acontece nos PRs para `main` e nos pushes para `main` ou `feature/...`. O banco de cada execução é removido ao terminar.
 
