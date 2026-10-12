@@ -110,6 +110,8 @@ npm run test:cleanup
 
 Os testes de integração executam importação, cadastro, declaração, sessão, bloqueios de produção e banco em sequência, com dados fictícios. Eles iniciam e encerram seu próprio portal; execute-os sem outro Next ativo na mesma pasta. `test:cleanup` confere se o banco novo ficou vazio.
 
+Para testar as telas em Chromium, use `npm run test:browser` com o mesmo banco descartável. A suíte faz o primeiro acesso, retoma a confirmação, entra e sai do portal e acompanha um pedido de declaração até a liberação para retirada. A instalação do navegador e os cuidados com os relatórios estão no [guia de testes de navegador](docs/testes-navegador.md). O CI também executa essa suíte.
+
 O [GitHub Actions](.github/workflows/ci.yml) já compila os apps, aplica as migrações e executa a integração em PostgreSQL temporário. Isso acontece nos PRs para `main` e nos pushes para `main` ou `feature/...`. O banco de cada execução é removido ao terminar. Os workflows também são validados antes do build. As permissões e os cuidados com PRs estão no [guia de segurança do CI](docs/seguranca/workflows.md).
 
 O [Dependabot](.github/dependabot.yml) propõe atualizações semanais, que são revisadas antes do merge. A [auditoria de dependências](.github/workflows/dependency-audit.yml) também roda semanalmente e pode ser iniciada manualmente.

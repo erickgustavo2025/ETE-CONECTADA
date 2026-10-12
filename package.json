@@ -26,7 +26,8 @@
     "format:check:all": "node scripts/format.mjs --check --all",
     "test:session": "npm run test:session --workspace @ete-conectada/portal",
     "test:production": "npm run test:production --workspace @ete-conectada/portal",
-    "test:import": "npm run test:import --workspace @ete-conectada/portal"
+    "test:import": "npm run test:import --workspace @ete-conectada/portal",
+    "test:browser": "npm run test:browser --workspace @ete-conectada/portal"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
