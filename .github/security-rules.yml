@@ -1,0 +1,31 @@
+rules:
+  - id: ete.javascript.eval
+    languages: [javascript, typescript]
+    message: Evite eval; converta a entrada em dados e use APIs explícitas.
+    severity: ERROR
+    pattern: eval(...)
+
+  - id: ete.javascript.function-constructor
+    languages: [javascript, typescript]
+    message: Evite Function dinâmico; ele executa código construído em tempo de execução.
+    severity: ERROR
+    pattern: new Function(...)
+
+  - id: ete.javascript.dangerously-set-inner-html
+    languages: [javascript, typescript]
+    message: Revise HTML dinâmico; conteúdo não confiável pode causar XSS.
+    severity: WARNING
+    pattern: dangerouslySetInnerHTML={...}
+
+  - id: ete.prisma.raw-query-unsafe
+    languages: [javascript, typescript]
+    message: Revise SQL raw inseguro; prefira consultas Prisma parametrizadas.
+    severity: ERROR
+    paths:
+      # Esse teste de integração monta DDL de rollback com valores internos gerados.
+      # A exceção é só para esta regra e arquivo, não para consultas do aplicativo.
+      exclude:
+        - apps/portal/scripts/test-student-import.ts
+    pattern-either:
+      - pattern: $PRISMA.$queryRawUnsafe(...)
+      - pattern: $PRISMA.$executeRawUnsafe(...)
