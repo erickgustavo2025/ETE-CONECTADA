@@ -1,6 +1,6 @@
 # Seed e testes em PostgreSQL descartável
 
-Seed, `test:db`, `test:registration` e `test:declarations` escrevem registros sintéticos. Esses comandos exigem um banco local separado: não usam `DATABASE_URL`/`DIRECT_URL` de `.env.local` como destino nem permitem Neon ou host remoto. O portal normal continua usando sua configuração atual.
+Seed, `test:db`, `test:registration`, `test:declarations` e `test:session` escrevem registros sintéticos. Esses comandos exigem um banco local separado: não usam `DATABASE_URL`/`DIRECT_URL` de `.env.local` como destino nem permitem Neon ou host remoto. O portal normal continua usando sua configuração atual.
 
 ## Preparar o banco
 
@@ -72,7 +72,7 @@ Depois da preparação, executa `db:validate`, `db:migrate`, `db:status` e `test
 
 ## Integração no GitHub Actions
 
-O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: cadastro → declaração → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Cada script usa o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
+O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: cadastro → declaração → sessão/autorização → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Cada script usa o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
 
 Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos arquivadas. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
 
@@ -95,9 +95,9 @@ npm run dev:portal
 
 Se já houver um portal rodando nesta pasta, encerre-o antes de iniciar outro. Abra `http://localhost:3001/login`. Estes acessos são inteiramente fictícios:
 
-| Papel | E-mail | Senha inicial |
-| --- | --- | --- |
-| Aluno (Lucas) | `aluno.teste@eteconectada.invalid` | `Teste@12345` |
+| Papel            | E-mail                                 | Senha inicial |
+| ---------------- | -------------------------------------- | ------------- |
+| Aluno (Lucas)    | `aluno.teste@eteconectada.invalid`     | `Teste@12345` |
 | Secretaria (Ana) | `secretaria.demo@eteconectada.invalid` | `Teste@12345` |
 
 O aluno acessa `/declaracao`; a secretaria acessa `/secretaria/declaracoes`. Use perfis separados do navegador ou saia de uma conta antes de entrar na outra.
@@ -105,3 +105,7 @@ O aluno acessa `/declaracao`; a secretaria acessa `/secretaria/declaracoes`. Use
 `db:demo` usa as mesmas guardas do seed: somente loopback, nome e UUID identificados, opt-in explícito e ambiente test/development. Não cria acesso em Neon nem em produção. As contas permanecem após encerrar o portal e não são removidas pelos testes automáticos; a persistência entre reinícios depende de manter o armazenamento do PostgreSQL. Não rode `test:cleanup` neste banco, pois ele exige banco vazio.
 
 Reexecutar o comando preserva senhas existentes. Conta com e-mail, papel ou estado divergente cancela toda a transação; não promove uma conta existente nem redefine sua senha. A senha da tabela só vale para uma conta criada pelo comando e ainda não modificada. O seed normal mantém Marina e Ana disponíveis para primeiro acesso quando não têm conta; `db:demo` ocupa a conta de Ana para demonstrar a secretaria.
+
+## Sessão e autorização
+
+`npm run test:session` usa o mesmo banco descartável identificado e portal próprio. Verifica cookies inválidos/adulterados, expiração, contas pendentes/não reivindicadas, revogação e logout; prova isolamento entre dois alunos e restrição da secretaria, inclusive após mudança do papel no banco. Geração de PDF por secretaria é o controle positivo. Fixtures são removidas em finally; não executar na instância de demonstração ou da escola.
