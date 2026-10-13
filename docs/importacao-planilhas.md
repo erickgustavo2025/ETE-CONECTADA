@@ -73,7 +73,10 @@ de aba/linha/campo, sem transcrever nomes, matrículas ou filiação.
 - Um campo vazio não apaga automaticamente um valor já conferido. Excluir ou
   corrigir informação exige uma ação explícita com origem e responsável.
 - Ausência de aluno numa lista nova não exclui aluno, vínculo, conta ou histórico.
-- Não avançar série/módulo de todos os alunos apenas pela mudança de data.
+- No subsequente, a equipe autorizou progressão automática pelo calendário da
+  oferta, com alerta para reenvio da lista. A prévia confronta o módulo calculado
+  com o informado na exportação e destaca divergências; não promove séries do
+  integrado por extensão dessa regra.
 - Qualquer erro impeditivo bloqueia a confirmação; a gravação confirmada deve
   ser transacional. Uma falha não pode deixar metade da turma atualizada.
 
@@ -94,8 +97,9 @@ substring ou aproximação automática como correspondência. Nomes abreviados o
 formatos ambíguos exigem conferência. Não revelar os nomes esperados na resposta.
 
 Filiação ausente exige atendimento pela secretaria. Não inventar nome nem
-obrigar a informar duas pessoas. Os arquivos recebidos incluem registros sem
-filiação, por isso essa exceção faz parte do fluxo.
+obrigar a informar duas pessoas. Dois registros recebidos têm a célula de filiação
+vazia, o que pode ser falha da exportação e não ausência no registro escolar;
+a secretaria deve conferir a fonte.
 
 Esse dado adicional não comprova sozinho a titularidade: pode ser conhecido por
 outras pessoas. A implementação deve combinar proteção contra tentativas,
@@ -137,8 +141,15 @@ Letras A/B, ausência de letras e semestres sem seleção não podem mudar a ló
 de identificação. Ofertas distintas podem estar em módulos diferentes.
 
 Guardar módulo cursado no vínculo e calendário na oferta/período. Separar início
-do curso, datas do módulo e conclusão prevista. Reprovação, trancamento,
-transferência e calendário alterado impedem promover automaticamente pelo relógio.
+do curso, datas do módulo e conclusão prevista. Em 13/10, a equipe autorizou
+progressão automática do subsequente nas transições configuradas, sem ultrapassar
+o total de módulos. Vínculos encerrados e exceções conferidas ficam fora da rotina.
+O sistema deve alertar a secretaria para reenviar a lista atualizada e apresentar
+quem apareceu, quem ficou ausente e quais módulos mudaram ou divergem do calendário.
+Ausência não comprova desistência nem autoriza excluir conta ou histórico.
+A confirmação da importação prevalece sobre a estimativa do calendário; exceções
+devem permanecer registradas para não serem desfeitas na execução seguinte.
+Concluir o calendário não comprova conclusão acadêmica nem autoriza gerar diploma.
 Os exemplos julho/2026 → dezembro/2027 (ADM/DS) e julho/2026 → julho/2028
 (Enfermagem) não substituem datas conferidas por turma.
 
@@ -149,6 +160,12 @@ permissão. O futuro painel permitirá à secretaria gerenciar contas, bloquear
 acesso e iniciar redefinição de senha. Nunca mostrar a senha atual; manter hash,
 revogar sessões conforme bloqueio/reset e registrar ações sensíveis sem segredos.
 Contas de funcionários precisam de identidade própria, sem aluno fictício.
+
+Recuperação comum: link temporário para o e-mail já confirmado, com atendimento
+pela secretaria quando houver perda do e-mail ou contestação de titularidade.
+Uma solicitação pública inicia atendimento; não autoriza redefinir senha ou trocar
+e-mail sem conferência. A decisão técnica e o fluxo digital desejado de declaração
+estão em [Acesso e entrega de documentos](acesso-e-documentos.md).
 
 Implementar por etapas: dados e vínculos (EC-052/053), núcleo de prévia e gravação
 (EC-056), entradas por modalidade (EC-105/106), calendário (EC-108), conferência e
