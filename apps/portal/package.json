@@ -33,7 +33,8 @@
     "test:production": "node --import tsx scripts/test-production.ts",
     "pretest:unit": "prisma generate",
     "test:import": "node --import tsx scripts/test-student-import.ts",
-    "test:browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/browser/playwright.config.ts"
+    "test:browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/browser/playwright.config.ts",
+    "measure:performance": "node --import tsx scripts/measure-performance.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
