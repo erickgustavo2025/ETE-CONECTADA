@@ -1,0 +1,144 @@
+{
+  "descricao": "Grades inteiramente fictícias para especificação. Não são arquivos XLS nem dados para importar em produção.",
+  "exemplos": [
+    {
+      "entrada": "INTEGRADO",
+      "ofertaConferida": "integrado-adm-ingresso-ficticio-2026",
+      "abas": [
+        {
+          "nome": "Turma fictícia A",
+          "linhas": [
+            ["Alunos das Turmas"],
+            ["Escola fictícia"],
+            ["Ensino Médio - Técnico em Administração"],
+            ["1ANO - I - TURMA-FICTICIA-A"],
+            [],
+            [
+              "Matrícula",
+              "Nome",
+              "Data de nascimento",
+              "Nº de classe",
+              "Sexo",
+              "Situação",
+              "Raça/Cor",
+              "Procedência modalidade/curso",
+              "Filiação 1 e 2"
+            ],
+            [
+              "00001001",
+              "Aluno Fictício Um",
+              "29/02/2008",
+              "1",
+              "IGNORAR",
+              "IGNORAR",
+              "IGNORAR",
+              "IGNORAR",
+              "Pessoa Fictícia Alfa, Pessoa Fictícia Beta"
+            ],
+            [
+              "00001002",
+              "Aluno Fictício Dois",
+              "01/03/2009",
+              "2",
+              "IGNORAR",
+              "IGNORAR",
+              "IGNORAR",
+              "IGNORAR",
+              "Pessoa Fictícia Gama"
+            ]
+          ],
+          "esperado": {
+            "modalidade": "INTEGRADO",
+            "serie": 1,
+            "alunos": 2,
+            "quantidadeNomesFiliacao": [2, 1],
+            "preservarZerosDaMatricula": true
+          }
+        }
+      ]
+    },
+    {
+      "entrada": "SUBSEQUENTE",
+      "ofertaConferida": "subsequente-enf-ingresso-ficticio-2025",
+      "abas": [
+        {
+          "nome": "Turma fictícia sem letra",
+          "linhas": [
+            ["Alunos das Turmas"],
+            ["Escola fictícia"],
+            ["Técnico em Enfermagem - Subsequente"],
+            ["4MODULO - N - TURMA-FICTICIA-U"],
+            [],
+            [
+              "Matrícula",
+              "Nome",
+              "Data de nascimento",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "Filiação 1 e 2"
+            ],
+            [
+              "00002001",
+              "Aluno Fictício Três",
+              "31/12/2000",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ]
+          ],
+          "esperado": {
+            "modalidade": "SUBSEQUENTE",
+            "modulo": 4,
+            "alunos": 1,
+            "quantidadeNomesFiliacao": [0],
+            "colunaFiliacaoBaseZero": 8,
+            "frequenciaNoDocumento": false,
+            "cadastroSemFiliacaoExigeAtendimento": true
+          }
+        }
+      ]
+    }
+  ],
+  "cenariosAdicionaisParaImplementacao": [
+    {
+      "caso": "Data impossível",
+      "nascimentoFicticio": "31/02/2008",
+      "esperado": "Recusar sem normalizar para março."
+    },
+    {
+      "caso": "Matrícula duplicada com dados divergentes",
+      "matriculaFicticia": "00001001",
+      "esperado": "Mostrar conflito na prévia; não gravar parcialmente."
+    },
+    {
+      "caso": "Entrada integrado com cabeçalho subsequente",
+      "esperado": "Recusar divergência de modalidade."
+    },
+    {
+      "caso": "Mesmo arquivo confirmado duas vezes",
+      "esperado": "Sem novos alunos/vínculos extras."
+    },
+    {
+      "caso": "Aluno ausente na nova lista",
+      "esperado": "Não excluir aluno, conta ou vínculo."
+    },
+    {
+      "caso": "Filiação vazia após valor previamente conferido",
+      "esperado": "Não apagar o valor sem correção explícita."
+    },
+    {
+      "caso": "Curso e código da turma reaparecem em outro ingresso",
+      "esperado": "Exigir identificação da oferta; não sobrescrever coorte anterior."
+    },
+    {
+      "caso": "Filiação com formato ambíguo ou mais de dois nomes",
+      "esperado": "Pedir conferência, sem adivinhar parentesco."
+    }
+  ]
+}
