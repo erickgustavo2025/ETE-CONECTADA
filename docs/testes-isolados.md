@@ -1,6 +1,6 @@
 # Seed e testes em PostgreSQL descartável
 
-Seed, `test:db`, `test:registration` e `test:declarations` escrevem registros sintéticos. Esses comandos exigem um banco local separado: não usam `DATABASE_URL`/`DIRECT_URL` de `.env.local` como destino nem permitem Neon ou host remoto. O portal normal continua usando sua configuração atual.
+Seed, `test:db`, `test:registration`, `test:declarations`, `test:session` e `test:import` escrevem registros sintéticos. Esses comandos exigem um banco local separado: não usam `DATABASE_URL`/`DIRECT_URL` de `.env.local` como destino nem permitem Neon ou host remoto. O portal normal continua usando sua configuração atual.
 
 ## Preparar o banco
 
@@ -72,7 +72,7 @@ Depois da preparação, executa `db:validate`, `db:migrate`, `db:status` e `test
 
 ## Integração no GitHub Actions
 
-O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: cadastro → declaração → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Cada script usa o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
+O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: importação → cadastro → declaração → sessão/autorização → produção → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Os testes de desenvolvimento usam o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
 
 Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos arquivadas. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
 
@@ -95,9 +95,9 @@ npm run dev:portal
 
 Se já houver um portal rodando nesta pasta, encerre-o antes de iniciar outro. Abra `http://localhost:3001/login`. Estes acessos são inteiramente fictícios:
 
-| Papel | E-mail | Senha inicial |
-| --- | --- | --- |
-| Aluno (Lucas) | `aluno.teste@eteconectada.invalid` | `Teste@12345` |
+| Papel            | E-mail                                 | Senha inicial |
+| ---------------- | -------------------------------------- | ------------- |
+| Aluno (Lucas)    | `aluno.teste@eteconectada.invalid`     | `Teste@12345` |
 | Secretaria (Ana) | `secretaria.demo@eteconectada.invalid` | `Teste@12345` |
 
 O aluno acessa `/declaracao`; a secretaria acessa `/secretaria/declaracoes`. Use perfis separados do navegador ou saia de uma conta antes de entrar na outra.
@@ -105,3 +105,35 @@ O aluno acessa `/declaracao`; a secretaria acessa `/secretaria/declaracoes`. Use
 `db:demo` usa as mesmas guardas do seed: somente loopback, nome e UUID identificados, opt-in explícito e ambiente test/development. Não cria acesso em Neon nem em produção. As contas permanecem após encerrar o portal e não são removidas pelos testes automáticos; a persistência entre reinícios depende de manter o armazenamento do PostgreSQL. Não rode `test:cleanup` neste banco, pois ele exige banco vazio.
 
 Reexecutar o comando preserva senhas existentes. Conta com e-mail, papel ou estado divergente cancela toda a transação; não promove uma conta existente nem redefine sua senha. A senha da tabela só vale para uma conta criada pelo comando e ainda não modificada. O seed normal mantém Marina e Ana disponíveis para primeiro acesso quando não têm conta; `db:demo` ocupa a conta de Ana para demonstrar a secretaria.
+
+## Sessão e autorização
+
+`npm run test:session` usa o mesmo banco descartável identificado e portal próprio. Verifica cookies inválidos/adulterados, expiração, contas pendentes/não reivindicadas, revogação e logout; prova isolamento entre dois alunos e restrição da secretaria, inclusive após mudança do papel no banco. Geração de PDF por secretaria é o controle positivo. Fixtures são removidas em finally; não executar na instância de demonstração ou da escola.
+
+## Bloqueios de produção
+
+`npm run test:production` usa uma cópia/checkout isolado, sem arquivos `.env` na raiz ou no portal. Não execute onde há um Next em uso: o comando compila o portal e substitui seu `.next`. Gere antes o cliente com `npm run db:generate --workspace @ete-conectada/portal`; use as mesmas variáveis e o banco novo identificado dos demais testes.
+
+O teste cria uma conta e sessão sintéticas e confirma que a sessão é válida no banco descartável. Depois compila e inicia seu próprio `next start`, em loopback/porta livre, com `NODE_ENV=production`. Esse subprocesso não recebe credenciais do banco da fixture: `DATABASE_URL` e `DIRECT_URL` apontam para um servidor TCP local que conta e recusa conexões. Qualquer tentativa de consultar o banco durante o build ou as rotas exercitadas reprova a suíte.
+
+Confere login/cadastro bloqueados, páginas privadas redirecionadas, APIs privadas negadas mesmo com cookie válido de desenvolvimento e ausência de dados/link/token nas respostas verificadas. Logout remove o cookie sem consultar o banco em produção. A sessão original continua intacta. Servidor, conexões e fixture próprios são encerrados/removidos no `finally`; não habilita acesso nem emissão em produção.
+
+No CI, essa prova roda em sequência depois dos testes de desenvolvimento, recompila apenas o portal e participa da mesma conferência de limpeza. Não recebe arquivos locais, dados reais ou credenciais institucionais.
+
+## Entradas de login e cadastro
+
+As quatro rotas de acesso aceitam objetos JSON de até 4096 bytes (4 KiB), medidos durante a leitura. Corpo maior retorna 413, JSON/tipos inválidos retornam 400 e mídia diferente de `application/json` retorna 415. `Content-Length` permite rejeição antecipada, mas não substitui a contagem real; corpos sem esse cabeçalho também têm limite. Produção continua recusando acesso antes de ler o corpo.
+
+Login e cadastro aceitam senhas de 8 a 128 unidades UTF-16, conforme a regra existente de comprimento JavaScript, sem truncar nem remover espaços. Os campos têm limites antes da normalização: identificador/e-mail 320, matrícula/CPF 32, nascimento 10 e token 50; e-mail normalizado continua limitado a 254 e os formatos existentes continuam validados. Dados fora do contrato são recusados antes de consulta ou scrypt. Esse controle de tamanho não substitui limites de frequência das requisições.
+
+`test:unit` gera o cliente Prisma antes dos testes, sem consultar banco, e inclui `test-access-input.ts`: corpos no limite, UTF-8, stream cancelado, cabeçalhos ausentes/subestimados, arrays/null, tipos e tamanhos de campos. Os handlers reais usam sentinelas instrumentadas para contar tentativas de banco e scrypt; entradas recusadas não podem acioná-las. Controles válidos comprovam que as sentinelas estão ativas, sem consultar banco ou calcular senha nessa prova. O teste HTTP de cadastro confirma recusas também com envio chunked e mantém o fluxo positivo completo no banco descartável.
+
+## Importação JSON
+
+`npm run test:import` exercita o CLI real com um backup pequeno e inteiramente fictício, no mesmo PostgreSQL descartável identificado. Não inicia portal, não envia e-mail e não lê a planilha de alunos da escola. A identidade é conferida antes de criar a fixture ou iniciar o importador; o subprocesso recebe explicitamente a URL já validada.
+
+Confere lista branca, acesso bloqueado por padrão, repetição sem duplicar alunos/matrículas, preservação de dados e contas existentes e conflitos entre matrícula e identificador de origem. O teste também libera um aluno sintético com o opt-in de desenvolvimento e confirma que reimportar não altera essa permissão.
+
+Para provar rollback depois de uma escrita, cria uma restrição temporária em `enrollments`, limitada ao identificador aleatório da fixture. Ela força a falha da matrícula após a criação do aluno; nenhum registro parcial pode permanecer. A restrição é removida em `finally`, assim como o arquivo JSON temporário e apenas os alunos gerados pelo teste. Este teste requer permissão para adicionar/remover essa restrição exclusivamente no banco descartável.
+
+A prova participa de `test:integration` antes dos testes HTTP e da conferência final de limpeza no CI. Não executá-la no banco de demonstração nem no banco da escola.

@@ -1,41 +1,51 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import LogoutButton from "./logout-button";
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
+import LogoutButton from './logout-button';
 import {
   StateIdentityBar,
   SchoolFooter,
   PortalNavigationLink,
-} from "./portal-frame";
-import styles from "./portal-home.module.css";
-import PernambucoArt from "../../../../shared/brand/pernambuco-art";
+} from './portal-frame';
+import styles from './portal-home.module.css';
+import PernambucoArt from '../../../../shared/brand/pernambuco-art';
+
+const subscribeToClient = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
 
 type PortalHomeProps = {
   studentName: string | null;
   siteHref?: string;
-  role?: "student" | "secretary";
+  role?: 'student' | 'secretary';
   children?: ReactNode;
   internalPage?: boolean;
 };
 
 const services = [
   {
-    title: "Declaração de vínculo",
+    title: 'Declaração de vínculo',
     detail:
-      "Solicite sua declaração e acompanhe quando estiver pronta para retirada.",
-    icon: "statement",
+      'Solicite sua declaração e acompanhe quando estiver pronta para retirada.',
+    icon: 'statement',
   },
   {
-    title: "Histórico escolar",
-    detail: "O histórico escolar será disponibilizado em uma próxima etapa.",
-    icon: "history",
+    title: 'Histórico escolar',
+    detail: 'O histórico escolar será disponibilizado em uma próxima etapa.',
+    icon: 'history',
   },
   {
-    title: "Diploma",
-    detail: "O serviço de diploma será disponibilizado em uma próxima etapa.",
-    icon: "diploma",
+    title: 'Diploma',
+    detail: 'O serviço de diploma será disponibilizado em uma próxima etapa.',
+    icon: 'diploma',
   },
 ];
 
@@ -80,10 +90,15 @@ function ServiceIcon({ name }: { name: string }) {
 export default function PortalHome({
   studentName,
   siteHref,
-  role = "student",
+  role = 'student',
   children,
   internalPage = false,
 }: PortalHomeProps) {
+  const ready = useSyncExternalStore(
+    subscribeToClient,
+    clientReady,
+    serverReady,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<number | null>(null);
   const menuRef = useRef<HTMLDialogElement>(null);
@@ -120,6 +135,8 @@ export default function PortalHome({
             }}
             aria-label="Abrir menu de serviços"
             aria-expanded={menuOpen}
+            aria-controls="portal-menu"
+            disabled={!ready}
           >
             <Image
               src="/icons/menu.png"
@@ -140,27 +157,27 @@ export default function PortalHome({
           </div>
           <div className={styles.headerRight}>
             <PortalNavigationLink
-              destination={internalPage ? "home" : "site"}
+              destination={internalPage ? 'home' : 'site'}
               siteHref={siteHref}
             />
           </div>
         </div>
       </header>
 
-      <main id="conteudo" className={styles.main}>
+      <main id="conteudo" tabIndex={-1} className={styles.main}>
         {children ?? (
           <>
             <section className={styles.welcome} aria-labelledby="welcome-title">
               <div className={styles.welcomeCopy}>
                 <span className={styles.welcomeBadge}>
-                  {role === "secretary"
-                    ? "PORTAL DA SECRETARIA"
-                    : "SEU ESPAÇO NA ESCOLA"}
+                  {role === 'secretary'
+                    ? 'PORTAL DA SECRETARIA'
+                    : 'SEU ESPAÇO NA ESCOLA'}
                 </span>
                 <h1 id="welcome-title">
                   Olá,
                   <br />
-                  <span>{studentName || "estudante"}</span>
+                  <span>{studentName || 'estudante'}</span>
                   <span className={styles.greetingDot}>.</span>
                 </h1>
                 <p>Bom ter você por aqui.</p>
@@ -176,6 +193,8 @@ export default function PortalHome({
                     setMenuOpen(true);
                   }}
                   aria-expanded={menuOpen}
+                  aria-controls="portal-menu"
+                  disabled={!ready}
                 >
                   Abrir serviços <span aria-hidden="true">→</span>
                 </button>
@@ -208,6 +227,7 @@ export default function PortalHome({
 
       <SchoolFooter />
       <dialog
+        id="portal-menu"
         ref={menuRef}
         className={styles.menuDialog}
         aria-labelledby="menu-title"
@@ -240,9 +260,9 @@ export default function PortalHome({
                   className={styles.menuService}
                   key={service.title}
                   href={
-                    role === "secretary"
-                      ? "/secretaria/declaracoes"
-                      : "/declaracao"
+                    role === 'secretary'
+                      ? '/secretaria/declaracoes'
+                      : '/declaracao'
                   }
                   onClick={() => setMenuOpen(false)}
                 >
@@ -280,7 +300,7 @@ export default function PortalHome({
             aria-live="polite"
           >
             {selectedService === null ? (
-              "Selecione um serviço para saber mais."
+              'Selecione um serviço para saber mais.'
             ) : (
               <>
                 <strong>{services[selectedService].title}</strong>

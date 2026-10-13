@@ -6,17 +6,33 @@ on:
   push:
     branches: [main, 'feature/**']
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  workflows:
+    name: Validar workflows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Conferir YAML, expressões e comandos
+        run: bash .github/scripts/check-workflows.sh
+
   build:
     name: Build dos dois apps
+    needs: workflows
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 15
     env:
       NEXT_TELEMETRY_DISABLED: '1'
@@ -28,10 +44,12 @@ jobs:
           fetch-depth: 0
 
       - name: Preparar Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-          cache: npm
+          # PRs executam código sob revisão; só pushes alimentam o cache npm.
+          cache: ${{ github.event_name == 'push' && 'npm' || '' }}
+          package-manager-cache: false
           cache-dependency-path: package-lock.json
 
       - name: Instalar dependências
@@ -58,7 +76,10 @@ jobs:
 
   migrations:
     name: Migrações e integração em PostgreSQL descartável
+    needs: workflows
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 15
     env:
       TEST_DB_CONTAINER: ete-test-${{ github.run_id }}-${{ github.run_attempt }}
@@ -69,10 +90,12 @@ jobs:
           persist-credentials: false
 
       - name: Preparar Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-          cache: npm
+          # PRs executam código sob revisão; só pushes alimentam o cache npm.
+          cache: ${{ github.event_name == 'push' && 'npm' || '' }}
+          package-manager-cache: false
           cache-dependency-path: package-lock.json
 
       - name: Instalar dependências
@@ -98,8 +121,16 @@ jobs:
         id: generate
         run: npm run db:generate --workspace @ete-conectada/portal
 
-      - name: Testar cadastro, declaração e banco em sequência
+      - name: Testar importação, cadastro, declaração, sessão, produção e banco em sequência
         run: npm run test:integration
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Instalar Chromium para os testes de navegador
+        run: npm exec --workspace @ete-conectada/portal -- playwright install --with-deps chromium
+
+      - name: Testar jornadas em navegador com dados sintéticos
+        run: npm run test:browser
         env:
           NEXT_TELEMETRY_DISABLED: '1'
 

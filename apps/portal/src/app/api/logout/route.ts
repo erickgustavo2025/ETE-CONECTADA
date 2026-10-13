@@ -7,9 +7,14 @@ export const runtime = 'nodejs';
 
 export async function POST() {
   const token = (await cookies()).get(sessionCookieName)?.value;
-  if (token) {
-    try { await getDb().session.deleteMany({ where: { tokenHash: hashSessionToken(token) } }); }
-    catch { /* O cookie ainda é removido se o banco estiver indisponível. */ }
+  if (process.env.NODE_ENV === 'development' && token) {
+    try {
+      await getDb().session.deleteMany({
+        where: { tokenHash: hashSessionToken(token) },
+      });
+    } catch {
+      /* O cookie ainda é removido se o banco estiver indisponível. */
+    }
   }
   const response = NextResponse.json({ ok: true });
   response.cookies.delete(sessionCookieName);

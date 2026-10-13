@@ -9,11 +9,11 @@ npm run db:migrate --workspace @ete-conectada/portal
 
 `db:migrate` aplica as migrações pendentes em ordem, incluindo a tabela de sessões. Para seed e testes, prepare outro PostgreSQL local descartável conforme [testes isolados](../../../docs/testes-isolados.md); esses scripts não usam o Neon configurado em `.env.local`. `db:seed` pode ser executado novamente sem duplicar os estudantes; ele cria a conta de teste ativa apenas se ela ainda não existir, preservando senhas existentes. Os três registros são inteiramente fictícios. Os CPFs foram gerados para passar no cálculo de dígitos verificadores, mas são dados sintéticos de teste.
 
-| Matrícula sintética | CPF sintético para a segunda etapa | Nascimento | Acesso de teste |
-| --- | --- | --- | --- |
-| `9900001` | `45278196319` | 17/04/2008 | Primeiro acesso, se ainda não houver conta ativa |
-| `9900002` | `63820517480` | 03/11/2007 | `aluno.teste@eteconectada.invalid` / `Teste@12345`, se a senha não tiver sido alterada |
-| `9900003` | `29471638500` | 26/08/2009 | Primeiro acesso, se ainda não houver conta ativa |
+| Matrícula sintética | CPF sintético para a segunda etapa | Nascimento | Acesso de teste                                                                        |
+| ------------------- | ---------------------------------- | ---------- | -------------------------------------------------------------------------------------- |
+| `9900001`           | `45278196319`                      | 17/04/2008 | Primeiro acesso, se ainda não houver conta ativa                                       |
+| `9900002`           | `63820517480`                      | 03/11/2007 | `aluno.teste@eteconectada.invalid` / `Teste@12345`, se a senha não tiver sido alterada |
+| `9900003`           | `29471638500`                      | 26/08/2009 | Primeiro acesso, se ainda não houver conta ativa                                       |
 
 O seed preserva contas, senhas e estados já existentes no banco descartável; colisões com aluno ou matrícula divergente cancelam a transação. Não use CPF no primeiro formulário: use matrícula e nascimento. No modal, informe CPF válido, e-mail, senha com pelo menos 8 caracteres e confirmação. O CPF já informado permanece vinculado mesmo se o link de e-mail expirar. Login aceita CPF ou e-mail.
 
@@ -29,7 +29,9 @@ Na raiz:
 npm run students:import -- '/caminho/Backup.alunos.json'
 ```
 
-A importação valida o arquivo inteiro antes de escrever, usa transação e identificadores únicos, não duplica alunos/matrículas e preserva registros já importados. Não importa senhas, e-mails, permissões, fotos ou dados da gamificação. Não cria contas. O primeiro acesso fica bloqueado por padrão; a equipe autorizou explicitamente `--enable-development-registration` para testar matrícula/nascimento em desenvolvimento. A aplicação continua sem autenticação/cadastro em produção. O CPF é incluído no banco quando os dados da segunda etapa são aceitos, com validação matemática e unicidade.
+A importação valida o arquivo inteiro antes de escrever, usa transação e identificadores únicos, não duplica alunos/matrículas e preserva registros já importados. Matrícula e identificador de origem devem continuar vinculados ao mesmo aluno; conflitos cancelam o lote inteiro. O identificador da matrícula de curso também precisa pertencer ao aluno correspondente. Não importa senhas, e-mails, permissões, fotos ou dados da gamificação. Não cria contas. O primeiro acesso fica bloqueado por padrão; a equipe autorizou explicitamente `--enable-development-registration` para testar matrícula/nascimento em desenvolvimento. A aplicação continua sem autenticação/cadastro em produção. O CPF é incluído no banco quando os dados da segunda etapa são aceitos, com validação matemática e unicidade.
+
+A prova automática desse fluxo é `npm run test:import`, usando apenas fixtures sintéticas em [PostgreSQL descartável](../../../docs/testes-isolados.md#importação-json). Ela cobre repetição, preservação, lista branca, bloqueio padrão e rollback após falha de escrita.
 
 ## Acesso à secretaria
 
@@ -62,7 +64,6 @@ npm run test:db --workspace @ete-conectada/portal
 `test:db` exige configuração e identidade do banco descartável. Inicia seu próprio portal em loopback/porta livre, com e-mail desativado, e encerra o processo ao terminar. `TEST_BASE_URL` não é aceito. Cria um aluno sintético temporário e remove somente esse aluno ao terminar. Verifica concorrência na reivindicação, confirmação única, login CPF/e-mail, sessão e logout.
 
 O runtime limita o pool a cinco conexões com espera de conexão de 15 segundos. Credenciais ficam exclusivamente em `.env.local`.
-
 
 ## Solicitações de declaração
 

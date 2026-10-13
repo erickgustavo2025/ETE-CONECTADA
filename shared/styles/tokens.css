@@ -11,14 +11,15 @@
   --ink: #172b47;
   --muted: #5c6d83;
   --border: #dbe3ee;
+  --control-border: #78879a;
   --bg: #f5f7fb;
-  --font-display: var(--font-manrope, "Trebuchet MS"), Arial, sans-serif;
-  --font-body: var(--font-source, "Segoe UI"), Arial, sans-serif;
+  --font-display: var(--font-manrope, 'Trebuchet MS'), Arial, sans-serif;
+  --font-body: var(--font-source, 'Segoe UI'), Arial, sans-serif;
   --radius-control: 12px;
   --radius-button: 12px;
   --radius-panel: 28px;
   --page-max: 1200px;
-  --focus: #629bf0;
+  --focus: #155bcc;
   --shadow-control: 0 4px 12px #0a203f12;
   --shadow-panel: 0 24px 64px #0a203f0b;
   --scroll-thumb: #9aacc4;
