@@ -12,6 +12,8 @@ import {
 const columns: Record<string, string> = {
   students:
     'id cpf birth_date created_at full_name school_registration import_source_id registration_allowed',
+  student_details:
+    'student_id parent_one parent_two parentage_source social_name social_name_source birth_city birth_state birth_country birthplace_source updated_at updated_by_id',
   accounts:
     'id student_id email password_hash status created_at updated_at role',
   email_verification_tokens:
@@ -92,6 +94,14 @@ async function main() {
         values: ['REQUESTED', 'IN_PREPARATION', 'READY_FOR_PICKUP'],
       },
       { name: 'EducationMode', values: ['INTEGRADO', 'SUBSEQUENTE'] },
+      {
+        name: 'StudentDataSource',
+        values: [
+          'SCHOOL_RECORD',
+          'STUDENT_DECLARATION',
+          'SECRETARY_CORRECTION',
+        ],
+      },
     ]);
     const constraints = await client.query<{
       table_name: string;
@@ -113,6 +123,14 @@ async function main() {
     );
     assert.match(constraint('accounts_check'), /password_hash IS NOT NULL/);
     assert.match(
+      constraint('student_details_parentage_check'),
+      /parentage_source.*STUDENT_DECLARATION/,
+    );
+    assert.match(
+      constraint('student_details_birthplace_check'),
+      /birth_country.*birth_state/,
+    );
+    assert.match(
       constraint('declaration_requests_dates_check'),
       /REQUESTED.*generated_at IS NULL.*IN_PREPARATION.*READY_FOR_PICKUP.*ready_at IS NOT NULL/,
     );
@@ -129,6 +147,8 @@ async function main() {
       ['declaration_requests', 'prepared_by_id', 'accounts', 'SET NULL'],
       ['declaration_requests', 'ready_by_id', 'accounts', 'SET NULL'],
       ['retired_profile_photos', 'student_id', 'students', 'CASCADE'],
+      ['student_details', 'student_id', 'students', 'CASCADE'],
+      ['student_details', 'updated_by_id', 'accounts', 'SET NULL'],
     ]) {
       assert.ok(
         foreignKeys.some(
