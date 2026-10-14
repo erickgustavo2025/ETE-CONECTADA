@@ -16,8 +16,14 @@ async function main() {
         (SELECT count(*) FROM retired_profile_photos)
       ) AS records
     `;
-    assert.equal(counts[0].records, BigInt(0), 'Os testes devem remover todos os registros sintéticos do banco novo.');
-    console.log('OK: banco descartável sem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos residuais.');
+    assert.equal(
+      counts[0].records,
+      BigInt(0),
+      'Os testes devem remover todos os registros sintéticos do banco novo.',
+    );
+    console.log(
+      'OK: banco descartável sem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos residuais.',
+    );
   } finally {
     await environment.close();
   }

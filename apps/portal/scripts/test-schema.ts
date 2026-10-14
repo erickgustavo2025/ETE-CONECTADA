@@ -2,23 +2,37 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { Client } from 'pg';
-import { assertDatabaseIdentity, parseTestEnvironment, reportTestFailure } from './test-environment';
+import {
+  assertDatabaseIdentity,
+  parseTestEnvironment,
+  reportTestFailure,
+} from './test-environment';
 
 // Contrato do banco migrado, incluindo arquivo histórico e regras fora do Prisma.
 const columns: Record<string, string> = {
-  students: 'id cpf birth_date created_at full_name school_registration import_source_id registration_allowed',
-  accounts: 'id student_id email password_hash status created_at updated_at role',
-  email_verification_tokens: 'token_hash account_id expires_at consumed_at created_at',
+  students:
+    'id cpf birth_date created_at full_name school_registration import_source_id registration_allowed',
+  accounts:
+    'id student_id email password_hash status created_at updated_at role',
+  email_verification_tokens:
+    'token_hash account_id expires_at consumed_at created_at',
   sessions: 'token_hash account_id expires_at created_at',
-  enrollments: 'id student_id mode class_name grade course_label school_year import_source_id created_at',
-  declaration_requests: 'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id',
+  enrollments:
+    'id student_id mode class_name grade course_label school_year import_source_id created_at',
+  declaration_requests:
+    'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id',
   portal_schema_migrations: 'version applied_at',
-  retired_profile_photos: 'student_id photo_data mime_type updated_at object_key storage_bucket',
+  retired_profile_photos:
+    'student_id photo_data mime_type updated_at object_key storage_bucket',
 };
 
 async function main() {
   const expected = parseTestEnvironment(process.env);
-  const client = new Client({ connectionString: expected.url, connectionTimeoutMillis: 5000, query_timeout: 5000 });
+  const client = new Client({
+    connectionString: expected.url,
+    connectionTimeoutMillis: 5000,
+    query_timeout: 5000,
+  });
   try {
     await client.connect();
     const identity = await client.query(
@@ -27,44 +41,84 @@ async function main() {
     assertDatabaseIdentity(identity.rows[0], expected);
     // Somente leitura após conferir a identidade; não gera Prisma nem inicia portal.
     await client.query('BEGIN READ ONLY');
-    const actual = await client.query<{ table_name: string; column_name: string; is_nullable: string; udt_name: string; column_default: string | null }>(
+    const actual = await client.query<{
+      table_name: string;
+      column_name: string;
+      is_nullable: string;
+      udt_name: string;
+      column_default: string | null;
+    }>(
       "SELECT table_name, column_name, is_nullable, udt_name, column_default FROM information_schema.columns WHERE table_schema = 'public' ORDER BY table_name, column_name",
     );
-    assert.deepEqual([...new Set(actual.rows.map(row => row.table_name))].sort(), [...Object.keys(columns), '_prisma_migrations'].sort());
+    assert.deepEqual(
+      [...new Set(actual.rows.map((row) => row.table_name))].sort(),
+      [...Object.keys(columns), '_prisma_migrations'].sort(),
+    );
     for (const [table, names] of Object.entries(columns)) {
-      assert.deepEqual(actual.rows.filter(row => row.table_name === table).map(row => row.column_name).sort(), names.split(' ').sort(), `Colunas de ${table}`);
+      assert.deepEqual(
+        actual.rows
+          .filter((row) => row.table_name === table)
+          .map((row) => row.column_name)
+          .sort(),
+        names.split(' ').sort(),
+        `Colunas de ${table}`,
+      );
     }
-    const column = (table: string, name: string) => actual.rows.find(row => row.table_name === table && row.column_name === name)!;
+    const column = (table: string, name: string) =>
+      actual.rows.find(
+        (row) => row.table_name === table && row.column_name === name,
+      )!;
     assert.equal(column('students', 'cpf').is_nullable, 'YES');
     assert.equal(column('students', 'cpf').udt_name, 'bpchar');
     assert.equal(column('students', 'birth_date').udt_name, 'date');
     assert.equal(column('students', 'registration_allowed').is_nullable, 'NO');
-    assert.equal(column('students', 'registration_allowed').column_default, 'true');
+    assert.equal(
+      column('students', 'registration_allowed').column_default,
+      'true',
+    );
     assert.equal(column('accounts', 'role').column_default, "'student'::text");
-    assert.equal(column('declaration_requests', 'status').udt_name, 'DeclarationRequestStatus');
+    assert.equal(
+      column('declaration_requests', 'status').udt_name,
+      'DeclarationRequestStatus',
+    );
     assert.equal(column('enrollments', 'mode').udt_name, 'EducationMode');
 
     const enums = await client.query<{ name: string; values: string[] }>(
       "SELECT t.typname AS name, array_agg(e.enumlabel::text ORDER BY e.enumsortorder) AS values FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid JOIN pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = 'public' GROUP BY t.typname ORDER BY t.typname",
     );
     assert.deepEqual(enums.rows, [
-      { name: 'DeclarationRequestStatus', values: ['REQUESTED', 'IN_PREPARATION', 'READY_FOR_PICKUP'] },
+      {
+        name: 'DeclarationRequestStatus',
+        values: ['REQUESTED', 'IN_PREPARATION', 'READY_FOR_PICKUP'],
+      },
       { name: 'EducationMode', values: ['INTEGRADO', 'SUBSEQUENTE'] },
     ]);
-    const constraints = await client.query<{ table_name: string; name: string; definition: string }>(
+    const constraints = await client.query<{
+      table_name: string;
+      name: string;
+      definition: string;
+    }>(
       "SELECT r.relname AS table_name, c.conname AS name, pg_get_constraintdef(c.oid) AS definition FROM pg_constraint c JOIN pg_class r ON r.oid = c.conrelid JOIN pg_namespace n ON n.oid = r.relnamespace WHERE n.nspname = 'public'",
     );
     const constraint = (name: string) => {
-      const found = constraints.rows.find(row => row.name === name);
+      const found = constraints.rows.find((row) => row.name === name);
       assert.ok(found, `Constraint obrigatória: ${name}`);
       return found.definition;
     };
     assert.match(constraint('students_cpf_check'), /\^\[0-9\]\{11\}\$/);
     assert.match(constraint('accounts_role_check'), /student.*secretary/);
-    assert.match(constraint('accounts_status_check'), /unclaimed.*pending.*active/);
+    assert.match(
+      constraint('accounts_status_check'),
+      /unclaimed.*pending.*active/,
+    );
     assert.match(constraint('accounts_check'), /password_hash IS NOT NULL/);
-    assert.match(constraint('declaration_requests_dates_check'), /REQUESTED.*generated_at IS NULL.*IN_PREPARATION.*READY_FOR_PICKUP.*ready_at IS NOT NULL/);
-    const foreignKeys = constraints.rows.filter(row => row.definition.startsWith('FOREIGN KEY'));
+    assert.match(
+      constraint('declaration_requests_dates_check'),
+      /REQUESTED.*generated_at IS NULL.*IN_PREPARATION.*READY_FOR_PICKUP.*ready_at IS NOT NULL/,
+    );
+    const foreignKeys = constraints.rows.filter((row) =>
+      row.definition.startsWith('FOREIGN KEY'),
+    );
     for (const [table, field, target, deletion] of [
       ['accounts', 'student_id', 'students', 'CASCADE'],
       ['sessions', 'account_id', 'accounts', 'CASCADE'],
@@ -76,27 +130,82 @@ async function main() {
       ['declaration_requests', 'ready_by_id', 'accounts', 'SET NULL'],
       ['retired_profile_photos', 'student_id', 'students', 'CASCADE'],
     ]) {
-      assert.ok(foreignKeys.some(row => row.table_name === table && row.definition.includes(`FOREIGN KEY (${field}) REFERENCES ${target}(id)`) && row.definition.includes(`ON DELETE ${deletion}`)), `FK: ${table}.${field}`);
+      assert.ok(
+        foreignKeys.some(
+          (row) =>
+            row.table_name === table &&
+            row.definition.includes(
+              `FOREIGN KEY (${field}) REFERENCES ${target}(id)`,
+            ) &&
+            row.definition.includes(`ON DELETE ${deletion}`),
+        ),
+        `FK: ${table}.${field}`,
+      );
     }
-    const indexes = await client.query<{ indexname: string; indexdef: string }>("SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = 'public'");
-    for (const name of ['students_cpf_key', 'students_school_registration_key', 'students_import_source_id_key', 'accounts_student_id_key', 'accounts_email_key', 'enrollments_import_source_id_key']) {
-      assert.ok(indexes.rows.some(row => row.indexname === name && row.indexdef.startsWith('CREATE UNIQUE INDEX')), `Índice único: ${name}`);
+    const indexes = await client.query<{ indexname: string; indexdef: string }>(
+      "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = 'public'",
+    );
+    for (const name of [
+      'students_cpf_key',
+      'students_school_registration_key',
+      'students_import_source_id_key',
+      'accounts_student_id_key',
+      'accounts_email_key',
+      'enrollments_import_source_id_key',
+    ]) {
+      assert.ok(
+        indexes.rows.some(
+          (row) =>
+            row.indexname === name &&
+            row.indexdef.startsWith('CREATE UNIQUE INDEX'),
+        ),
+        `Índice único: ${name}`,
+      );
     }
-    const openRequest = indexes.rows.find(row => row.indexname === 'declaration_requests_open_enrollment_key');
+    const openRequest = indexes.rows.find(
+      (row) => row.indexname === 'declaration_requests_open_enrollment_key',
+    );
     assert.ok(openRequest);
-    assert.match(openRequest.indexdef, /CREATE UNIQUE INDEX.*\(enrollment_id\) WHERE \(status <> 'READY_FOR_PICKUP'::"DeclarationRequestStatus"\)/);
+    assert.match(
+      openRequest.indexdef,
+      /CREATE UNIQUE INDEX.*\(enrollment_id\) WHERE \(status <> 'READY_FOR_PICKUP'::"DeclarationRequestStatus"\)/,
+    );
 
     const migrations = new URL('../prisma/migrations/', import.meta.url);
-    const directories = (await readdir(migrations, { withFileTypes: true })).filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
-    const history = await client.query<{ migration_name: string; checksum: string; finished_at: Date | null; rolled_back_at: Date | null }>('SELECT migration_name, checksum, finished_at, rolled_back_at FROM _prisma_migrations ORDER BY migration_name');
-    assert.deepEqual(history.rows.map(row => row.migration_name), directories);
+    const directories = (await readdir(migrations, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+    const history = await client.query<{
+      migration_name: string;
+      checksum: string;
+      finished_at: Date | null;
+      rolled_back_at: Date | null;
+    }>(
+      'SELECT migration_name, checksum, finished_at, rolled_back_at FROM _prisma_migrations ORDER BY migration_name',
+    );
+    assert.deepEqual(
+      history.rows.map((row) => row.migration_name),
+      directories,
+    );
     for (const row of history.rows) {
-      assert.ok(row.finished_at && !row.rolled_back_at, `Migração concluída: ${row.migration_name}`);
-      const sql = await readFile(new URL(`${row.migration_name}/migration.sql`, migrations));
-      assert.equal(row.checksum, createHash('sha256').update(sql).digest('hex'), `Checksum: ${row.migration_name}`);
+      assert.ok(
+        row.finished_at && !row.rolled_back_at,
+        `Migração concluída: ${row.migration_name}`,
+      );
+      const sql = await readFile(
+        new URL(`${row.migration_name}/migration.sql`, migrations),
+      );
+      assert.equal(
+        row.checksum,
+        createHash('sha256').update(sql).digest('hex'),
+        `Checksum: ${row.migration_name}`,
+      );
     }
     await client.query('COMMIT');
-    console.log(`OK: ${directories.length} migrações, colunas, enums, constraints, FKs, índices únicos e arquivo histórico conferidos.`);
+    console.log(
+      `OK: ${directories.length} migrações, colunas, enums, constraints, FKs, índices únicos e arquivo histórico conferidos.`,
+    );
   } finally {
     await client.end();
   }
