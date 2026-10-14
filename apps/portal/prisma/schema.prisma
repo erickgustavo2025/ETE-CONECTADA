@@ -19,7 +19,32 @@ model Student {
   account   Account?
   declarationRequests DeclarationRequest[]
   enrollments Enrollment[]
+  details StudentDetails?
   @@map("students")
+}
+
+enum StudentDataSource {
+  SCHOOL_RECORD
+  STUDENT_DECLARATION
+  SECRETARY_CORRECTION
+}
+
+model StudentDetails {
+  studentId String @id @map("student_id") @db.Uuid
+  parentOne String? @map("parent_one") @db.VarChar(180)
+  parentTwo String? @map("parent_two") @db.VarChar(180)
+  parentageSource StudentDataSource? @map("parentage_source")
+  socialName String? @map("social_name") @db.VarChar(180)
+  socialNameSource StudentDataSource? @map("social_name_source")
+  birthCity String? @map("birth_city") @db.VarChar(120)
+  birthState String? @map("birth_state") @db.VarChar(2)
+  birthCountry String? @map("birth_country") @db.VarChar(2)
+  birthplaceSource StudentDataSource? @map("birthplace_source")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedById String? @map("updated_by_id") @db.Uuid
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  updatedBy Account? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  @@map("student_details")
 }
 
 enum EducationMode {
@@ -58,6 +83,7 @@ model Account {
   completedDeclarations DeclarationRequest[] @relation("ReadyBy")
   sessions     Session[]
   verificationTokens EmailVerificationToken[]
+  updatedStudentDetails StudentDetails[]
   @@map("accounts")
 }
 
