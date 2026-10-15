@@ -3,6 +3,17 @@ import { randomBytes, randomInt } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import { hashPassword } from '../../src/lib/password';
 
+async function checkRegistration(page: Page) {
+  // A rota pode compilar sob demanda no primeiro acesso do ambiente de teste.
+  const response = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/registration/check' &&
+      response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: /Conferir cadastro/ }).click();
+  expect((await response).status()).toBe(200);
+}
+
 function validCpf() {
   const digits = Array.from({ length: 9 }, () => randomInt(10));
   for (let n = 9; n < 11; n++) {
@@ -60,7 +71,7 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
     await page.goto(`${base}/cadastro`);
     await page.getByLabel('Matrícula').fill(student.schoolRegistration!);
     await page.getByLabel('Data de nascimento').fill('2008-01-15');
-    await page.getByRole('button', { name: /Conferir cadastro/ }).click();
+    await checkRegistration(page);
     await expect(
       page.getByRole('heading', { name: 'Escolha seus dados de acesso' }),
     ).toBeVisible();
@@ -85,7 +96,7 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
     await page.getByRole('button', { name: 'Fechar' }).click();
     await page.getByLabel('Matrícula').fill(student.schoolRegistration!);
     await page.getByLabel('Data de nascimento').fill('2008-01-15');
-    await page.getByRole('button', { name: /Conferir cadastro/ }).click();
+    await checkRegistration(page);
     await expect(
       page.getByText(/ainda não foi confirmado\. Use o mesmo CPF/),
     ).toBeVisible();
