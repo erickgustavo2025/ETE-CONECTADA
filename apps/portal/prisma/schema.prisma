@@ -79,6 +79,7 @@ model Enrollment {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   declarationRequests DeclarationRequest[]
+  importHistory EnrollmentImportHistory[]
   @@index([studentId])
   @@index([className])
   @@map("enrollments")
@@ -101,6 +102,7 @@ model Account {
   updatedStudentDetails StudentDetails[]
   reviewedEnrollments Enrollment[]
   sheetImportPreview SheetImportPreview?
+  recordedEnrollmentImports EnrollmentImportHistory[]
   @@map("accounts")
 }
 
@@ -170,4 +172,29 @@ model SheetImportPreview {
   result Json?
   actor Account @relation(fields: [actorId], references: [id], onDelete: Cascade)
   @@map("sheet_import_previews")
+}
+
+// Estado anterior à alteração pelo XLS; não copia nome, nascimento ou filiação.
+model EnrollmentImportHistory {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  enrollmentId String @map("enrollment_id") @db.Uuid
+  recordedAt DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  recordedById String? @map("recorded_by_id") @db.Uuid
+  reason String @db.VarChar(32)
+  mode EducationMode
+  className String @map("class_name")
+  grade Int?
+  moduleNumber Int? @map("module_number")
+  courseLabel String @map("course_label")
+  schoolYear Int? @map("school_year")
+  periodLabel String? @map("period_label") @db.VarChar(60)
+  validFrom DateTime? @map("valid_from") @db.Date
+  validUntil DateTime? @map("valid_until") @db.Date
+  status EnrollmentStatus
+  reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  recordedBy Account? @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+  @@index([enrollmentId, recordedAt, id])
+  @@index([recordedById])
+  @@map("enrollment_import_history")
 }

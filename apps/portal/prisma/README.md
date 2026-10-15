@@ -84,3 +84,5 @@ A migração `20261013200000_enrollment_validity` acrescenta situação, períod
 ## Fonte escolar XLS
 
 A migração `20261015150000_sheet_import` acrescenta `school_import_key` (associação da oferta/turma à pessoa), `module_number` separado da série e `sheet_import_previews` com hashes/expiração/contagens, sem arquivo bruto. As origens do importador JSON são preservadas. Cadastros/vínculos antigos não recebem associação, módulo nem mudança de situação automaticamente. Veja o [núcleo de prévia e confirmação](../../../docs/importacao-nucleo.md).
+
+O histórico `enrollment_import_history` preserva versões acadêmicas substituídas pela confirmação de XLS, na mesma transação. A migração aditiva não fabrica versões de matrículas antigas. Consulta e limites estão no [núcleo de importação](../../../docs/importacao-nucleo.md#histórico-das-alterações-escolares).

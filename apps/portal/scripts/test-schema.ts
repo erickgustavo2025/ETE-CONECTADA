@@ -21,6 +21,8 @@ const columns: Record<string, string> = {
   sessions: 'token_hash account_id expires_at created_at',
   enrollments:
     'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id school_import_key module_number',
+  enrollment_import_history:
+    'id enrollment_id recorded_at recorded_by_id reason mode class_name grade module_number course_label school_year period_label valid_from valid_until status reviewed_at',
   sheet_import_previews:
     'actor_id token_hash input_hash snapshot_hash expires_at consumed_at result',
   declaration_requests:
@@ -134,6 +136,10 @@ async function main() {
       /ACTIVE.*reviewed_at IS NOT NULL/,
     );
     assert.match(
+      constraint('enrollment_import_history_reason_check'),
+      /METADATA_CHANGE.*IDENTITY_REVIEW/,
+    );
+    assert.match(
       constraint('enrollments_module_number_check'),
       /module_number/,
     );
@@ -159,6 +165,8 @@ async function main() {
       ['enrollments', 'student_id', 'students', 'CASCADE'],
       ['enrollments', 'reviewed_by_id', 'accounts', 'SET NULL'],
       ['sheet_import_previews', 'actor_id', 'accounts', 'CASCADE'],
+      ['enrollment_import_history', 'enrollment_id', 'enrollments', 'CASCADE'],
+      ['enrollment_import_history', 'recorded_by_id', 'accounts', 'SET NULL'],
       ['declaration_requests', 'student_id', 'students', 'CASCADE'],
       ['declaration_requests', 'enrollment_id', 'enrollments', 'CASCADE'],
       ['declaration_requests', 'prepared_by_id', 'accounts', 'SET NULL'],
