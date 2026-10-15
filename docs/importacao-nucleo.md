@@ -52,8 +52,22 @@ A confirmação reconfere autorização e estado atual dentro de uma transação
 
 A migração `20261015150000_sheet_import` acrescenta associação de origem, módulo separado da série e registro temporário de prévia; não altera a situação ou os dados de vínculos antigos. Não use reset para aplicar ou reverter. Uma reversão apenas do código pode manter as colunas aditivas; remover a migração aplicada exige revisão e preservação das associações.
 
+## Histórico das alterações escolares
+
+Ao confirmar uma mudança de turma, série/módulo ou período permitida pelo núcleo, o estado anterior do vínculo fica em `enrollment_import_history`. Se a correção de identidade exigir nova conferência, a situação/conferência anterior dos vínculos afetados também é preservada. Uma mesma confirmação grava no máximo uma versão por vínculo, mesmo quando os dois motivos ocorrem juntos. O registro contém metadados acadêmicos anteriores, situação, vigência, data da conferência anterior, data da importação e referência à conta que a confirmou. Não copia nome, nascimento, filiação, CPF, credenciais ou o arquivo. Esses registros continuam vinculados ao aluno e exigem o mesmo cuidado de acesso dos demais dados escolares.
+
+Prévia, confirmação recusada, arquivo idêntico, repetição de token e simples associação à fonte sem mudança de dados não criam versões. Vínculos novos não têm versão anterior. Histórico e atualizações participam da mesma transação: se uma linha falhar, o lote inteiro volta ao estado anterior, incluindo as versões e o consumo do token. Mudança acadêmica do integrado não altera os metadados do subsequente, e vice-versa; uma correção de identidade comum pode exigir nova conferência dos dois vínculos.
+
+Renovação ou mudança dentro da mesma oferta usa sua associação estável. Transferência para outra modalidade/curso/ingresso exige vínculo separado e conferido; não reutilize a associação antiga. O importador continua recusando alterações incompatíveis ou de metadados de vínculo encerrado, sem encerrar o anterior automaticamente. Ausência na planilha não prova transferência ou desistência. Datas acadêmicas e progressão automática dependem do calendário; não são deduzidas do dia do upload.
+
+Este histórico registra alterações feitas pelo importador a partir desta entrega; não reconstrói o passado nem cobre alterações manuais ou todos os eventos de auditoria. Ainda não há tela ou endpoint de consulta do histórico. Não é uma prova de conclusão acadêmica nem substitui a conferência para emitir documentos. Nenhuma rotina de expurgo foi adicionada: os registros seguem o vínculo ao qual pertencem, sem exclusão pelo importador. A exclusão explícita do vínculo mantém a política relacional existente de cascata; excluir a conta do operador apenas deixa sua referência nula, preservando as versões. Política institucional de retenção e auditoria geral continuam pendentes.
+
+A migração aditiva `20261015160000_enrollment_import_history` cria a tabela vazia e seus índices, sem alterar matrículas existentes. Reverter somente o código pode manter a tabela; não apague uma migração aplicada para reverter a funcionalidade.
+
 ## Testes
 
 `test:sheet-input` cria XLS binários fictícios e verifica layout, modalidade, zeros, filiação, datas, duplicados, fórmula BIFF real e hiperlink. Integra `test:unit`. `test:sheet-import` usa a API real e PostgreSQL novo identificado: autorização, upload limitado, prévia, confirmação, expiração, repetição, atualização, dados protegidos, ausências, múltiplos vínculos, revisão posterior e rollback depois da primeira escrita. Integra `test:integration`; cleanup remove somente suas fixtures.
 
 O contrato completo está em [Importação das planilhas](importacao-planilhas.md). Para executar as provas, siga [Testes isolados](testes-isolados.md); nunca use a demonstração em uso ou dados reais como fixtures.
+
+`test:sheet-history` verifica pela API real mudança de turma/período/série e módulo, invalidação de conferência, isolamento entre modalidades, repetição, conflitos e prévia desatualizada. Força falha após a escrita do histórico para comprovar rollback de versões e cadastros, e verifica preservação das versões quando a conta do operador é excluída. Integra `test:integration`; `test:cleanup` também confere a tabela de histórico.

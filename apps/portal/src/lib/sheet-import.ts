@@ -336,6 +336,47 @@ export async function confirmSheetImport(
           'Confirme explicitamente as alterações de nome, nascimento ou filiação.',
           409,
         );
+      const metadataChanges = new Set(
+        prepared.entries
+          .filter((entry) => entry.enrollment && entry.metadataChanged)
+          .map((entry) => entry.enrollment!.id),
+      );
+      const changedIdentities = new Set(
+        prepared.entries
+          .filter((entry) => entry.identityChanged || entry.parentsChanged)
+          .map((entry) => entry.student?.id),
+      );
+      // Captura o estado conferido antes de qualquer escrita; uma versão por vínculo.
+      const history = current.enrollments
+        .filter(
+          (enrollment) =>
+            metadataChanges.has(enrollment.id) ||
+            (changedIdentities.has(enrollment.studentId) &&
+              enrollment.status !== 'ENDED' &&
+              (enrollment.status !== 'UNCONFIRMED' ||
+                enrollment.reviewedAt !== null ||
+                enrollment.reviewedById !== null)),
+        )
+        .map((enrollment) => ({
+          enrollmentId: enrollment.id,
+          recordedById: actorId,
+          reason: metadataChanges.has(enrollment.id)
+            ? 'METADATA_CHANGE'
+            : 'IDENTITY_REVIEW',
+          mode: enrollment.mode,
+          className: enrollment.className,
+          grade: enrollment.grade,
+          moduleNumber: enrollment.moduleNumber,
+          courseLabel: enrollment.courseLabel,
+          schoolYear: enrollment.schoolYear,
+          periodLabel: enrollment.periodLabel,
+          validFrom: enrollment.validFrom,
+          validUntil: enrollment.validUntil,
+          status: enrollment.status,
+          reviewedAt: enrollment.reviewedAt,
+        }));
+      if (history.length)
+        await tx.enrollmentImportHistory.createMany({ data: history });
       for (const entry of prepared.entries) {
         const { row, metadata } = entry;
         const student =
