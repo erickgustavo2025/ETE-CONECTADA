@@ -14,7 +14,7 @@
     "test:declarations": "npm run test:declarations --workspace @ete-conectada/portal",
     "test:guards": "npm run test:guards --workspace @ete-conectada/portal",
     "test:schema": "npm run test:schema --workspace @ete-conectada/portal",
-    "test:integration": "npm run test:import && npm run test:registration && npm run test:declarations && npm run test:session && npm run test:production && npm run test:student-details && npm run test:enrollments && npm run test:db --workspace @ete-conectada/portal",
+    "test:integration": "npm run test:import && npm run test:registration && npm run test:declarations && npm run test:session && npm run test:production && npm run test:student-details && npm run test:enrollments && npm run test:sheet-import && npm run test:db --workspace @ete-conectada/portal",
     "test:enrollments": "npm run test:enrollments --workspace @ete-conectada/portal",
     "test:student-details": "npm run test:student-details --workspace @ete-conectada/portal",
     "test:cleanup": "npm run test:cleanup --workspace @ete-conectada/portal",
@@ -30,7 +30,8 @@
     "test:production": "npm run test:production --workspace @ete-conectada/portal",
     "test:import": "npm run test:import --workspace @ete-conectada/portal",
     "test:browser": "npm run test:browser --workspace @ete-conectada/portal",
-    "measure:performance": "npm run measure:performance --workspace @ete-conectada/portal"
+    "measure:performance": "npm run measure:performance --workspace @ete-conectada/portal",
+    "test:sheet-import": "npm run test:sheet-import --workspace @ete-conectada/portal"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

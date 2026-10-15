@@ -72,7 +72,7 @@ Depois da preparação, executa `db:validate`, `db:migrate`, `db:status` e `test
 
 ## Integração no GitHub Actions
 
-O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: importação → cadastro → declaração → sessão/autorização → produção → dados complementares → vigência de matrícula → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Os testes de desenvolvimento usam o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
+O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: importação → cadastro → declaração → sessão/autorização → produção → dados complementares → vigência de matrícula → importação XLS → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Os testes de desenvolvimento usam o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
 
 Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos arquivadas. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
 
@@ -141,3 +141,7 @@ A prova participa de `test:integration` antes dos testes HTTP e da conferência 
 ## Situação e vigência das matrículas
 
 `npm run test:enrollments` exige banco novo e identificado, sem seed. Verifica conferência exclusiva da secretaria, matrículas múltiplas, período/datas, mudanças entre geração e liberação e preparação idempotente da demonstração. Cria e remove suas fixtures, inclusive as contas de demonstração criadas durante a prova. O comando participa de `test:integration`; não deve rodar no banco de demonstração em uso. Regras e migração em [Vigência das matrículas](vigencia-matriculas.md).
+
+## Importação XLS
+
+`test:sheet-input` lê somente arquivos fictícios gerados em memória e integra os unitários, sem banco. `npm run test:sheet-import` exige banco novo identificado e inicia seu próprio portal; prova a API de prévia/confirmacão, autorização, limites, repetição, proteção de dados e rollback após falha intermediária. Integra `test:integration`. O teste remove seus alunos/contas/prévias no finally e nunca deve ser executado no banco de demonstração em uso. Regras em [Núcleo de importação](importacao-nucleo.md).

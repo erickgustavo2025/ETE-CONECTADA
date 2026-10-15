@@ -1,9 +1,10 @@
 # Importação das planilhas da secretaria
 
 Este contrato descreve como receber as listas do integrado e do subsequente sem
-confundir alunos, turmas ou módulos. O importador atual aceita backup JSON; ainda
-não recebe XLS nem atualiza os registros existentes. As regras abaixo orientam
-as próximas implementações, sem habilitar importação ou acesso em produção.
+confundir alunos, turmas ou módulos. O importador de backup JSON continua separado. O [núcleo de XLS](importacao-nucleo.md)
+já oferece API de desenvolvimento para leitura, prévia e atualização confirmada.
+As telas e entradas próprias das duas modalidades ainda serão conectadas nas
+EC-105/106. As regras não habilitam acesso em produção.
 
 ## Arquivo e cabeçalhos
 

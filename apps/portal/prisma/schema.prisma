@@ -74,6 +74,8 @@ model Enrollment {
   reviewedById String? @map("reviewed_by_id") @db.Uuid
   reviewedBy Account? @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
   importSourceId String? @unique @map("import_source_id")
+  schoolImportKey String? @unique @map("school_import_key") @db.VarChar(80)
+  moduleNumber Int? @map("module_number")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   declarationRequests DeclarationRequest[]
@@ -98,6 +100,7 @@ model Account {
   verificationTokens EmailVerificationToken[]
   updatedStudentDetails StudentDetails[]
   reviewedEnrollments Enrollment[]
+  sheetImportPreview SheetImportPreview?
   @@map("accounts")
 }
 
@@ -154,4 +157,17 @@ model LegacyMigration {
   version String @id
   appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz(6)
   @@map("portal_schema_migrations")
+}
+
+// Guarda somente hashes e contagens; o arquivo e os dados pessoais não são retidos.
+model SheetImportPreview {
+  actorId String @id @map("actor_id") @db.Uuid
+  tokenHash String @unique @map("token_hash") @db.Char(64)
+  inputHash String @map("input_hash") @db.Char(64)
+  snapshotHash String @map("snapshot_hash") @db.Char(64)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(3)
+  result Json?
+  actor Account @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  @@map("sheet_import_previews")
 }

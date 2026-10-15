@@ -84,7 +84,7 @@ A secretaria pode gerar até 100 declarações por lote, uma por aluno. Quando i
 
 A versão atual prepara o documento para impressão e assinatura no papel. Os [modelos e o exemplo fictício](output/pdf/) estão disponíveis para revisão. O modelo próprio do subsequente, assinatura eletrônica e consulta por QR Code ainda fazem parte do trabalho futuro. A pesquisa sobre a emissão está em [Declaração de vínculo](docs/declaracao-vinculo/viabilidade.md).
 
-O [guia do banco](apps/portal/prisma/README.md) também explica a importação de alunos pelo backup JSON e a concessão de acesso à secretaria.
+O [guia do banco](apps/portal/prisma/README.md) também explica a importação pelo backup JSON e a concessão de acesso à secretaria. O [núcleo de importação XLS](docs/importacao-nucleo.md) já valida arquivos e aplica alterações após confirmação pela API de desenvolvimento; as telas para integrado e subsequente ainda serão adicionadas.
 
 ## Verificações disponíveis
 
@@ -126,7 +126,7 @@ O [guia de contribuição](docs/contribuicao.md) mostra os comandos e o processo
 
 ## O que vem depois
 
-- Importar, atualizar e exportar planilhas, com caminhos próprios para integrado e subsequente. O importador atual lê backup JSON e preserva os registros existentes.
+- Conectar a importação de planilhas às telas do integrado e do subsequente e criar a exportação. O importador de backup JSON continua separado.
 - Adequar e validar os modelos de declaração com a escola.
 - Definir com a escola a proteção do primeiro acesso e a recuperação de contas antes de liberar o portal em produção.
 - Concluir as verificações de qualidade, a proteção da `main` e a preparação de Docker, hospedagem e publicação.

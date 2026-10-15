@@ -20,7 +20,9 @@ const columns: Record<string, string> = {
     'token_hash account_id expires_at consumed_at created_at',
   sessions: 'token_hash account_id expires_at created_at',
   enrollments:
-    'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id',
+    'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id school_import_key module_number',
+  sheet_import_previews:
+    'actor_id token_hash input_hash snapshot_hash expires_at consumed_at result',
   declaration_requests:
     'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id',
   portal_schema_migrations: 'version applied_at',
@@ -132,6 +134,10 @@ async function main() {
       /ACTIVE.*reviewed_at IS NOT NULL/,
     );
     assert.match(
+      constraint('enrollments_module_number_check'),
+      /module_number/,
+    );
+    assert.match(
       constraint('enrollments_validity_check'),
       /valid_from <= valid_until/,
     );
@@ -152,6 +158,7 @@ async function main() {
       ['email_verification_tokens', 'account_id', 'accounts', 'CASCADE'],
       ['enrollments', 'student_id', 'students', 'CASCADE'],
       ['enrollments', 'reviewed_by_id', 'accounts', 'SET NULL'],
+      ['sheet_import_previews', 'actor_id', 'accounts', 'CASCADE'],
       ['declaration_requests', 'student_id', 'students', 'CASCADE'],
       ['declaration_requests', 'enrollment_id', 'enrollments', 'CASCADE'],
       ['declaration_requests', 'prepared_by_id', 'accounts', 'SET NULL'],
@@ -182,6 +189,8 @@ async function main() {
       'accounts_student_id_key',
       'accounts_email_key',
       'enrollments_import_source_id_key',
+      'enrollments_school_import_key_key',
+      'sheet_import_previews_token_hash_key',
     ]) {
       assert.ok(
         indexes.rows.some(
