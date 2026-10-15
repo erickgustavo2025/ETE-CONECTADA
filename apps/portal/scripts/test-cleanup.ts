@@ -9,6 +9,7 @@ async function main() {
       SELECT (
         (SELECT count(*) FROM students) +
         (SELECT count(*) FROM student_details) +
+        (SELECT count(*) FROM sheet_import_previews) +
         (SELECT count(*) FROM accounts) +
         (SELECT count(*) FROM enrollments) +
         (SELECT count(*) FROM sessions) +

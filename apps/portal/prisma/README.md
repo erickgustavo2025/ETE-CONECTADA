@@ -80,3 +80,7 @@ UI, API, modelo Prisma ativo, SDK S3 e variáveis de storage foram removidos. A 
 ## Situação e vigência
 
 A migração `20261013200000_enrollment_validity` acrescenta situação, período, datas e última conferência à matrícula. Vínculos antigos ficam não conferidos, sem datas inventadas. PDF e liberação exigem situação ativa, vigência e período compatíveis; o painel de conferência permanece futuro. Antes de usar o portal atualizado, aplique migrações; para contas fictícias em banco local identificado, `npm run db:demo` faz a preparação preservando senhas e conferências anteriores. Veja [Vigência das matrículas](../../../docs/vigencia-matriculas.md).
+
+## Fonte escolar XLS
+
+A migração `20261015150000_sheet_import` acrescenta `school_import_key` (associação da oferta/turma à pessoa), `module_number` separado da série e `sheet_import_previews` com hashes/expiração/contagens, sem arquivo bruto. As origens do importador JSON são preservadas. Cadastros/vínculos antigos não recebem associação, módulo nem mudança de situação automaticamente. Veja o [núcleo de prévia e confirmação](../../../docs/importacao-nucleo.md).

@@ -130,6 +130,29 @@ async function main() {
     'A fixture deve conter fórmula real.',
   );
   await assert.rejects(decodeXls(formulaFile), /Arquivo/);
+  // Dimensões falsas não podem esconder uma célula além do limite.
+  const farRecord = Buffer.alloc(18);
+  farRecord.writeUInt16LE(0x0203, 0);
+  farRecord.writeUInt16LE(14, 2);
+  farRecord.writeUInt16LE(6000, 4);
+  farRecord.writeUInt16LE(3, 6);
+  farRecord.writeDoubleLE(1, 10);
+  XLSX.CFB.utils.cfb_add(
+    cfb,
+    'Workbook',
+    Buffer.concat([
+      workbook.subarray(0, eof),
+      farRecord,
+      workbook.subarray(eof),
+    ]),
+  );
+  await assert.rejects(
+    decodeXls(Buffer.from(XLSX.CFB.write(cfb, { type: 'buffer' }))),
+    /Arquivo/,
+  );
+  const corrupt = Buffer.alloc(512);
+  Buffer.from('d0cf11e0a1b11ae1', 'hex').copy(corrupt);
+  await assert.rejects(decodeXls(corrupt), /Arquivo/);
   const missing = sheetFixture();
   missing.wb.Sheets['Fictícia'].I7 = { t: 's', v: '' };
   assert.equal(

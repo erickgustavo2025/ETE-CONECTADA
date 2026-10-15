@@ -79,7 +79,7 @@ const decoder = `
 const {parentPort,workerData}=require('node:worker_threads');
 try {
  const XLSX=require(workerData.modulePath);
- const wb=XLSX.read(Buffer.from(workerData.file),{type:'buffer',sheetRows:5007,cellFormula:true,cellHTML:false,bookVBA:true,cellNF:false,raw:true,WTF:true});
+ const wb=XLSX.read(Buffer.from(workerData.file),{type:'buffer',cellFormula:true,cellHTML:false,bookVBA:true,cellNF:false,raw:true,WTF:true});
  if(wb.vbaraw||wb.SheetNames.length<1||wb.SheetNames.length>25)throw Error();
  let total=0;
  const sheets=wb.SheetNames.map((name,index)=>{
@@ -87,7 +87,10 @@ try {
   if(!ref||ws['!type']||wb.Workbook?.Sheets?.[index]?.Hidden)throw Error();
   const range=XLSX.utils.decode_range(ref);
   if(range.e.c>8||range.e.r>5005||Object.keys(ws).length>50000)throw Error();
-  for(const [key,cell] of Object.entries(ws))if(!key.startsWith('!')&&(cell.f||cell.l||cell.t==='e'))throw Error();
+  for(const [key,cell] of Object.entries(ws))if(!key.startsWith('!')) {
+   const position=XLSX.utils.decode_cell(key);
+   if(position.r>range.e.r||position.c>range.e.c||position.r>5005||position.c>8||cell.f||cell.l||cell.t==='e')throw Error();
+  }
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:'',blankrows:true,range:{s:{r:0,c:0},e:{r:range.e.r,c:8}}});
   total+=Math.max(0,rows.length-6);if(total>5000)throw Error();
   if(rows.some(row=>row.some(v=>String(v).length>512)))throw Error();
@@ -174,7 +177,8 @@ export async function parseSheetInput(
       c.confirmed !== true ||
       typeof c.scopeId !== 'string' ||
       !uuid.test(c.scopeId) ||
-      !['ADM', 'DS', 'ENF'].includes(String(c.courseLabel)) ||
+      typeof c.courseLabel !== 'string' ||
+      !['ADM', 'DS', 'ENF'].includes(c.courseLabel) ||
       !Number.isInteger(c.stage) ||
       Number(c.stage) < 1 ||
       Number(c.stage) >
