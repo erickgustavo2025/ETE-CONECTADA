@@ -1,3 +1,4 @@
+import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
 import { randomBytes, randomInt } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import { hashPassword } from '../../src/lib/password';
@@ -157,6 +158,7 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
           create: {
             mode: 'INTEGRADO',
             className: `Turma declaração ${suffix}`,
+            ...syntheticEnrollmentValidity(),
             grade: 2,
             courseLabel: 'DS',
           },

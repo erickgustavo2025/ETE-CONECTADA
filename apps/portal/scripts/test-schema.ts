@@ -20,7 +20,7 @@ const columns: Record<string, string> = {
     'token_hash account_id expires_at consumed_at created_at',
   sessions: 'token_hash account_id expires_at created_at',
   enrollments:
-    'id student_id mode class_name grade course_label school_year import_source_id created_at',
+    'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id',
   declaration_requests:
     'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id',
   portal_schema_migrations: 'version applied_at',
@@ -94,6 +94,7 @@ async function main() {
         values: ['REQUESTED', 'IN_PREPARATION', 'READY_FOR_PICKUP'],
       },
       { name: 'EducationMode', values: ['INTEGRADO', 'SUBSEQUENTE'] },
+      { name: 'EnrollmentStatus', values: ['UNCONFIRMED', 'ACTIVE', 'ENDED'] },
       {
         name: 'StudentDataSource',
         values: [
@@ -127,6 +128,14 @@ async function main() {
       /parentage_source.*STUDENT_DECLARATION/,
     );
     assert.match(
+      constraint('enrollments_active_check'),
+      /ACTIVE.*reviewed_at IS NOT NULL/,
+    );
+    assert.match(
+      constraint('enrollments_validity_check'),
+      /valid_from <= valid_until/,
+    );
+    assert.match(
       constraint('student_details_birthplace_check'),
       /birth_country.*birth_state/,
     );
@@ -142,6 +151,7 @@ async function main() {
       ['sessions', 'account_id', 'accounts', 'CASCADE'],
       ['email_verification_tokens', 'account_id', 'accounts', 'CASCADE'],
       ['enrollments', 'student_id', 'students', 'CASCADE'],
+      ['enrollments', 'reviewed_by_id', 'accounts', 'SET NULL'],
       ['declaration_requests', 'student_id', 'students', 'CASCADE'],
       ['declaration_requests', 'enrollment_id', 'enrollments', 'CASCADE'],
       ['declaration_requests', 'prepared_by_id', 'accounts', 'SET NULL'],

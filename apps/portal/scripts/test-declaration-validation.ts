@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { syntheticEnrollmentValidity } from './enrollment-fixture';
 import {
   declarationBody,
   DeclarationValidationError,
@@ -32,6 +33,7 @@ const student: DeclarationStudent = {
   birthDate: new Date('2008-02-29T00:00:00Z'),
   enrollments: [
     {
+      ...syntheticEnrollmentValidity(),
       id: enrollmentId,
       mode: 'INTEGRADO',
       className: 'Turma fictícia',

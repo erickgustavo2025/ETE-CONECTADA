@@ -72,7 +72,7 @@ Depois da preparação, executa `db:validate`, `db:migrate`, `db:status` e `test
 
 ## Integração no GitHub Actions
 
-O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: importação → cadastro → declaração → sessão/autorização → produção → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Os testes de desenvolvimento usam o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
+O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: importação → cadastro → declaração → sessão/autorização → produção → dados complementares → vigência de matrícula → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Os testes de desenvolvimento usam o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
 
 Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos arquivadas. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
 
@@ -102,7 +102,7 @@ Se já houver um portal rodando nesta pasta, encerre-o antes de iniciar outro. A
 
 O aluno acessa `/declaracao`; a secretaria acessa `/secretaria/declaracoes`. Use perfis separados do navegador ou saia de uma conta antes de entrar na outra.
 
-`db:demo` usa as mesmas guardas do seed: somente loopback, nome e UUID identificados, opt-in explícito e ambiente test/development. Não cria acesso em Neon nem em produção. As contas permanecem após encerrar o portal e não são removidas pelos testes automáticos; a persistência entre reinícios depende de manter o armazenamento do PostgreSQL. Não rode `test:cleanup` neste banco, pois ele exige banco vazio.
+`db:demo` confere a identidade antes de aplicar migrações e preparar as três matrículas fictícias para emissão no período `2026`. Não ativa matrículas reais nem desfaz situações já conferidas. Usa as mesmas guardas do seed: somente loopback, nome e UUID identificados, opt-in explícito e ambiente test/development. Não cria acesso em Neon nem em produção. As contas permanecem após encerrar o portal e não são removidas pelos testes automáticos; a persistência entre reinícios depende de manter o armazenamento do PostgreSQL. Não rode `test:cleanup` neste banco, pois ele exige banco vazio.
 
 Reexecutar o comando preserva senhas existentes. Conta com e-mail, papel ou estado divergente cancela toda a transação; não promove uma conta existente nem redefine sua senha. A senha da tabela só vale para uma conta criada pelo comando e ainda não modificada. O seed normal mantém Marina e Ana disponíveis para primeiro acesso quando não têm conta; `db:demo` ocupa a conta de Ana para demonstrar a secretaria.
 
@@ -137,3 +137,7 @@ Confere lista branca, acesso bloqueado por padrão, repetição sem duplicar alu
 Para provar rollback depois de uma escrita, cria uma restrição temporária em `enrollments`, limitada ao identificador aleatório da fixture. Ela força a falha da matrícula após a criação do aluno; nenhum registro parcial pode permanecer. A restrição é removida em `finally`, assim como o arquivo JSON temporário e apenas os alunos gerados pelo teste. Este teste requer permissão para adicionar/remover essa restrição exclusivamente no banco descartável.
 
 A prova participa de `test:integration` antes dos testes HTTP e da conferência final de limpeza no CI. Não executá-la no banco de demonstração nem no banco da escola.
+
+## Situação e vigência das matrículas
+
+`npm run test:enrollments` exige banco novo e identificado, sem seed. Verifica conferência exclusiva da secretaria, matrículas múltiplas, período/datas, mudanças entre geração e liberação e preparação idempotente da demonstração. Cria e remove suas fixtures, inclusive as contas de demonstração criadas durante a prova. O comando participa de `test:integration`; não deve rodar no banco de demonstração em uso. Regras e migração em [Vigência das matrículas](vigencia-matriculas.md).

@@ -57,7 +57,16 @@ export async function POST(request: Request) {
       );
     const pdf = await createDeclarationPdf(student, fields);
     await recordGeneratedDeclarations(
-      [{ studentId: student.id, enrollmentId: fields.enrollmentId }],
+      [
+        {
+          studentId: student.id,
+          enrollmentId: fields.enrollmentId,
+          periodLabel: fields.schoolPeriod,
+          reviewedAt: student.enrollments.find(
+            (row) => row.id === fields.enrollmentId,
+          )!.reviewedAt,
+        },
+      ],
       session.accountId,
     );
     return new Response(Buffer.from(pdf), {

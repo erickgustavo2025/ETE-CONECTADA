@@ -4,6 +4,7 @@ import {
   TestEnvironmentError,
 } from './test-environment';
 import { hashPassword } from '../src/lib/password';
+import { reviewEnrollment } from '../src/lib/enrollment-validity';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -146,6 +147,25 @@ async function main() {
       },
       { timeout: 30000 },
     );
+    if (demo) {
+      const secretary = await db.account.findUniqueOrThrow({
+        where: { email: 'secretaria.demo@eteconectada.invalid' },
+      });
+      for (const student of students) {
+        const enrollment = await db.enrollment.findUniqueOrThrow({
+          where: { importSourceId: `seed:${student.schoolRegistration}` },
+        });
+        // Só completa a fixture inicial; não desfaz alterações de situação já conferidas.
+        if (!enrollment.reviewedAt && enrollment.status === 'UNCONFIRMED') {
+          await reviewEnrollment(db, secretary.id, enrollment.id, {
+            status: 'ACTIVE',
+            periodLabel: '2026',
+            validFrom: '2000-01-01',
+            validUntil: '2099-12-31',
+          });
+        }
+      }
+    }
     console.log(
       demo
         ? 'Demonstração preparada: aluno e secretaria sintéticos; contas e senhas existentes preservadas.'

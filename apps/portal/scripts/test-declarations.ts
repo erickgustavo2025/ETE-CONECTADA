@@ -1,3 +1,4 @@
+import { syntheticEnrollmentValidity } from './enrollment-fixture';
 import assert from 'node:assert/strict';
 import { randomBytes, randomInt, createHash } from 'node:crypto';
 import { mkdtemp, writeFile } from 'node:fs/promises';
@@ -83,6 +84,7 @@ async function main() {
         enrollments: {
           create: {
             mode: 'INTEGRADO',
+            ...syntheticEnrollmentValidity(),
             className: '2B DS',
             grade: 2,
             courseLabel: 'DS',
@@ -385,6 +387,51 @@ async function main() {
       ).status,
       'REQUESTED',
     );
+    for (const data of [
+      { status: 'UNCONFIRMED' as const },
+      { status: 'ENDED' as const },
+      { validFrom: new Date('2090-01-01') },
+      { validUntil: new Date('2001-12-31') },
+    ]) {
+      await db.enrollment.update({
+        where: { id: fields.enrollmentId },
+        data: { ...syntheticEnrollmentValidity(), ...data },
+      });
+      for (const [path, body] of [
+        ['/api/secretaria/declaracao', fields],
+        ['/api/secretaria/declaracoes', { items: [fields] }],
+      ] as const) {
+        const rejected = await post(path, body, staffCookie);
+        assert.equal(
+          rejected.status,
+          422,
+          'Vínculo incompatível não gera PDF.',
+        );
+        assert.match(rejected.headers.get('content-type')!, /json/);
+      }
+      assert.equal(
+        (
+          await db.declarationRequest.findUniqueOrThrow({
+            where: { id: requestId },
+          })
+        ).status,
+        'REQUESTED',
+      );
+    }
+    await db.enrollment.update({
+      where: { id: fields.enrollmentId },
+      data: syntheticEnrollmentValidity(),
+    });
+    assert.equal(
+      (
+        await post(
+          '/api/secretaria/declaracao',
+          { ...fields, schoolPeriod: '2025' },
+          staffCookie,
+        )
+      ).status,
+      422,
+    );
     const response = await post(
       '/api/secretaria/declaracao',
       fields,
@@ -418,6 +465,7 @@ async function main() {
         enrollments: {
           create: {
             mode: 'INTEGRADO',
+            ...syntheticEnrollmentValidity(),
             className: batchClass,
             grade: 2,
             courseLabel: 'DS',

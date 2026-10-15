@@ -103,9 +103,13 @@ export async function POST(request: Request) {
     });
     const pdf = await createDeclarationsPdf(selected);
     await recordGeneratedDeclarations(
-      items.map((item) => ({
-        studentId: item.studentId,
+      selected.map((item) => ({
+        studentId: item.student.id,
         enrollmentId: item.fields.enrollmentId,
+        periodLabel: item.fields.schoolPeriod,
+        reviewedAt: item.student.enrollments.find(
+          (row) => row.id === item.fields.enrollmentId,
+        )!.reviewedAt,
       })),
       session.accountId,
     );

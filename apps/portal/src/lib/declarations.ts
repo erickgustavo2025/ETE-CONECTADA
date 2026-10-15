@@ -1,4 +1,8 @@
 import type { PrismaClient } from '../generated/prisma/client';
+import {
+  EnrollmentValidityError,
+  requireCurrentEnrollment,
+} from './enrollment-validity';
 
 export const studentDeclarationSelect = {
   id: true,
@@ -14,6 +18,11 @@ export const studentDeclarationSelect = {
       grade: true,
       courseLabel: true,
       schoolYear: true,
+      status: true,
+      periodLabel: true,
+      validFrom: true,
+      validUntil: true,
+      reviewedAt: true,
     },
     orderBy: { createdAt: 'desc' as const },
   },
@@ -29,13 +38,31 @@ export async function declarationStudent(db: PrismaClient, studentId: string) {
 export type DeclarationStudent = NonNullable<
   Awaited<ReturnType<typeof declarationStudent>>
 >;
-export type StudentView = Omit<DeclarationStudent, 'birthDate'> & {
+type EnrollmentView = Pick<
+  DeclarationStudent['enrollments'][number],
+  'id' | 'mode' | 'className' | 'grade' | 'courseLabel' | 'schoolYear'
+>;
+export type StudentView = Omit<
+  DeclarationStudent,
+  'birthDate' | 'enrollments'
+> & {
   birthDate: string;
+  enrollments: EnrollmentView[];
 };
 export function studentView(student: DeclarationStudent): StudentView {
   return {
     ...student,
     birthDate: student.birthDate.toISOString().slice(0, 10),
+    enrollments: student.enrollments.map(
+      ({ id, mode, className, grade, courseLabel, schoolYear }) => ({
+        id,
+        mode,
+        className,
+        grade,
+        courseLabel,
+        schoolYear,
+      }),
+    ),
   };
 }
 
@@ -205,6 +232,13 @@ export function declarationBody(
     throw new DeclarationValidationError(
       'O modelo do subsequente ainda precisa ser confirmado pela escola.',
     );
+  try {
+    requireCurrentEnrollment(enrollment, fields.schoolPeriod);
+  } catch (error) {
+    if (error instanceof EnrollmentValidityError)
+      throw new DeclarationValidationError(error.message, error.field);
+    throw error;
+  }
   if (!student.fullName || !enrollment.grade)
     throw new DeclarationValidationError(
       'O cadastro não contém nome e série completos. Procure a secretaria.',

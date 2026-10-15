@@ -1,7 +1,37 @@
-import type { Prisma } from '@/generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import { getDb } from './db';
 import { DeclarationValidationError } from './declarations';
 import type { RequestSummary } from './declaration-request-types';
+import {
+  requireCurrentEnrollment,
+  EnrollmentValidityError,
+} from './enrollment-validity';
+
+async function lockSecretary(tx: Prisma.TransactionClient, accountId: string) {
+  const allowed = await tx.$queryRaw<Array<{ id: string }>>`
+    SELECT id FROM accounts WHERE id=${accountId}::uuid AND status='active' AND role='secretary' FOR UPDATE
+  `;
+  if (!allowed.length) throw new RequestError('Acesso não autorizado.', 403);
+}
+
+async function lockEnrollments(tx: Prisma.TransactionClient, ids: string[]) {
+  const unique = [...new Set(ids)].sort();
+  await tx.$queryRaw(Prisma.sql`
+    SELECT id FROM enrollments WHERE id IN (${Prisma.join(unique.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY id FOR UPDATE
+  `);
+  return tx.enrollment.findMany({
+    where: { id: { in: unique } },
+    select: {
+      id: true,
+      studentId: true,
+      status: true,
+      periodLabel: true,
+      validFrom: true,
+      validUntil: true,
+      reviewedAt: true,
+    },
+  });
+}
 
 export const requestSummarySelect = {
   id: true,
@@ -86,13 +116,43 @@ export async function requestDeclaration(
 // Só uma geração bem-sucedida, com os dados conferidos, inicia a preparação.
 // Não grava os dados pessoais digitados no editor e não anuncia retirada.
 export async function recordGeneratedDeclarations(
-  items: { studentId: string; enrollmentId: string }[],
+  items: {
+    studentId: string;
+    enrollmentId: string;
+    periodLabel: string;
+    reviewedAt: Date | null;
+  }[],
   accountId: string,
 ) {
+  if (!items.length) return;
   await getDb().$transaction(async (tx) => {
+    await lockSecretary(tx, accountId);
+    const rows = await lockEnrollments(
+      tx,
+      items.map((item) => item.enrollmentId),
+    );
+    for (const item of items) {
+      const enrollment = rows.find(
+        (row) =>
+          row.id === item.enrollmentId && row.studentId === item.studentId,
+      );
+      if (!enrollment)
+        throw new DeclarationValidationError('Matrícula não disponível.');
+      try {
+        requireCurrentEnrollment(enrollment, item.periodLabel);
+      } catch (error) {
+        if (error instanceof EnrollmentValidityError)
+          throw new DeclarationValidationError(error.message, error.field);
+        throw error;
+      }
+      if (enrollment.reviewedAt?.getTime() !== item.reviewedAt?.getTime())
+        throw new DeclarationValidationError(
+          'A matrícula mudou durante a geração. Confira e gere novamente.',
+        );
+    }
     await tx.declarationRequest.updateMany({
       where: {
-        status: 'REQUESTED',
+        status: { in: ['REQUESTED', 'IN_PREPARATION'] },
         OR: items.map((item) => ({
           studentId: item.studentId,
           enrollmentId: item.enrollmentId,
@@ -109,6 +169,17 @@ export async function recordGeneratedDeclarations(
 export async function markReadyForPickup(id: string, accountId: string) {
   return getDb().$transaction(
     async (tx) => {
+      await lockSecretary(tx, accountId);
+      const before = await tx.declarationRequest.findUnique({
+        where: { id },
+        select: { enrollmentId: true },
+      });
+      if (!before)
+        throw new RequestError(
+          'Solicitação não encontrada. Atualize a lista.',
+          404,
+        );
+      const [enrollment] = await lockEnrollments(tx, [before.enrollmentId]);
       await tx.$queryRaw`SELECT id FROM declaration_requests WHERE id = ${id}::uuid FOR UPDATE`;
       const row = await tx.declarationRequest.findUnique({
         where: { id },
@@ -123,6 +194,18 @@ export async function markReadyForPickup(id: string, accountId: string) {
       if (row.status !== 'IN_PREPARATION')
         throw new RequestError(
           'Gere o PDF e prepare o documento antes de liberar a retirada.',
+          409,
+        );
+      if (!enrollment || row.enrollmentId !== enrollment.id)
+        throw new RequestError('Matrícula não disponível.', 409);
+      requireCurrentEnrollment(enrollment);
+      if (
+        !row.generatedAt ||
+        !enrollment.reviewedAt ||
+        enrollment.reviewedAt > row.generatedAt
+      )
+        throw new RequestError(
+          'A matrícula mudou após a preparação. Confira e gere o PDF novamente.',
           409,
         );
       return requestSummary(
@@ -149,6 +232,8 @@ export function validRequestId(value: unknown): value is string {
   );
 }
 export function requestFailure(error: unknown) {
+  if (error instanceof EnrollmentValidityError)
+    return { error: error.message, status: 422 };
   if (error instanceof RequestError)
     return { error: error.message, status: error.status };
   if (error instanceof DeclarationValidationError)
