@@ -489,9 +489,8 @@ async function main() {
       contexts: [bulk.context],
     };
     const beforeRollback = await preview(bulkBody);
-    await db.$executeRawUnsafe(
-      `ALTER TABLE enrollments ADD CONSTRAINT ec056_test_rollback CHECK (school_import_key IS DISTINCT FROM 'school:${bulk.context.scopeId}:00001003')`,
-    );
+    // Banco novo identificado: o alvo é uma matrícula exclusivamente sintética.
+    await db.$executeRaw`ALTER TABLE enrollments ADD CONSTRAINT ec056_test_rollback CHECK (school_import_key NOT LIKE '%:00001003')`;
     constraint = true;
     assert.equal((await confirm(beforeRollback)).status, 409);
     assert.equal(
@@ -509,9 +508,7 @@ async function main() {
       ).consumedAt,
       null,
     );
-    await db.$executeRawUnsafe(
-      'ALTER TABLE enrollments DROP CONSTRAINT ec056_test_rollback',
-    );
+    await db.$executeRaw`ALTER TABLE enrollments DROP CONSTRAINT ec056_test_rollback`;
     constraint = false;
     assert.equal((await confirm(beforeRollback)).status, 200);
     const last = await preview();
@@ -526,9 +523,7 @@ async function main() {
   } finally {
     try {
       if (constraint)
-        await db.$executeRawUnsafe(
-          'ALTER TABLE enrollments DROP CONSTRAINT ec056_test_rollback',
-        );
+        await db.$executeRaw`ALTER TABLE enrollments DROP CONSTRAINT ec056_test_rollback`;
       await db.student.deleteMany({
         where: {
           OR: [
