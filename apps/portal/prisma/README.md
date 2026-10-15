@@ -76,3 +76,7 @@ Dados complementares do PDF permanecem apenas no editor; não são acrescentados
 ## Perfil removido
 
 UI, API, modelo Prisma ativo, SDK S3 e variáveis de storage foram removidos. A tabela anterior é arquivada como `retired_profile_photos`, sem acesso pela aplicação. Fotos antigas permanecem no bucket privado, preservadas para limpeza separada se a equipe solicitar; não há upload, leitura ou exclusão de fotos no portal. Migrações já aplicadas permanecem no histórico do Prisma.
+
+## Situação e vigência
+
+A migração `20261013200000_enrollment_validity` acrescenta situação, período, datas e última conferência à matrícula. Vínculos antigos ficam não conferidos, sem datas inventadas. PDF e liberação exigem situação ativa, vigência e período compatíveis; o painel de conferência permanece futuro. Antes de usar o portal atualizado, aplique migrações; para contas fictícias em banco local identificado, `npm run db:demo` faz a preparação preservando senhas e conferências anteriores. Veja [Vigência das matrículas](../../../docs/vigencia-matriculas.md).

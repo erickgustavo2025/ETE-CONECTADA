@@ -1,3 +1,4 @@
+import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
 import { randomBytes, randomInt } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import { hashPassword } from '../../src/lib/password';
@@ -72,6 +73,7 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
           create: {
             mode: 'INTEGRADO',
             className: 'Turma sintética',
+            ...syntheticEnrollmentValidity(),
             grade: 2,
             courseLabel: 'DS',
           },

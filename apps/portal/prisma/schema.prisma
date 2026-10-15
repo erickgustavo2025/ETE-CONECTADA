@@ -52,6 +52,12 @@ enum EducationMode {
   SUBSEQUENTE
 }
 
+enum EnrollmentStatus {
+  UNCONFIRMED
+  ACTIVE
+  ENDED
+}
+
 model Enrollment {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   studentId String @map("student_id") @db.Uuid
@@ -60,6 +66,13 @@ model Enrollment {
   grade Int?
   courseLabel String @map("course_label")
   schoolYear Int? @map("school_year")
+  status EnrollmentStatus @default(UNCONFIRMED)
+  periodLabel String? @map("period_label") @db.VarChar(60)
+  validFrom DateTime? @map("valid_from") @db.Date
+  validUntil DateTime? @map("valid_until") @db.Date
+  reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedById String? @map("reviewed_by_id") @db.Uuid
+  reviewedBy Account? @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
   importSourceId String? @unique @map("import_source_id")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -84,6 +97,7 @@ model Account {
   sessions     Session[]
   verificationTokens EmailVerificationToken[]
   updatedStudentDetails StudentDetails[]
+  reviewedEnrollments Enrollment[]
   @@map("accounts")
 }
 

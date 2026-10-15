@@ -1,3 +1,4 @@
+import { syntheticEnrollmentValidity } from './enrollment-fixture';
 import assert from 'node:assert/strict';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { cpus, platform, arch } from 'node:os';
@@ -49,6 +50,7 @@ async function main() {
         data: ids.map((studentId) => ({
           studentId,
           mode: 'INTEGRADO' as const,
+          ...syntheticEnrollmentValidity(),
           className,
           grade: 2,
           courseLabel: 'DS',

@@ -1,3 +1,4 @@
+import { syntheticEnrollmentValidity } from './enrollment-fixture';
 import assert from 'node:assert/strict';
 import { createHash, randomBytes, randomInt } from 'node:crypto';
 import { hashPassword } from '../src/lib/password';
@@ -30,6 +31,7 @@ async function main() {
         enrollments: {
           create: {
             mode: 'INTEGRADO',
+            ...syntheticEnrollmentValidity(),
             className: `Teste ${suffix}`,
             grade: 2,
             courseLabel: 'Curso fictício',
