@@ -18,7 +18,7 @@
     "test:schema": "node --import tsx scripts/test-schema.ts",
     "test:cleanup": "node --import tsx scripts/test-cleanup.ts",
     "test:guards": "node --import tsx scripts/test-test-environment.ts",
-    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts && node --import tsx scripts/test-student-details-validation.ts && node --import tsx scripts/test-enrollment-validation.ts",
+    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts && node --import tsx scripts/test-student-details-validation.ts && node --import tsx scripts/test-enrollment-validation.ts && npm run test:sheet-input",
     "test:student-details": "node --import tsx scripts/test-student-details.ts",
     "test:registration": "tsx scripts/test-registration.ts",
     "diagnose:login": "node --import tsx scripts/diagnose-login.ts",
@@ -36,7 +36,8 @@
     "pretest:unit": "prisma generate",
     "test:import": "node --import tsx scripts/test-student-import.ts",
     "test:browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/browser/playwright.config.ts",
-    "measure:performance": "node --import tsx scripts/measure-performance.ts"
+    "measure:performance": "node --import tsx scripts/measure-performance.ts",
+    "test:sheet-input": "node --import tsx scripts/test-sheet-input.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
@@ -47,7 +48,8 @@
     "pg": "^8.23.1",
     "react": "19.2.6",
     "react-dom": "19.3.0",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
