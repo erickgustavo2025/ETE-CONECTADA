@@ -1,36 +1,36 @@
-import assert from "node:assert/strict";
-import { randomBytes, randomInt, createHash } from "node:crypto";
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { PDFDocument } from "pdf-lib";
-import { openTestEnvironment, reportTestFailure } from "./test-environment";
-import { parseStudentBackup } from "../src/lib/student-import";
-import { hashPassword } from "../src/lib/password";
+import assert from 'node:assert/strict';
+import { randomBytes, randomInt, createHash } from 'node:crypto';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { PDFDocument } from 'pdf-lib';
+import { openTestEnvironment, reportTestFailure } from './test-environment';
+import { parseStudentBackup } from '../src/lib/student-import';
+import { hashPassword } from '../src/lib/password';
 import {
   validateDeclarationFields,
   DeclarationValidationError,
-} from "../src/lib/declarations";
+} from '../src/lib/declarations';
 
 async function main() {
   const environment = await openTestEnvironment({ http: true });
   const { db, base } = environment;
-  const suffix = randomBytes(8).toString("hex");
+  const suffix = randomBytes(8).toString('hex');
   const created: string[] = [];
-  const cookie = async (studentId: string, role: "student" | "secretary") => {
+  const cookie = async (studentId: string, role: 'student' | 'secretary') => {
     const account = await db.account.create({
       data: {
         studentId,
         role,
-        status: "active",
-        passwordHash: await hashPassword(randomBytes(16).toString("hex")),
+        status: 'active',
+        passwordHash: await hashPassword(randomBytes(16).toString('hex')),
         email: `${role}-${studentId}-${suffix}@eteconectada.invalid`,
       },
     });
-    const token = randomBytes(32).toString("base64url");
+    const token = randomBytes(32).toString('base64url');
     await db.session.create({
       data: {
-        tokenHash: createHash("sha256").update(token).digest("hex"),
+        tokenHash: createHash('sha256').update(token).digest('hex'),
         accountId: account.id,
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       },
@@ -39,9 +39,9 @@ async function main() {
   };
   const post = (url: string, body: unknown, session?: string, origin = base) =>
     fetch(`${base}${url}`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Origin: origin,
         ...(session ? { Cookie: session } : {}),
       },
@@ -50,28 +50,28 @@ async function main() {
   try {
     const parse = parseStudentBackup([
       {
-        _id: { $oid: "aaaaaaaaaaaaaaaaaaaaaaaa" },
-        matricula: "9900099",
-        nome: "Aluno sintético",
-        dataNascimento: "15/01/2008",
-        turma: "2B DS",
-        senha: "não importar",
-        role: "admin",
-        email: "nao-importar@example.invalid",
+        _id: { $oid: 'aaaaaaaaaaaaaaaaaaaaaaaa' },
+        matricula: '9900099',
+        nome: 'Aluno sintético',
+        dataNascimento: '15/01/2008',
+        turma: '2B DS',
+        senha: 'não importar',
+        role: 'admin',
+        email: 'nao-importar@example.invalid',
       },
     ]);
-    assert.equal(parse[0].courseLabel, "DS");
-    assert.equal("senha" in parse[0], false);
-    assert.equal("email" in parse[0], false);
-    assert.equal("role" in parse[0], false);
+    assert.equal(parse[0].courseLabel, 'DS');
+    assert.equal('senha' in parse[0], false);
+    assert.equal('email' in parse[0], false);
+    assert.equal('role' in parse[0], false);
     assert.throws(() =>
       parseStudentBackup([
         {
-          _id: { $oid: "aaaaaaaaaaaaaaaaaaaaaaaa" },
-          matricula: "9900099",
-          nome: "Aluno sintético",
-          dataNascimento: "31/02/2008",
-          turma: "2B DS",
+          _id: { $oid: 'aaaaaaaaaaaaaaaaaaaaaaaa' },
+          matricula: '9900099',
+          nome: 'Aluno sintético',
+          dataNascimento: '31/02/2008',
+          turma: '2B DS',
         },
       ]),
     );
@@ -79,13 +79,13 @@ async function main() {
       data: {
         fullName: `Estudante fictício João D'Ávila ${suffix}`,
         schoolRegistration: String(randomInt(10000000, 99999999)),
-        birthDate: new Date("2008-01-15T00:00:00Z"),
+        birthDate: new Date('2008-01-15T00:00:00Z'),
         enrollments: {
           create: {
-            mode: "INTEGRADO",
-            className: "2B DS",
+            mode: 'INTEGRADO',
+            className: '2B DS',
             grade: 2,
-            courseLabel: "DS",
+            courseLabel: 'DS',
           },
         },
       },
@@ -94,21 +94,21 @@ async function main() {
     created.push(student.id);
     const staff = await db.student.create({
       data: {
-        fullName: "Responsável sintético de teste",
-        birthDate: new Date("1990-01-01T00:00:00Z"),
+        fullName: 'Responsável sintético de teste',
+        birthDate: new Date('1990-01-01T00:00:00Z'),
         enrollments: {
           create: {
-            mode: "SUBSEQUENTE",
-            className: "Teste subsequente",
-            courseLabel: "DS",
+            mode: 'SUBSEQUENTE',
+            className: 'Teste subsequente',
+            courseLabel: 'DS',
           },
         },
       },
       include: { enrollments: true },
     });
     created.push(staff.id);
-    const studentCookie = await cookie(student.id, "student");
-    const staffCookie = await cookie(staff.id, "secretary");
+    const studentCookie = await cookie(student.id, 'student');
+    const staffCookie = await cookie(staff.id, 'secretary');
     assert.equal((await fetch(`${base}/api/declaracao/pdf`)).status, 404);
     assert.equal((await fetch(`${base}/api/profile/photo`)).status, 404);
     assert.equal(
@@ -117,7 +117,7 @@ async function main() {
     );
     assert.equal(
       (
-        await post("/api/declaracao/solicitacoes", {
+        await post('/api/declaracao/solicitacoes', {
           enrollmentId: student.enrollments[0].id,
         })
       ).status,
@@ -126,10 +126,10 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/declaracao/solicitacoes",
+          '/api/declaracao/solicitacoes',
           { enrollmentId: student.enrollments[0].id },
           studentCookie,
-          "https://example.invalid",
+          'https://example.invalid',
         )
       ).status,
       403,
@@ -137,7 +137,7 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/declaracao/solicitacoes",
+          '/api/declaracao/solicitacoes',
           { enrollmentId: staff.enrollments[0].id },
           studentCookie,
         )
@@ -147,7 +147,7 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/declaracao/solicitacoes",
+          '/api/declaracao/solicitacoes',
           { enrollmentId: staff.enrollments[0].id },
           staffCookie,
         )
@@ -157,7 +157,7 @@ async function main() {
     const concurrent = await Promise.all(
       Array.from({ length: 3 }, () =>
         post(
-          "/api/declaracao/solicitacoes",
+          '/api/declaracao/solicitacoes',
           { enrollmentId: student.enrollments[0].id, studentId: staff.id },
           studentCookie,
         ),
@@ -186,7 +186,7 @@ async function main() {
     const ownRows = (await ownRequests.json()).requests;
     assert.equal(ownRows.length, 1);
     assert.equal(ownRows[0].id, requestId);
-    assert.equal("student" in ownRows[0], false);
+    assert.equal('student' in ownRows[0], false);
     assert.equal(
       (
         await fetch(`${base}/api/secretaria/solicitacoes`, {
@@ -211,7 +211,7 @@ async function main() {
       headers: { Cookie: staffCookie },
     });
     assert.equal(staffRequests.status, 200);
-    assert.match(staffRequests.headers.get("cache-control")!, /no-store/);
+    assert.match(staffRequests.headers.get('cache-control')!, /no-store/);
     assert.ok(
       (await staffRequests.json()).requests.some(
         (row: { id: string }) => row.id === requestId,
@@ -220,7 +220,7 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/secretaria/solicitacoes",
+          '/api/secretaria/solicitacoes',
           { id: requestId, confirmed: true },
           studentCookie,
         )
@@ -230,10 +230,10 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/secretaria/solicitacoes",
+          '/api/secretaria/solicitacoes',
           { id: requestId, confirmed: true },
           staffCookie,
-          "https://example.invalid",
+          'https://example.invalid',
         )
       ).status,
       403,
@@ -241,7 +241,7 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/secretaria/solicitacoes",
+          '/api/secretaria/solicitacoes',
           { id: requestId, confirmed: true },
           staffCookie,
         )
@@ -249,23 +249,23 @@ async function main() {
       409,
     );
     assert.equal(
-      (await post("/api/secretaria/alunos", {}, studentCookie)).status,
+      (await post('/api/secretaria/alunos', {}, studentCookie)).status,
       403,
     );
-    assert.equal((await post("/api/secretaria/alunos", {})).status, 401);
+    assert.equal((await post('/api/secretaria/alunos', {})).status, 401);
     assert.equal(
       (
         await post(
-          "/api/secretaria/alunos",
+          '/api/secretaria/alunos',
           {},
           staffCookie,
-          "https://example.invalid",
+          'https://example.invalid',
         )
       ).status,
       403,
     );
     const list = await post(
-      "/api/secretaria/alunos",
+      '/api/secretaria/alunos',
       { query: suffix, page: 9999 },
       staffCookie,
     );
@@ -274,9 +274,9 @@ async function main() {
     assert.equal(result.total, 1);
     assert.equal(result.page, 1);
     assert.equal(result.students.length, 1);
-    assert.equal("account" in result.students[0], false);
+    assert.equal('account' in result.students[0], false);
     const empty = await post(
-      "/api/secretaria/alunos",
+      '/api/secretaria/alunos',
       { query: `not-found-${suffix}` },
       staffCookie,
     );
@@ -284,62 +284,62 @@ async function main() {
     const fields = {
       studentId: student.id,
       enrollmentId: student.enrollments[0].id,
-      naturality: "Jaboatão dos Guararapes/PE",
-      parentOne: "Responsável fictício Um",
-      parentTwo: "Responsável fictício Dois",
-      socialName: "",
-      courseName: "Desenvolvimento de Sistemas",
-      schoolPeriod: "2026",
-      schedule: "de segunda-feira a sexta-feira, das 07h30 às 16h40",
-      secretaryName: "Secretário(a) de teste",
-      secretaryRegistration: "",
-      directorName: "Gestor(a) de teste",
-      directorRegistration: "",
+      naturality: 'Jaboatão dos Guararapes/PE',
+      parentOne: 'Responsável fictício Um',
+      parentTwo: 'Responsável fictício Dois',
+      socialName: '',
+      courseName: 'Desenvolvimento de Sistemas',
+      schoolPeriod: '2026',
+      schedule: 'de segunda-feira a sexta-feira, das 07h30 às 16h40',
+      secretaryName: 'Secretário(a) de teste',
+      secretaryRegistration: '',
+      directorName: 'Gestor(a) de teste',
+      directorRegistration: '',
       includeFrequency: true,
-      frequencyPercent: "92,5",
-      frequencyStart: "2026-02-01",
-      frequencyEnd: "2026-09-30",
+      frequencyPercent: '92,5',
+      frequencyStart: '2026-02-01',
+      frequencyEnd: '2026-09-30',
       reviewed: true,
     };
-    assert.equal(validateDeclarationFields(fields).frequencyPercent, "92.5");
-    for (const percent of ["101", "-1", "abc", "1.234", ""])
+    assert.equal(validateDeclarationFields(fields).frequencyPercent, '92.5');
+    for (const percent of ['101', '-1', 'abc', '1.234', ''])
       assert.throws(
         () =>
           validateDeclarationFields({ ...fields, frequencyPercent: percent }),
         DeclarationValidationError,
       );
     assert.equal(
-      validateDeclarationFields({ ...fields, frequencyPercent: "0" })
+      validateDeclarationFields({ ...fields, frequencyPercent: '0' })
         .frequencyPercent,
-      "0",
+      '0',
     );
     assert.throws(
       () =>
-        validateDeclarationFields({ ...fields, frequencyStart: "2026-02-31" }),
+        validateDeclarationFields({ ...fields, frequencyStart: '2026-02-31' }),
       DeclarationValidationError,
     );
     assert.throws(
       () =>
         validateDeclarationFields({
           ...fields,
-          frequencyStart: "2026-10-01",
-          frequencyEnd: "2026-09-30",
+          frequencyStart: '2026-10-01',
+          frequencyEnd: '2026-09-30',
         }),
       DeclarationValidationError,
     );
     assert.throws(
       () =>
-        validateDeclarationFields({ ...fields, frequencyEnd: "2099-01-01" }),
+        validateDeclarationFields({ ...fields, frequencyEnd: '2099-01-01' }),
       DeclarationValidationError,
     );
     assert.equal(
-      (await post("/api/secretaria/declaracao", fields, studentCookie)).status,
+      (await post('/api/secretaria/declaracao', fields, studentCookie)).status,
       403,
     );
     assert.equal(
       (
         await post(
-          "/api/secretaria/declaracao",
+          '/api/secretaria/declaracao',
           { ...fields, reviewed: false },
           staffCookie,
         )
@@ -347,16 +347,16 @@ async function main() {
       422,
     );
     const invalid = await post(
-      "/api/secretaria/declaracao",
-      { ...fields, naturality: "" },
+      '/api/secretaria/declaracao',
+      { ...fields, naturality: '' },
       staffCookie,
     );
     assert.equal(invalid.status, 422);
-    assert.equal((await invalid.json()).field, "naturality");
+    assert.equal((await invalid.json()).field, 'naturality');
     assert.equal(
       (
         await post(
-          "/api/secretaria/declaracao",
+          '/api/secretaria/declaracao',
           { ...fields, enrollmentId: staff.enrollments[0].id },
           staffCookie,
         )
@@ -366,7 +366,7 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/secretaria/declaracao",
+          '/api/secretaria/declaracao',
           {
             ...fields,
             studentId: staff.id,
@@ -383,16 +383,16 @@ async function main() {
           where: { id: requestId },
         })
       ).status,
-      "REQUESTED",
+      'REQUESTED',
     );
     const response = await post(
-      "/api/secretaria/declaracao",
+      '/api/secretaria/declaracao',
       fields,
       staffCookie,
     );
     assert.equal(response.status, 200);
-    assert.equal(response.headers.get("content-type"), "application/pdf");
-    assert.match(response.headers.get("cache-control")!, /no-store/);
+    assert.equal(response.headers.get('content-type'), 'application/pdf');
+    assert.match(response.headers.get('cache-control')!, /no-store/);
     const pdf = new Uint8Array(await response.arrayBuffer());
     const doc = await PDFDocument.load(pdf);
     assert.equal(doc.getPageCount(), 1);
@@ -401,7 +401,7 @@ async function main() {
     const prepared = await db.declarationRequest.findUniqueOrThrow({
       where: { id: requestId },
     });
-    assert.equal(prepared.status, "IN_PREPARATION");
+    assert.equal(prepared.status, 'IN_PREPARATION');
     assert.ok(prepared.generatedAt && prepared.preparedById);
     assert.equal(prepared.readyAt, null);
     const artifacts = await mkdtemp(join(tmpdir(), 'ete-declarations-test-'));
@@ -413,14 +413,14 @@ async function main() {
     });
     const second = await db.student.create({
       data: {
-        fullName: "Estudante fictícia Marina",
-        birthDate: new Date("2008-05-25T00:00:00Z"),
+        fullName: 'Estudante fictícia Marina',
+        birthDate: new Date('2008-05-25T00:00:00Z'),
         enrollments: {
           create: {
-            mode: "INTEGRADO",
+            mode: 'INTEGRADO',
             className: batchClass,
             grade: 2,
-            courseLabel: "DS",
+            courseLabel: 'DS',
           },
         },
       },
@@ -428,7 +428,7 @@ async function main() {
     });
     created.push(second.id);
     const filtered = await post(
-      "/api/secretaria/alunos",
+      '/api/secretaria/alunos',
       { className: batchClass, allClass: true },
       staffCookie,
     );
@@ -438,13 +438,13 @@ async function main() {
     assert.equal(filteredRows.students.length, 2);
     assert.ok(filteredRows.classes.includes(batchClass));
     assert.equal(
-      (await post("/api/secretaria/alunos", { allClass: true }, staffCookie))
+      (await post('/api/secretaria/alunos', { allClass: true }, staffCookie))
         .status,
       400,
     );
-    const secondCookie = await cookie(second.id, "student");
+    const secondCookie = await cookie(second.id, 'student');
     const secondRequest = await post(
-      "/api/declaracao/solicitacoes",
+      '/api/declaracao/solicitacoes',
       { enrollmentId: second.enrollments[0].id },
       secondCookie,
     );
@@ -454,38 +454,38 @@ async function main() {
       ...fields,
       studentId: second.id,
       enrollmentId: second.enrollments[0].id,
-      frequencyPercent: "85",
+      frequencyPercent: '85',
     };
     const bulkBody = { items: [fields, batchFields] };
     assert.equal(
-      (await post("/api/secretaria/declaracoes", bulkBody)).status,
+      (await post('/api/secretaria/declaracoes', bulkBody)).status,
       401,
     );
     assert.equal(
-      (await post("/api/secretaria/declaracoes", bulkBody, studentCookie))
+      (await post('/api/secretaria/declaracoes', bulkBody, studentCookie))
         .status,
       403,
     );
     assert.equal(
       (
         await post(
-          "/api/secretaria/declaracoes",
+          '/api/secretaria/declaracoes',
           bulkBody,
           staffCookie,
-          "https://example.invalid",
+          'https://example.invalid',
         )
       ).status,
       403,
     );
     assert.equal(
-      (await post("/api/secretaria/declaracoes", { items: [] }, staffCookie))
+      (await post('/api/secretaria/declaracoes', { items: [] }, staffCookie))
         .status,
       400,
     );
     assert.equal(
       (
         await post(
-          "/api/secretaria/declaracoes",
+          '/api/secretaria/declaracoes',
           { items: Array(101).fill(fields) },
           staffCookie,
         )
@@ -495,7 +495,7 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/secretaria/declaracoes",
+          '/api/secretaria/declaracoes',
           { items: [fields, fields] },
           staffCookie,
         )
@@ -503,8 +503,8 @@ async function main() {
       422,
     );
     const invalidBatch = await post(
-      "/api/secretaria/declaracoes",
-      { items: [fields, { ...batchFields, frequencyPercent: "101" }] },
+      '/api/secretaria/declaracoes',
+      { items: [fields, { ...batchFields, frequencyPercent: '101' }] },
       staffCookie,
     );
     assert.equal(invalidBatch.status, 422);
@@ -512,7 +512,7 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/secretaria/declaracoes",
+          '/api/secretaria/declaracoes',
           {
             items: [
               fields,
@@ -530,15 +530,15 @@ async function main() {
           where: { id: secondRequestId },
         })
       ).status,
-      "REQUESTED",
+      'REQUESTED',
     );
     const bulk = await post(
-      "/api/secretaria/declaracoes",
+      '/api/secretaria/declaracoes',
       bulkBody,
       staffCookie,
     );
     assert.equal(bulk.status, 200);
-    assert.match(bulk.headers.get("cache-control")!, /no-store/);
+    assert.match(bulk.headers.get('cache-control')!, /no-store/);
     const bulkPdf = new Uint8Array(await bulk.arrayBuffer());
     const bulkDoc = await PDFDocument.load(bulkPdf);
     assert.equal(bulkDoc.getPageCount(), 2);
@@ -554,12 +554,12 @@ async function main() {
           where: { id: secondRequestId },
         })
       ).status,
-      "IN_PREPARATION",
+      'IN_PREPARATION',
     );
     assert.equal(
       (
         await post(
-          "/api/secretaria/solicitacoes",
+          '/api/secretaria/solicitacoes',
           { id: requestId },
           staffCookie,
         )
@@ -569,26 +569,26 @@ async function main() {
     assert.equal(
       (
         await post(
-          "/api/secretaria/solicitacoes",
-          { id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", confirmed: true },
+          '/api/secretaria/solicitacoes',
+          { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', confirmed: true },
           staffCookie,
         )
       ).status,
       404,
     );
     const ready = await post(
-      "/api/secretaria/solicitacoes",
+      '/api/secretaria/solicitacoes',
       { id: requestId, confirmed: true },
       staffCookie,
     );
     assert.equal(ready.status, 200);
     const readyRow = (await ready.json()).request;
-    assert.equal(readyRow.status, "READY_FOR_PICKUP");
+    assert.equal(readyRow.status, 'READY_FOR_PICKUP');
     assert.ok(readyRow.readyAt);
     assert.equal(
       (
         await post(
-          "/api/secretaria/solicitacoes",
+          '/api/secretaria/solicitacoes',
           { id: requestId, confirmed: true },
           staffCookie,
         )
@@ -605,7 +605,7 @@ async function main() {
     });
     assert.equal(
       (await refreshed.json()).requests[0].status,
-      "READY_FOR_PICKUP",
+      'READY_FOR_PICKUP',
     );
     const otherStudent = await fetch(`${base}/api/declaracao/solicitacoes`, {
       headers: { Cookie: secondCookie },
@@ -632,7 +632,7 @@ async function main() {
     assert.doesNotMatch(homeHtml, /Abrir perfil|profile\/photo|Alterar foto/);
     // Gerar novamente não reabre um atendimento já liberado nem muda sua data.
     assert.equal(
-      (await post("/api/secretaria/declaracao", fields, staffCookie)).status,
+      (await post('/api/secretaria/declaracao', fields, staffCookie)).status,
       200,
     );
     assert.equal(
@@ -641,10 +641,10 @@ async function main() {
           where: { id: requestId },
         })
       ).status,
-      "READY_FOR_PICKUP",
+      'READY_FOR_PICKUP',
     );
     const newRequest = await post(
-      "/api/declaracao/solicitacoes",
+      '/api/declaracao/solicitacoes',
       { enrollmentId: student.enrollments[0].id },
       studentCookie,
     );
@@ -655,13 +655,15 @@ async function main() {
     });
     assert.match(await pages.text(), /Acesso restrito ao atendimento escolar/);
     console.log(
-      "OK: solicitações persistidas e concorrentes, isolamento de alunos, preparação sem liberar retirada, confirmação e auditoria da retirada, autorização/origem, fotos e PDF do aluno removidos, frequência e lote A4.",
+      'OK: solicitações persistidas e concorrentes, isolamento de alunos, preparação sem liberar retirada, confirmação e auditoria da retirada, autorização/origem, fotos e PDF do aluno removidos, frequência e lote A4.',
     );
   } finally {
     try {
       if (created.length)
         await db.student.deleteMany({ where: { id: { in: created } } });
-    } finally { await environment.close(); }
+    } finally {
+      await environment.close();
+    }
   }
 }
 main().catch(reportTestFailure);

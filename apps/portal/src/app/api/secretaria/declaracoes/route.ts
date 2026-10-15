@@ -1,43 +1,43 @@
-import { recordGeneratedDeclarations } from "@/lib/declaration-requests";
-import { canManageDeclarations } from "@/lib/declaration-access";
-import { currentSession } from "@/lib/session";
-import { getDb } from "@/lib/db";
+import { recordGeneratedDeclarations } from '@/lib/declaration-requests';
+import { canManageDeclarations } from '@/lib/declaration-access';
+import { currentSession } from '@/lib/session';
+import { getDb } from '@/lib/db';
 import {
   studentDeclarationSelect,
   validateDeclarationFields,
   DeclarationValidationError,
-} from "@/lib/declarations";
-import { createDeclarationsPdf } from "@/lib/declaration-pdf";
-import { sameOriginRequest, privateHeaders } from "@/lib/private-request";
+} from '@/lib/declarations';
+import { createDeclarationsPdf } from '@/lib/declaration-pdf';
+import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
 
-export const runtime = "nodejs";
+export const runtime = 'nodejs';
 export async function POST(request: Request) {
   if (!sameOriginRequest(request))
     return Response.json(
-      { error: "Origem não autorizada." },
+      { error: 'Origem não autorizada.' },
       { status: 403, headers: privateHeaders },
     );
   try {
     const session = await currentSession();
     if (!session)
       return Response.json(
-        { error: "Entre novamente para continuar." },
+        { error: 'Entre novamente para continuar.' },
         { status: 401, headers: privateHeaders },
       );
     if (!canManageDeclarations(session.role))
       return Response.json(
-        { error: "Somente a secretaria pode preparar as declarações." },
+        { error: 'Somente a secretaria pode preparar as declarações.' },
         { status: 403, headers: privateHeaders },
       );
-    if (Number(request.headers.get("content-length") ?? 0) > 400000)
+    if (Number(request.headers.get('content-length') ?? 0) > 400000)
       return Response.json(
-        { error: "Dados acima do limite do lote." },
+        { error: 'Dados acima do limite do lote.' },
         { status: 413, headers: privateHeaders },
       );
     const raw = await request.text();
     if (raw.length > 400000)
       return Response.json(
-        { error: "Dados acima do limite do lote." },
+        { error: 'Dados acima do limite do lote.' },
         { status: 413, headers: privateHeaders },
       );
     let body;
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       body = JSON.parse(raw);
     } catch {
       return Response.json(
-        { error: "Confira os dados do lote." },
+        { error: 'Confira os dados do lote.' },
         { status: 400, headers: privateHeaders },
       );
     }
@@ -56,21 +56,21 @@ export async function POST(request: Request) {
       body.items.length > 100
     )
       return Response.json(
-        { error: "Selecione de 1 a 100 declarações por PDF." },
+        { error: 'Selecione de 1 a 100 declarações por PDF.' },
         { status: 400, headers: privateHeaders },
       );
     const items = body.items.map((item: unknown, index: number) => {
       try {
-        if (!item || typeof item !== "object" || Array.isArray(item))
+        if (!item || typeof item !== 'object' || Array.isArray(item))
           throw new DeclarationValidationError(
-            "Confira os dados da declaração.",
+            'Confira os dados da declaração.',
           );
         const value = item as Record<string, unknown>;
         if (
-          typeof value.studentId !== "string" ||
+          typeof value.studentId !== 'string' ||
           !/^[0-9a-f-]{36}$/i.test(value.studentId)
         )
-          throw new DeclarationValidationError("Selecione um aluno válido.");
+          throw new DeclarationValidationError('Selecione um aluno válido.');
         return {
           studentId: value.studentId,
           fields: validateDeclarationFields(item),
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       fields: ReturnType<typeof validateDeclarationFields>;
     }[];
     if (new Set(items.map((item) => item.studentId)).size !== items.length)
-      throw new DeclarationValidationError("O lote contém um aluno repetido.");
+      throw new DeclarationValidationError('O lote contém um aluno repetido.');
     const students = await getDb().student.findMany({
       where: { id: { in: items.map((item) => item.studentId) } },
       select: studentDeclarationSelect,
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       const student = students.find((student) => student.id === item.studentId);
       if (!student) {
         const error = new DeclarationValidationError(
-          "Aluno não encontrado. Atualize a seleção.",
+          'Aluno não encontrado. Atualize a seleção.',
         );
         error.itemIndex = index;
         throw error;
@@ -112,8 +112,8 @@ export async function POST(request: Request) {
     return new Response(Buffer.from(pdf), {
       headers: {
         ...privateHeaders,
-        "Content-Type": "application/pdf",
-        "Content-Disposition":
+        'Content-Type': 'application/pdf',
+        'Content-Disposition':
           'attachment; filename="declaracoes-vinculo-minutas.pdf"',
       },
     });
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error:
-          "Não foi possível preparar o lote. Nenhum dado foi alterado; tente novamente.",
+          'Não foi possível preparar o lote. Nenhum dado foi alterado; tente novamente.',
       },
       { status: 503, headers: privateHeaders },
     );

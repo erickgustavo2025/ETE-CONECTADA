@@ -1,7 +1,7 @@
-import type { Prisma } from "@/generated/prisma/client";
-import { getDb } from "./db";
-import { DeclarationValidationError } from "./declarations";
-import type { RequestSummary } from "./declaration-request-types";
+import type { Prisma } from '@/generated/prisma/client';
+import { getDb } from './db';
+import { DeclarationValidationError } from './declarations';
+import type { RequestSummary } from './declaration-request-types';
 
 export const requestSummarySelect = {
   id: true,
@@ -32,7 +32,7 @@ export async function studentRequests(studentId: string) {
     await getDb().declarationRequest.findMany({
       where: { studentId },
       select: requestSummarySelect,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       take: 20,
     })
   ).map(requestSummary);
@@ -59,16 +59,16 @@ export async function requestDeclaration(
       });
       if (!enrollment)
         throw new RequestError(
-          "Matrícula não encontrada na sua conta. Procure a secretaria.",
+          'Matrícula não encontrada na sua conta. Procure a secretaria.',
           422,
         );
-      if (enrollment.mode !== "INTEGRADO")
+      if (enrollment.mode !== 'INTEGRADO')
         throw new RequestError(
-          "O atendimento do subsequente aguarda a confirmação do modelo pela escola.",
+          'O atendimento do subsequente aguarda a confirmação do modelo pela escola.',
           422,
         );
       const existing = await tx.declarationRequest.findFirst({
-        where: { enrollmentId, status: { not: "READY_FOR_PICKUP" } },
+        where: { enrollmentId, status: { not: 'READY_FOR_PICKUP' } },
         select: requestSummarySelect,
       });
       if (existing)
@@ -92,14 +92,14 @@ export async function recordGeneratedDeclarations(
   await getDb().$transaction(async (tx) => {
     await tx.declarationRequest.updateMany({
       where: {
-        status: "REQUESTED",
+        status: 'REQUESTED',
         OR: items.map((item) => ({
           studentId: item.studentId,
           enrollmentId: item.enrollmentId,
         })),
       },
       data: {
-        status: "IN_PREPARATION",
+        status: 'IN_PREPARATION',
         generatedAt: new Date(),
         preparedById: accountId,
       },
@@ -116,20 +116,20 @@ export async function markReadyForPickup(id: string, accountId: string) {
       });
       if (!row)
         throw new RequestError(
-          "Solicitação não encontrada. Atualize a lista.",
+          'Solicitação não encontrada. Atualize a lista.',
           404,
         );
-      if (row.status === "READY_FOR_PICKUP") return requestSummary(row);
-      if (row.status !== "IN_PREPARATION")
+      if (row.status === 'READY_FOR_PICKUP') return requestSummary(row);
+      if (row.status !== 'IN_PREPARATION')
         throw new RequestError(
-          "Gere o PDF e prepare o documento antes de liberar a retirada.",
+          'Gere o PDF e prepare o documento antes de liberar a retirada.',
           409,
         );
       return requestSummary(
         await tx.declarationRequest.update({
           where: { id },
           data: {
-            status: "READY_FOR_PICKUP",
+            status: 'READY_FOR_PICKUP',
             readyAt: new Date(),
             readyById: accountId,
           },
@@ -142,7 +142,7 @@ export async function markReadyForPickup(id: string, accountId: string) {
 }
 export function validRequestId(value: unknown): value is string {
   return (
-    typeof value === "string" &&
+    typeof value === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
       value,
     )
@@ -155,7 +155,7 @@ export function requestFailure(error: unknown) {
     return { error: error.message, status: 422 };
   return {
     error:
-      "Não foi possível concluir. Seus dados foram preservados; tente novamente.",
+      'Não foi possível concluir. Seus dados foram preservados; tente novamente.',
     status: 503,
   };
 }
