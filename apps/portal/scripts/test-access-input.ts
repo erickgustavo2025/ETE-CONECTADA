@@ -218,6 +218,7 @@ test('handlers negam entradas antes de banco/scrypt; controles válidos chegam �
     const identity = {
       schoolRegistration: '01234567',
       birthDate: '2008-01-15',
+      parentName: 'Filiação Fictícia Um',
     };
     const signup = {
       ...identity,
@@ -248,6 +249,9 @@ test('handlers negam entradas antes de banco/scrypt; controles válidos chegam �
         { ...identity, schoolRegistration: ' '.repeat(33) },
         { ...identity, birthDate: [] },
         { ...identity, birthDate: '2008-01-15x' },
+        ...[undefined, [], 'Ana', 'x'.repeat(181), 'Nome\u0000 Sobrenome'].map(
+          (parentName) => ({ ...identity, parentName }),
+        ),
       ],
       [
         { ...signup, cpf: 123 },
@@ -255,6 +259,9 @@ test('handlers negam entradas antes de banco/scrypt; controles válidos chegam �
         { ...signup, email: [] },
         { ...signup, email: 'x'.repeat(321) },
         { ...signup, confirmPassword: {} },
+        ...[undefined, [], 'Ana', 'x'.repeat(181), 'Nome\u0000 Sobrenome'].map(
+          (parentName) => ({ ...signup, parentName }),
+        ),
         ...[7, 129].map((n) => ({
           ...signup,
           password: 'a'.repeat(n),

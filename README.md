@@ -7,7 +7,7 @@ O projeto está em desenvolvimento. Cadastro e login funcionam apenas nesse ambi
 ## O que já funciona
 
 - Site institucional com acesso ao portal.
-- Primeiro acesso com matrícula e nascimento, cadastro de CPF, e-mail e senha, confirmação de e-mail e login.
+- Primeiro acesso com matrícula, nascimento e nome completo de um dos pais, cadastro de CPF, e-mail e senha, confirmação de e-mail e login.
 - Solicitação de declaração pelo aluno e acompanhamento do pedido.
 - Atendimento pela secretaria, com busca por aluno ou turma e geração de PDF individual ou em lote.
 
@@ -62,7 +62,9 @@ Para acessar pelo celular ou por outro computador na mesma rede, configure `NEXT
 
 ### Experimentar o primeiro acesso
 
-O aluno informa matrícula e nascimento; depois, CPF, e-mail, senha e confirmação da senha. A conta é ativada pelo link de confirmação. O login aceita CPF ou e-mail.
+O aluno informa matrícula, nascimento e nome completo do pai ou da mãe, conforme o registro escolar; depois, CPF, e-mail, senha e confirmação da senha. A conta é ativada pelo link de confirmação. O login aceita CPF ou e-mail.
+
+O nome é uma conferência adicional. Se os dados estiverem ausentes ou diferentes, o aluno precisa procurar a secretaria. As regras e os limites dessa conferência estão em [Acesso e entrega de documentos](docs/acesso-e-documentos.md).
 
 Para enviar o link por e-mail, configure `RESEND_API_KEY` e `EMAIL_FROM`. Sem essas variáveis, o link aparece na tela apenas em desenvolvimento, permitindo experimentar a ativação.
 

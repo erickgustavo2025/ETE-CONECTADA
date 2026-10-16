@@ -1,12 +1,12 @@
-import Image from "next/image";
-import PernambucoArt from "../../../../shared/brand/pernambuco-art";
-export default function AuthSide({ mode }: { mode: "login" | "cadastro" }) {
+import Image from 'next/image';
+import PernambucoArt from '../../../../shared/brand/pernambuco-art';
+export default function AuthSide({ mode }: { mode: 'login' | 'cadastro' }) {
   return (
     <aside className="auth-side" aria-label="ETE Conectada">
       <div>
         <p className="auth-side-label">DA NOSSA ETE. PARA VOCÊ.</p>
         <h2>
-          {mode === "login" ? (
+          {mode === 'login' ? (
             <>
               Sua escola,
               <br />
@@ -21,9 +21,9 @@ export default function AuthSide({ mode }: { mode: "login" | "cadastro" }) {
           )}
         </h2>
         <p className="side-description">
-          {mode === "login"
-            ? "Os serviços da escola, em um só lugar."
-            : "Use sua matrícula e data de nascimento para começar. Depois, crie seus dados de acesso."}
+          {mode === 'login'
+            ? 'Os serviços da escola, em um só lugar.'
+            : 'Use os dados da sua matrícula para começar. Depois, crie seus dados de acesso.'}
         </p>
       </div>
       <PernambucoArt className="auth-art" />

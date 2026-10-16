@@ -69,6 +69,12 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
         schoolRegistration: String(randomInt(10000000, 99999999)),
         birthDate: new Date('2008-01-15T00:00:00Z'),
         registrationAllowed: true,
+        details: {
+          create: {
+            parentOne: 'Filiação Fictícia Acessibilidade',
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
         enrollments: {
           create: {
             mode: 'INTEGRADO',
@@ -144,6 +150,9 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
     await page.setViewportSize({ width: 320, height: 640 });
     await page.getByLabel('Matrícula').fill(student.schoolRegistration!);
     await page.getByLabel('Data de nascimento').fill('2008-01-15');
+    await page
+      .getByLabel('Nome completo do pai ou da mãe')
+      .fill('Filiação Fictícia Acessibilidade');
     const trigger = page.getByRole('button', { name: /Conferir cadastro/ });
     await trigger.focus();
     await page.keyboard.press('Enter');

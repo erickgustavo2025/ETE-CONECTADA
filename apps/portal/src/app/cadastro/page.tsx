@@ -5,10 +5,14 @@ import PasswordInput from '@/components/password-input';
 import { useFormValidation } from '@/components/use-form-validation';
 import AuthSide from '@/components/auth-side';
 import PortalFrame from '@/components/portal-frame';
-import { normalizeCpf } from '@/lib/registration';
+import { normalizeCpf, normalizeParentName } from '@/lib/registration';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 
-type Identity = { schoolRegistration: string; birthDate: string };
+type Identity = {
+  schoolRegistration: string;
+  birthDate: string;
+  parentName: string;
+};
 
 export default function CadastroPage() {
   const identityValidation = useFormValidation('identity-error');
@@ -50,7 +54,16 @@ export default function CadastroPage() {
     const current = {
       schoolRegistration: String(data.get('schoolRegistration') || ''),
       birthDate: String(data.get('birthDate') || ''),
+      parentName: String(data.get('parentName') || ''),
     };
+    if (!normalizeParentName(current.parentName)) {
+      identityValidation.reject(
+        'parentName',
+        'Informe o nome completo do pai ou da mãe, como consta na matrícula.',
+        event.currentTarget,
+      );
+      return;
+    }
     setMessage('');
     setLoginHint(false);
     setBusy(true);
@@ -59,6 +72,7 @@ export default function CadastroPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(current),
+        signal: AbortSignal.timeout(20_000),
       });
       const result = await response.json();
       if (!response.ok)
@@ -83,9 +97,12 @@ export default function CadastroPage() {
         );
     } catch (error) {
       setMessage(
-        error instanceof Error
+        error instanceof Error &&
+          !(error instanceof TypeError) &&
+          !(error instanceof SyntaxError) &&
+          error.name !== 'TimeoutError'
           ? error.message
-          : 'Não foi possível consultar o cadastro.',
+          : 'Não foi possível consultar o cadastro agora. Confira a conexão e tente novamente.',
       );
     } finally {
       setBusy(false);
@@ -175,7 +192,7 @@ export default function CadastroPage() {
               </span>
               <span className="eyebrow">SEU ESPAÇO NA ESCOLA</span>
               <h1>Primeiro acesso</h1>
-              <p>Vamos encontrar seu cadastro na ETE.</p>
+              <p>Informe seus dados como constam na matrícula.</p>
             </div>
             <div className="auth-card-body">
               <form
@@ -197,6 +214,7 @@ export default function CadastroPage() {
                   pattern="[0-9]{7,8}"
                   placeholder="Sua matrícula na escola"
                   required
+                  disabled={busy}
                 />
                 <label htmlFor="birth-date">Data de nascimento</label>
                 <input
@@ -206,7 +224,28 @@ export default function CadastroPage() {
                   type="date"
                   autoComplete="off"
                   required
+                  disabled={busy}
                 />
+                <label htmlFor="parent-name">
+                  Nome completo do pai ou da mãe
+                </label>
+                <input
+                  {...identityValidation.field('parentName')}
+                  id="parent-name"
+                  name="parentName"
+                  type="text"
+                  autoComplete="off"
+                  autoCapitalize="words"
+                  spellCheck={false}
+                  maxLength={180}
+                  aria-describedby={`${identityValidation.field('parentName')['aria-describedby'] ?? ''} parentage-help`.trim()}
+                  required
+                  disabled={busy}
+                />
+                <p id="parentage-help" className="form-note">
+                  Informe apenas um dos nomes completos registrados. Se não
+                  conseguir conferir os dados, procure a secretaria.
+                </p>
                 {identityValidation.error && (
                   <p id="identity-error" className="field-error" role="alert">
                     {identityValidation.error}

@@ -5,7 +5,72 @@ import {
   normalizeEmail,
   normalizeSchoolRegistration,
   validBirthDate,
+  normalizeParentName,
+  matchesRegisteredParent,
 } from '../src/lib/registration';
+
+test('filiação: normaliza caixa, acentos e espaços; mantém nome inteiro e pontuação', () => {
+  assert.equal(normalizeParentName('  MARÍA   D’ÁVILA  '), "maria d'avila");
+  assert.equal(normalizeParentName('Ana-Maria Silva'), 'ana-maria silva');
+  const details = {
+    parentOne: 'Maria de Souza Silva',
+    parentTwo: 'João D’Ávila',
+    parentageSource: 'SCHOOL_RECORD',
+  };
+  assert.equal(matchesRegisteredParent('MÁRIA DE SOUZA SILVA', details), true);
+  assert.equal(matchesRegisteredParent("joao d'avila", details), true);
+  for (const value of [
+    'Maria',
+    'Maria Silva',
+    'Souza Silva',
+    'Maria Silva Souza',
+    'Joao D Avila',
+    'João D’Ávila Extra',
+    '',
+    null,
+    {},
+    [],
+    'A'.repeat(181),
+    'Maria\nSilva',
+    'Maria\u200b Silva',
+    'Maria 123',
+  ]) {
+    assert.equal(matchesRegisteredParent(value, details), false);
+  }
+});
+
+test('filiação: aceita registro único e correção da secretaria, recusa origem desconhecida ou autodeclarada', () => {
+  const details = {
+    parentOne: null,
+    parentTwo: 'Nome Completo Fictício',
+    parentageSource: 'SECRETARY_CORRECTION',
+  };
+  assert.equal(
+    matchesRegisteredParent('Nome Completo Fictício', details),
+    true,
+  );
+  for (const parentageSource of [null, 'STUDENT_DECLARATION', 'outro']) {
+    assert.equal(
+      matchesRegisteredParent('Nome Completo Fictício', {
+        ...details,
+        parentageSource,
+      }),
+      false,
+    );
+  }
+  assert.equal(matchesRegisteredParent('Nome Completo Fictício', null), false);
+  assert.equal(
+    matchesRegisteredParent('Nome Completo Fictício', {
+      ...details,
+      parentTwo: null,
+    }),
+    false,
+  );
+  const boundary = `${'a'.repeat(178)} b`;
+  assert.equal(boundary.length, 180);
+  assert.notEqual(normalizeParentName(boundary), null);
+  assert.equal(normalizeParentName(boundary + 'c'), null);
+});
 
 test('normaliza CPF com pontuação e aceita dígitos verificadores válidos', () => {
   assert.equal(normalizeCpf('45278196319'), '45278196319');
@@ -15,12 +80,17 @@ test('normaliza CPF com pontuação e aceita dígitos verificadores válidos', (
 
 test('recusa CPF com cada dígito verificador alterado, repetido ou de tipo desconhecido', () => {
   const cpf = '45278196319';
-  const alter = (index: number) => `${cpf.slice(0, index)}${cpf[index] === '9' ? '0' : '9'}${cpf.slice(index + 1)}`;
+  const alter = (index: number) =>
+    `${cpf.slice(0, index)}${cpf[index] === '9' ? '0' : '9'}${cpf.slice(index + 1)}`;
 
   assert.equal(normalizeCpf(alter(9)), null);
   assert.equal(normalizeCpf(alter(10)), null);
   for (const digit of '0123456789') {
-    assert.equal(normalizeCpf(digit.repeat(11)), null, `CPF repetido: ${digit}`);
+    assert.equal(
+      normalizeCpf(digit.repeat(11)),
+      null,
+      `CPF repetido: ${digit}`,
+    );
   }
   assert.equal(normalizeCpf('1234567890'), null);
   assert.equal(normalizeCpf('123456789012'), null);
@@ -35,13 +105,29 @@ test('aceita matrículas de 7 ou 8 dígitos, preservando zeros e removendo espa�
 });
 
 test('recusa matrículas fora dos limites ou que não sejam strings numéricas', () => {
-  for (const value of ['123456', '123456789', '12 34567', '', '   ', 1234567, null, undefined]) {
-    assert.equal(normalizeSchoolRegistration(value), null, `valor recusado: ${String(value)}`);
+  for (const value of [
+    '123456',
+    '123456789',
+    '12 34567',
+    '',
+    '   ',
+    1234567,
+    null,
+    undefined,
+  ]) {
+    assert.equal(
+      normalizeSchoolRegistration(value),
+      null,
+      `valor recusado: ${String(value)}`,
+    );
   }
 });
 
 test('normaliza e-mail conforme o formato simples do contrato atual', () => {
-  assert.equal(normalizeEmail('  Aluno+teste@EXEMPLO.COM  '), 'aluno+teste@exemplo.com');
+  assert.equal(
+    normalizeEmail('  Aluno+teste@EXEMPLO.COM  '),
+    'aluno+teste@exemplo.com',
+  );
 });
 
 test('aceita e-mail com 254 caracteres e recusa com 255', () => {
@@ -55,13 +141,31 @@ test('aceita e-mail com 254 caracteres e recusa com 255', () => {
 });
 
 test('recusa e-mails vazios, com espaços, sem domínio ou com separadores ausentes', () => {
-  for (const value of ['', '   ', 'a b@exemplo.com', 'a@sub dominio.com', 'a@exemplo', '@exemplo.com', 'a@@exemplo.com', null, undefined, 12]) {
-    assert.equal(normalizeEmail(value), null, `valor recusado: ${String(value)}`);
+  for (const value of [
+    '',
+    '   ',
+    'a b@exemplo.com',
+    'a@sub dominio.com',
+    'a@exemplo',
+    '@exemplo.com',
+    'a@@exemplo.com',
+    null,
+    undefined,
+    12,
+  ]) {
+    assert.equal(
+      normalizeEmail(value),
+      null,
+      `valor recusado: ${String(value)}`,
+    );
   }
 });
 
 test('valida datas existentes, anos bissextos e relógio determinístico para hoje e futuro', (t) => {
-  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-11T12:00:00.000Z') });
+  t.mock.timers.enable({
+    apis: ['Date'],
+    now: new Date('2026-10-11T12:00:00.000Z'),
+  });
 
   assert.equal(validBirthDate('2000-02-29'), true);
   assert.equal(validBirthDate('2024-02-29'), true);
@@ -86,6 +190,10 @@ test('recusa nascimento impossível, vazio ou de tipo desconhecido', () => {
     undefined,
     20261011,
   ]) {
-    assert.equal(validBirthDate(value), false, `valor recusado: ${String(value)}`);
+    assert.equal(
+      validBirthDate(value),
+      false,
+      `valor recusado: ${String(value)}`,
+    );
   }
 });

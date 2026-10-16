@@ -16,6 +16,7 @@ async function main() {
   const identity = {
     schoolRegistration: String(randomInt(10000000, 99999999)),
     birthDate: '2008-01-15',
+    parentName: 'Filiação Fictícia Um',
   };
   const suffix = randomBytes(8).toString('hex');
   const credentials = {
@@ -33,12 +34,13 @@ async function main() {
     return { status: response.status, body: await response.json() };
   }
   const check = () => post('/api/registration/check', identity);
-  const start = (data = credentials) =>
+  const start = (data = credentials, parentName = identity.parentName) =>
     post('/api/registration/start', {
       ...identity,
       ...data,
       cpf,
       confirmPassword: data.password,
+      parentName,
     });
   const tokenFrom = (result: Awaited<ReturnType<typeof start>>) => {
     assert.equal(result.status, 200);
@@ -97,10 +99,134 @@ async function main() {
         schoolRegistration: identity.schoolRegistration,
         birthDate: new Date(`${identity.birthDate}T00:00:00Z`),
         fullName: 'Teste temporário de retomada',
+        details: {
+          create: {
+            parentOne: identity.parentName,
+            parentTwo: 'Filiação Fictícia Dois',
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
       },
     });
     studentId = student.id;
+    const signup = {
+      ...identity,
+      ...credentials,
+      cpf,
+      confirmPassword: credentials.password,
+    };
+    for (const parentName of [
+      undefined,
+      null,
+      [],
+      {},
+      'Filiação',
+      'x'.repeat(181),
+    ]) {
+      assert.equal(
+        (await post('/api/registration/check', { ...identity, parentName }))
+          .status,
+        400,
+      );
+      assert.equal(
+        (await post('/api/registration/start', { ...signup, parentName }))
+          .status,
+        400,
+      );
+    }
+    const unmatched = { status: 200, body: { result: 'unmatched' } };
+    for (const parentName of [
+      'Pessoa Desconhecida',
+      'Filiação Um',
+      'Filiação Fictícia Um Extra',
+    ]) {
+      assert.deepEqual(
+        await post('/api/registration/check', { ...identity, parentName }),
+        unmatched,
+      );
+      const denied = await post('/api/registration/start', {
+        ...signup,
+        parentName,
+      });
+      assert.equal(denied.status, 400);
+      assert.deepEqual(Object.keys(denied.body), ['error']);
+    }
+    assert.deepEqual(
+      await post('/api/registration/check', {
+        ...identity,
+        schoolRegistration: '00000000',
+      }),
+      unmatched,
+    );
+    await assert.rejects(
+      db.studentDetails.update({
+        where: { studentId },
+        data: { parentageSource: 'STUDENT_DECLARATION' },
+      }),
+    );
+    await db.studentDetails.update({
+      where: { studentId },
+      data: { parentOne: null, parentTwo: null, parentageSource: null },
+    });
+    assert.deepEqual(
+      await check(),
+      unmatched,
+      'Ausência não pode ser exposta na resposta pública.',
+    );
+    assert.equal((await start()).status, 400);
+    await db.studentDetails.delete({ where: { studentId } });
+    assert.deepEqual(await check(), unmatched);
+    assert.equal((await start()).status, 400);
+    await db.studentDetails.create({ data: { studentId } });
+    await db.studentDetails.update({
+      where: { studentId },
+      data: {
+        parentOne: identity.parentName,
+        parentTwo: 'Filiação Fictícia Dois',
+        parentageSource: 'SCHOOL_RECORD',
+      },
+    });
+    assert.equal(
+      (
+        await post('/api/registration/check', {
+          ...identity,
+          parentName: 'Pessoa Desconhecida',
+        })
+      ).body.result,
+      'unmatched',
+      'Filiação divergente não pode conferir cadastro.',
+    );
     assert.equal((await check()).body.result, 'eligible');
+    assert.equal(
+      (
+        await post('/api/registration/check', {
+          ...identity,
+          parentName: '  FILIACAO FICTICIA DOIS  ',
+        })
+      ).body.result,
+      'eligible',
+    );
+    await db.student.update({
+      where: { id: studentId },
+      data: { registrationAllowed: false },
+    });
+    assert.deepEqual(await check(), unmatched);
+    assert.equal((await start()).status, 400);
+    await db.student.update({
+      where: { id: studentId },
+      data: { registrationAllowed: true },
+    });
+    // A aprovação da primeira tela não autoriza a chamada posterior após uma correção.
+    await db.studentDetails.update({
+      where: { studentId },
+      data: { parentOne: 'Outro Nome Conferido' },
+    });
+    assert.equal((await start()).status, 400);
+    await db.studentDetails.update({
+      where: { studentId },
+      data: { parentOne: identity.parentName },
+    });
+    assert.equal(await db.account.count({ where: { studentId } }), 0);
     assert.equal(
       (await db.student.findUniqueOrThrow({ where: { id: studentId } })).cpf,
       null,
@@ -153,7 +279,74 @@ async function main() {
       ).body.result,
       'unmatched',
     );
-    const firstToken = tokenFrom(await start());
+    let firstToken = tokenFrom(
+      await start(credentials, 'FILIACAO FICTICIA DOIS'),
+    );
+    const pendingAccount = await db.account.findUniqueOrThrow({
+      where: { studentId },
+    });
+    const proof = await db.emailVerificationToken.findFirstOrThrow({
+      where: { accountId: pendingAccount.id },
+    });
+    assert.match(proof.claimDataHash!, /^[0-9a-f]{64}$/);
+    // Links legados e links emitidos antes de correção/bloqueio não ativam contas.
+    await db.emailVerificationToken.update({
+      where: { tokenHash: proof.tokenHash },
+      data: { claimDataHash: null },
+    });
+    assert.equal((await verify(firstToken)).status, 400);
+    firstToken = tokenFrom(await start());
+    await db.studentDetails.update({
+      where: { studentId },
+      data: { parentTwo: 'Segundo Nome Corrigido' },
+    });
+    assert.equal((await verify(firstToken)).status, 400);
+    assert.equal(
+      (await db.account.findUniqueOrThrow({ where: { studentId } })).status,
+      'pending',
+    );
+    await db.studentDetails.update({
+      where: { studentId },
+      data: { parentTwo: 'Filiação Fictícia Dois' },
+    });
+    firstToken = tokenFrom(await start());
+    await db.student.update({
+      where: { id: studentId },
+      data: { registrationAllowed: false },
+    });
+    assert.equal((await verify(firstToken)).status, 400);
+    await db.student.update({
+      where: { id: studentId },
+      data: { registrationAllowed: true },
+    });
+    firstToken = tokenFrom(await start());
+    const beforeRejected = await db.emailVerificationToken.findFirstOrThrow({
+      where: { accountId: pendingAccount.id },
+    });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      assert.deepEqual(
+        await post('/api/registration/check', {
+          ...identity,
+          parentName: 'Pessoa Desconhecida',
+        }),
+        unmatched,
+      );
+      assert.equal(
+        (await start(credentials, 'Pessoa Desconhecida')).status,
+        400,
+      );
+    }
+    assert.deepEqual(
+      await db.emailVerificationToken.findFirstOrThrow({
+        where: { accountId: pendingAccount.id },
+      }),
+      beforeRejected,
+      'Tentativas inválidas não renovam nem consomem o link válido.',
+    );
+    assert.equal(
+      (await db.account.findUniqueOrThrow({ where: { studentId } })).email,
+      credentials.email,
+    );
     assert.equal(
       (await db.student.findUniqueOrThrow({ where: { id: studentId } })).cpf,
       cpf,
@@ -163,6 +356,12 @@ async function main() {
         schoolRegistration: String(randomInt(10000000, 99999999)),
         birthDate: new Date(`${identity.birthDate}T00:00:00Z`),
         fullName: 'Teste temporário de CPF repetido',
+        details: {
+          create: {
+            parentOne: identity.parentName,
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
       },
     });
     secondStudentId = secondStudent.id;
@@ -246,6 +445,14 @@ async function main() {
       'Um link só pode ser utilizado uma vez.',
     );
     assert.equal((await check()).body.result, 'created');
+    assert.deepEqual(
+      await post('/api/registration/check', {
+        ...identity,
+        parentName: 'Pessoa Desconhecida',
+      }),
+      unmatched,
+    );
+    assert.equal((await start(replacement, 'Pessoa Desconhecida')).status, 400);
     assert.equal(
       (await start(replacement)).status,
       409,
@@ -270,7 +477,7 @@ async function main() {
       200,
     );
     console.log(
-      'OK: matrícula/nascimento, CPF validado no servidor, senha mínima e confirmação, segunda tela sem conta, retomada pendente, proteção das credenciais, renovação, expiração, confirmação única e login CPF/e-mail.',
+      'OK: filiação completa por uma das duas referências escolares, respostas genéricas, chamada direta/entradas inválidas negadas, links legados/correção/bloqueio recusados, retomada protegida, expiração, confirmação única e login CPF/e-mail.',
     );
   } finally {
     try {

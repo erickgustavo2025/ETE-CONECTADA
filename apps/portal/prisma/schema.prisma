@@ -119,6 +119,7 @@ model Session {
 
 model EmailVerificationToken {
   tokenHash String @id @map("token_hash")
+  claimDataHash String? @map("claim_data_hash") @db.Char(64)
   accountId String @map("account_id") @db.Uuid
   expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
   consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
