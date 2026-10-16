@@ -22,9 +22,13 @@ const columns: Record<string, string> = {
     'token_hash account_id expires_at consumed_at created_at claim_data_hash',
   sessions: 'token_hash account_id expires_at created_at',
   enrollments:
-    'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id school_import_key module_number',
+    'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id school_import_key module_number offering_id calendar_module calendar_revision progression_held',
   enrollment_import_history:
-    'id enrollment_id recorded_at recorded_by_id reason mode class_name grade module_number course_label school_year period_label valid_from valid_until status reviewed_at',
+    'id enrollment_id recorded_at recorded_by_id reason mode class_name grade module_number course_label school_year period_label valid_from valid_until status reviewed_at offering_id calendar_revision progression_held',
+  course_offerings:
+    'id label course_label created_at last_import_at last_import_module last_import_period',
+  course_calendar_versions:
+    'id offering_id revision schedule created_at created_by_id',
   sheet_import_previews:
     'actor_id token_hash input_hash snapshot_hash expires_at consumed_at result',
   declaration_requests:
@@ -186,11 +190,31 @@ async function main() {
       constraint('password_reset_tokens_credential_hash_check'),
       /credential_hash.*\[0-9a-f\]/,
     );
+    assert.match(
+      constraint('enrollments_calendar_check'),
+      /SUBSEQUENTE.*calendar_module IS NOT NULL.*calendar_revision IS NOT NULL/,
+    );
+    assert.match(
+      constraint('course_calendar_schedule_check'),
+      /jsonb_typeof.*modules/,
+    );
+    assert.match(
+      constraint('course_offerings_import_check'),
+      /last_import_module IS NOT NULL/,
+    );
     const foreignKeys = constraints.rows.filter((row) =>
       row.definition.startsWith('FOREIGN KEY'),
     );
     for (const [table, field, target, deletion] of [
       ['accounts', 'student_id', 'students', 'CASCADE'],
+      ['enrollments', 'offering_id', 'course_offerings', 'RESTRICT'],
+      [
+        'course_calendar_versions',
+        'offering_id',
+        'course_offerings',
+        'RESTRICT',
+      ],
+      ['course_calendar_versions', 'created_by_id', 'accounts', 'SET NULL'],
       ['sessions', 'account_id', 'accounts', 'CASCADE'],
       ['email_verification_tokens', 'account_id', 'accounts', 'CASCADE'],
       ['password_reset_tokens', 'account_id', 'accounts', 'CASCADE'],
@@ -223,6 +247,7 @@ async function main() {
       "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = 'public'",
     );
     for (const name of [
+      'course_calendar_versions_offering_id_revision_key',
       'students_cpf_key',
       'students_school_registration_key',
       'students_import_source_id_key',

@@ -8,6 +8,8 @@ async function main() {
     const counts = await environment.db.$queryRaw<Array<{ records: bigint }>>`
       SELECT (
         (SELECT count(*) FROM students) +
+        (SELECT count(*) FROM course_calendar_versions) +
+        (SELECT count(*) FROM course_offerings) +
         (SELECT count(*) FROM student_details) +
         (SELECT count(*) FROM sheet_import_previews) +
         (SELECT count(*) FROM enrollment_import_history) +

@@ -171,5 +171,25 @@ O registro conferido prevalece sobre o cálculo e ajustes autorizados não devem
 ser desfeitos automaticamente. Datas oficiais por oferta serão cadastradas com
 fonte conferida; seis meses não é uma quantidade fixa de dias.
 
-EC-070 encerra o levantamento dos dados/modelo. EC-108 implementará calendário,
-progressão e aviso; o núcleo de importação implementará a comparação e prévia.
+A secretaria configura as ofertas em `/secretaria/calendarios`, com as datas de
+cada módulo e seus períodos. O identificador da oferta deve ser reutilizado na
+importação. Alterações criam versões; o histórico anterior é preservado.
+
+Ao abrir ou atualizar a tela, o portal reconcilia os vínculos ativos associados
+que tenham progressão automática autorizada. Uma mudança de módulo ou das datas
+vigentes exige nova conferência antes da emissão. Pausas, correções escolares e
+vínculos encerrados são preservados; ninguém é marcado como concluinte pelo
+relógio. Vínculos existentes começam sem oferta e com progressão pausada.
+A secretaria associa e ativa a progressão explicitamente, por aluno ou para os
+vínculos já associados da página (até 50). A associação não confere o vínculo.
+
+A prévia de importação do subsequente compara módulo e período recebidos com o
+calendário, sem alterar cadastros. Divergências exigem confirmação explícita e
+mantêm a progressão pausada. A tela de importação do subsequente segue na EC-106;
+o importador do integrado continua separado. O aviso de reenvio de planilha
+permanece enquanto não houver importação correspondente ao módulo e período.
+
+Não há tarefa agendada instalada nem serviço de produção nesta entrega. A
+reconciliação ocorre nas operações da tela; executar independentemente do acesso
+exige configurar o agendamento autenticado na implantação da VPS. Datas oficiais
+e associações reais devem ser conferidas pela escola antes de usar a rotina.

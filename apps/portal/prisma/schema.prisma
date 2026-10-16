@@ -76,12 +76,19 @@ model Enrollment {
   importSourceId String? @unique @map("import_source_id")
   schoolImportKey String? @unique @map("school_import_key") @db.VarChar(80)
   moduleNumber Int? @map("module_number")
+  offeringId String? @map("offering_id") @db.Uuid
+  calendarModule Int? @map("calendar_module")
+  calendarRevision Int? @map("calendar_revision")
+  progressionHeld Boolean @default(true) @map("progression_held")
+  offering CourseOffering? @relation(fields: [offeringId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   declarationRequests DeclarationRequest[]
   importHistory EnrollmentImportHistory[]
   @@index([studentId])
   @@index([className])
+  @@index([offeringId])
   @@map("enrollments")
 }
 
@@ -105,6 +112,7 @@ model Account {
   reviewedEnrollments Enrollment[]
   sheetImportPreview SheetImportPreview?
   recordedEnrollmentImports EnrollmentImportHistory[]
+  calendarVersions CourseCalendarVersion[]
   @@map("accounts")
 }
 
@@ -200,6 +208,9 @@ model EnrollmentImportHistory {
   grade Int?
   moduleNumber Int? @map("module_number")
   courseLabel String @map("course_label")
+  offeringId String? @map("offering_id") @db.Uuid
+  calendarRevision Int? @map("calendar_revision")
+  progressionHeld Boolean? @map("progression_held")
   schoolYear Int? @map("school_year")
   periodLabel String? @map("period_label") @db.VarChar(60)
   validFrom DateTime? @map("valid_from") @db.Date
@@ -211,4 +222,31 @@ model EnrollmentImportHistory {
   @@index([enrollmentId, recordedAt, id])
   @@index([recordedById])
   @@map("enrollment_import_history")
+}
+
+
+model CourseOffering {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ label String @db.VarChar(120)
+ courseLabel String @map("course_label") @db.VarChar(3)
+ lastImportAt DateTime? @map("last_import_at") @db.Timestamptz(6)
+ lastImportModule Int? @map("last_import_module")
+ lastImportPeriod String? @map("last_import_period") @db.VarChar(60)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ calendars CourseCalendarVersion[]
+ enrollments Enrollment[]
+ @@map("course_offerings")
+}
+model CourseCalendarVersion {
+ id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+ offeringId String @map("offering_id") @db.Uuid
+ revision Int
+ schedule Json
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+ createdById String? @map("created_by_id") @db.Uuid
+ offering CourseOffering @relation(fields: [offeringId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+ createdBy Account? @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: NoAction)
+ @@unique([offeringId,revision])
+ @@index([createdById])
+ @@map("course_calendar_versions")
 }

@@ -128,6 +128,7 @@ export async function reviewEnrollment(
     `;
     if (!allowed.length)
       throw new EnrollmentValidityError('Acesso não autorizado.');
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(774056)::text`;
     return tx.enrollment.update({
       where: { id: enrollmentId },
       data: {

@@ -72,6 +72,7 @@ export async function POST(request: Request) {
             'token',
             'confirmed',
             'acceptIdentityChanges',
+            'acceptCalendarDifferences',
           ].includes(k),
       ) ||
       typeof body.action !== 'string' ||
@@ -114,6 +115,7 @@ export async function POST(request: Request) {
             body.token,
             body.confirmed,
             body.acceptIdentityChanges,
+            body.acceptCalendarDifferences,
           );
     return json(result);
   } catch (error) {
