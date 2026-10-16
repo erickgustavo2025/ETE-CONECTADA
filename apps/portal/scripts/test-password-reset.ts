@@ -190,13 +190,9 @@ async function main() {
       },
     });
     // Falha depois de alterar senha/revogar sessões deve desfazer a transação inteira.
-    await db.$executeRawUnsafe(
-      "CREATE FUNCTION ec059_reject_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic rollback'; END $$",
-    );
+    await db.$executeRaw`CREATE FUNCTION ec059_reject_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic rollback'; END $$`;
     try {
-      await db.$executeRawUnsafe(
-        'CREATE TRIGGER ec059_reject_delete BEFORE DELETE ON password_reset_tokens FOR EACH ROW EXECUTE FUNCTION ec059_reject_delete()',
-      );
+      await db.$executeRaw`CREATE TRIGGER ec059_reject_delete BEFORE DELETE ON password_reset_tokens FOR EACH ROW EXECUTE FUNCTION ec059_reject_delete()`;
       assert.equal((await reset(token)).status, 503);
       assert.equal(
         (await db.account.findUniqueOrThrow({ where: { id: account.id } }))
@@ -218,10 +214,8 @@ async function main() {
         3,
       );
     } finally {
-      await db.$executeRawUnsafe(
-        'DROP TRIGGER IF EXISTS ec059_reject_delete ON password_reset_tokens',
-      );
-      await db.$executeRawUnsafe('DROP FUNCTION ec059_reject_delete()');
+      await db.$executeRaw`DROP TRIGGER IF EXISTS ec059_reject_delete ON password_reset_tokens`;
+      await db.$executeRaw`DROP FUNCTION ec059_reject_delete()`;
     }
     const results = await Promise.all([reset(token), reset(token)]);
     assert.deepEqual(
