@@ -196,15 +196,21 @@ function sheetHeader(
     );
   return { courseLabel: matches[0], stage: Number(stage[1]) };
 }
-// Inspeção sem contexto não autoriza aplicação: apenas expõe cabeçalhos do integrado.
-export async function inspectIntegratedSheet(file: Buffer) {
+// Inspeção não aplica dados: expõe somente cabeçalhos da modalidade escolhida.
+export async function inspectSchoolSheet(
+  file: Buffer,
+  mode: 'INTEGRADO' | 'SUBSEQUENTE',
+) {
   return (await decodeXls(file)).map((s, index) => ({
     sheetName: s.name,
-    ...sheetHeader(s, 'INTEGRADO', index),
+    ...sheetHeader(s, mode, index),
     rows: s.rows.slice(6).filter((row) => row.some((cell) => cell.trim()))
       .length,
   }));
 }
+
+export const inspectIntegratedSheet = (file: Buffer) =>
+  inspectSchoolSheet(file, 'INTEGRADO');
 
 export async function parseSheetInput(
   file: Buffer,

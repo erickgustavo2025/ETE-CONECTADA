@@ -4,7 +4,7 @@ export type ImportContextView = {
   scopeId: string;
   className: string;
   periodLabel: string;
-  courseLabel: 'ADM' | 'DS';
+  courseLabel: 'ADM' | 'DS' | 'ENF';
   stage: number;
   confirmed: boolean;
   bindings: Record<string, string>;
@@ -12,7 +12,7 @@ export type ImportContextView = {
 export type ImportInspection = {
   sheets: Array<{
     sheetName: string;
-    courseLabel: 'ADM' | 'DS';
+    courseLabel: 'ADM' | 'DS' | 'ENF';
     stage: number;
     rows: number;
   }>;
@@ -22,6 +22,11 @@ export type ImportInspection = {
     label: string;
     className: string;
     periodLabel: string;
+    calendar?: {
+      revision: number;
+      currentModule: number | null;
+      modules: Array<{ number: number; periodLabel: string }>;
+    };
   }>;
 };
 export type ImportCounts = {
@@ -37,6 +42,17 @@ export type ImportCounts = {
 export type ImportPreviewView = {
   token: string;
   expiresAt: string;
+  calendarComparisons?: Array<{
+    scopeId: string;
+    sheetName: string;
+    configured: boolean;
+    revision: number | null;
+    receivedModule: number;
+    expectedModule: number | null;
+    receivedPeriod: string;
+    expectedPeriod: string | null;
+    differs: boolean;
+  }>;
   counts: ImportCounts;
   entries: Array<{
     sheet: number;
@@ -63,6 +79,7 @@ export type ImportPreviewView = {
       periodLabel: string | null;
       status: string;
       grade: number | null;
+      moduleNumber?: number | null;
     }>;
   }>;
 };

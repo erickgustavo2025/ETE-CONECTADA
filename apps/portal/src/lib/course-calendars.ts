@@ -43,7 +43,7 @@ async function offerings(tx: Tx, ids?: string[]) {
     return { ...row, version, draft };
   });
 }
-export async function calendarImportState(tx: Tx, scopeIds: string[]) {
+export async function calendarImportState(tx: Tx, scopeIds?: string[]) {
   return offerings(tx, scopeIds);
 }
 function history(
