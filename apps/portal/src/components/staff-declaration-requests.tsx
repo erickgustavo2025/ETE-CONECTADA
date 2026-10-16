@@ -1,11 +1,11 @@
-"use client";
-import { useEffect, useRef, useState } from "react";
-import type { StudentView } from "@/lib/declarations";
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import type { StudentView } from '@/lib/declarations';
 import {
   requestDate,
   requestStatusLabels,
   type RequestSummary,
-} from "@/lib/declaration-request-types";
+} from '@/lib/declaration-request-types';
 type StaffRequest = RequestSummary & { student: StudentView };
 type Results = {
   requests: StaffRequest[];
@@ -23,12 +23,12 @@ export default function StaffDeclarationRequests({
   disabled,
   onPrepare,
 }: Props) {
-  const [filter, setFilter] = useState("OPEN");
+  const [filter, setFilter] = useState('OPEN');
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<Results | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [retry, setRetry] = useState(0);
   const [pending, setPending] = useState<StaffRequest | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -40,16 +40,16 @@ export default function StaffDeclarationRequests({
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    setError("");
+    setError('');
     fetch(`/api/secretaria/solicitacoes?status=${filter}&page=${page}`, {
-      cache: "no-store",
+      cache: 'no-store',
       signal: controller.signal,
     })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok)
           throw new Error(
-            data.error || "Não foi possível consultar os pedidos.",
+            data.error || 'Não foi possível consultar os pedidos.',
           );
         if (!controller.signal.aborted) {
           setResult(data);
@@ -61,7 +61,7 @@ export default function StaffDeclarationRequests({
           setError(
             error instanceof Error
               ? error.message
-              : "Não foi possível consultar os pedidos.",
+              : 'Não foi possível consultar os pedidos.',
           );
       })
       .finally(() => {
@@ -84,18 +84,18 @@ export default function StaffDeclarationRequests({
     if (!pending || !confirmed || mutationLock.current) return;
     mutationLock.current = true;
     setSaving(true);
-    setError("");
+    setError('');
     try {
-      const response = await fetch("/api/secretaria/solicitacoes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/secretaria/solicitacoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: pending.id, confirmed: true }),
       });
       const data = await response.json();
       if (!response.ok)
-        throw new Error(data.error || "Não foi possível liberar a retirada.");
+        throw new Error(data.error || 'Não foi possível liberar a retirada.');
       setMessage(
-        `Declaração de ${pending.student.fullName || "estudante"} marcada como pronta para retirada.`,
+        `Declaração de ${pending.student.fullName || 'estudante'} marcada como pronta para retirada.`,
       );
       setPending(null);
       setConfirmed(false);
@@ -104,7 +104,7 @@ export default function StaffDeclarationRequests({
       setError(
         error instanceof Error
           ? error.message
-          : "Não foi possível liberar a retirada. Tente novamente.",
+          : 'Não foi possível liberar a retirada. Tente novamente.',
       );
     } finally {
       mutationLock.current = false;
@@ -132,7 +132,7 @@ export default function StaffDeclarationRequests({
       </div>
       <div className="request-toolbar">
         <div className="declaration-field">
-          <label htmlFor="request-status-filter">Status do atendimento</label>
+          <label htmlFor="request-status-filter">Situação do pedido</label>
           <select
             id="request-status-filter"
             value={filter}
@@ -150,10 +150,10 @@ export default function StaffDeclarationRequests({
         </div>
         <p role="status">
           {loading
-            ? "Consultando solicitações…"
+            ? 'Consultando solicitações…'
             : error && !pending
               ? error
-              : `${result?.total ?? 0} solicitação(ões)`}
+              : `${result?.total ?? 0} ${result?.total === 1 ? 'pedido' : 'pedidos'}`}
         </p>
       </div>
       {error && !pending && (
@@ -167,7 +167,7 @@ export default function StaffDeclarationRequests({
       )}
       {!loading && !error && !result?.requests.length && (
         <div className="request-empty">
-          <strong>Nenhuma solicitação neste status</strong>
+          <strong>Nenhum pedido nesta situação</strong>
           <p>Os novos pedidos dos alunos aparecerão aqui.</p>
         </div>
       )}
@@ -181,19 +181,19 @@ export default function StaffDeclarationRequests({
                 >
                   {requestStatusLabels[row.status]}
                 </span>
-                <h3>{row.student.fullName || "Nome pendente"}</h3>
+                <h3>{row.student.fullName || 'Nome pendente'}</h3>
                 <p>
-                  Matrícula {row.student.schoolRegistration || "pendente"} ·{" "}
+                  Matrícula {row.student.schoolRegistration || 'pendente'} ·{' '}
                   {row.className}
                 </p>
                 <p>
                   Solicitada em {requestDate(row.createdAt)}
                   {row.readyAt
                     ? ` · retirada liberada em ${requestDate(row.readyAt)}`
-                    : ""}
+                    : ''}
                 </p>
               </div>
-              {row.status !== "READY_FOR_PICKUP" && (
+              {row.status !== 'READY_FOR_PICKUP' && (
                 <div className="request-row-actions">
                   <button
                     className="ete-button ete-button--secondary ete-button--compact"
@@ -210,7 +210,7 @@ export default function StaffDeclarationRequests({
                   >
                     Preparar declaração
                   </button>
-                  {row.status === "IN_PREPARATION" && (
+                  {row.status === 'IN_PREPARATION' && (
                     <button
                       className="ete-button ete-button--compact"
                       type="button"
@@ -218,8 +218,8 @@ export default function StaffDeclarationRequests({
                       onClick={(event) => {
                         returnFocus.current = event.currentTarget;
                         setConfirmed(false);
-                        setMessage("");
-                        setError("");
+                        setMessage('');
+                        setError('');
                         setPending(row);
                       }}
                     >
@@ -279,8 +279,8 @@ export default function StaffDeclarationRequests({
           <span className="eyebrow">ATENDIMENTO ESCOLAR</span>
           <h2 id="pickup-dialog-title">Liberar para retirada?</h2>
           <p>
-            A declaração de{" "}
-            <strong>{pending?.student.fullName || "estudante"}</strong> passará
+            A declaração de{' '}
+            <strong>{pending?.student.fullName || 'estudante'}</strong> passará
             a aparecer como pronta para retirada no portal do aluno.
           </p>
           <label className="declaration-reviewed">
@@ -315,7 +315,7 @@ export default function StaffDeclarationRequests({
               aria-busy={saving}
               onClick={release}
             >
-              {saving ? "Confirmando…" : "Confirmar retirada disponível"}
+              {saving ? 'Confirmando…' : 'Confirmar retirada disponível'}
             </button>
           </div>
         </div>

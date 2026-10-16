@@ -64,7 +64,9 @@ async function state(tx: Tx, input: SheetInput) {
     take: 10001,
   });
   if (enrollments.length > 10000)
-    throw new SheetImportError('Oferta acima do limite de conferência.');
+    throw new SheetImportError(
+      'Esta turma tem mais registros do que é possível conferir de uma vez. Procure o suporte.',
+    );
   const calendars =
     input.mode === 'SUBSEQUENTE'
       ? await calendarImportState(tx, [
@@ -324,7 +326,9 @@ export async function schoolImportSources(
         take: 10001,
       });
       if (rows.length > 10000)
-        throw new SheetImportError('Catálogo acima do limite de conferência.');
+        throw new SheetImportError(
+          'Há mais turmas do que é possível carregar de uma vez. Procure o suporte.',
+        );
       const sources = new Map<
         string,
         {
@@ -338,7 +342,7 @@ export async function schoolImportSources(
         const scopeId = row.schoolImportKey?.split(':')[1] || '';
         if (!uuid.test(scopeId))
           throw new SheetImportError(
-            'Associação escolar inválida. Solicite revisão.',
+            'Não foi possível identificar a turma desta lista. Confira a turma escolhida.',
           );
         const source = sources.get(scopeId) || {
           scopeId,
@@ -348,7 +352,7 @@ export async function schoolImportSources(
         };
         if (source.courseLabel !== row.courseLabel)
           throw new SheetImportError(
-            'Oferta com cursos divergentes. Solicite revisão.',
+            'A turma selecionada tem registros de cursos diferentes. Confira os cadastros antes de importar.',
           );
         source.classes.add(row.className);
         source.periods.add(row.periodLabel || '');
@@ -356,7 +360,7 @@ export async function schoolImportSources(
       }
       if (sources.size > 200)
         throw new SheetImportError(
-          'Há mais de 200 ofertas. Solicite revisão do catálogo antes de importar.',
+          'Há mais de 200 turmas cadastradas. Procure o suporte antes de importar.',
         );
       if (mode === 'SUBSEQUENTE') {
         const calendars = await calendarImportState(tx);
@@ -365,7 +369,7 @@ export async function schoolImportSources(
             const source = sources.get(course.id);
             if (source && source.courseLabel !== course.courseLabel)
               throw new SheetImportError(
-                'Curso da fonte e do calendário divergentes. Solicite revisão.',
+                'O curso da lista é diferente do curso do calendário. Confira a turma escolhida.',
               );
             return {
               scopeId: course.id,
@@ -475,11 +479,11 @@ export async function previewSheetImport(
           conflictReason: !e.blocked
             ? null
             : e.enrollment?.status === 'ENDED' && e.metadataChanged
-              ? 'Vínculo encerrado: os dados escolares não podem ser substituídos.'
+              ? 'Esta matrícula está encerrada. Os dados não serão substituídos.'
               : e.parentsChanged &&
                   e.student?.details?.parentageSource === 'SECRETARY_CORRECTION'
-                ? 'Filiação corrigida pela secretaria diverge da planilha. Confira a fonte.'
-                : 'Confira a associação do vínculo, a oferta e a modalidade antes de continuar.',
+                ? 'O nome do responsável nesta planilha é diferente do nome corrigido pela secretaria. Confira o registro escolar.'
+                : 'Confira a matrícula, a turma e se a lista é do integrado ou do subsequente.',
           needsBinding: e.needsBinding,
           candidates: !e.needsBinding
             ? []
@@ -533,7 +537,7 @@ export async function confirmSheetImport(
         preview.expiresAt < new Date()
       )
         throw new SheetImportError(
-          'A prévia expirou ou não corresponde ao arquivo/operador. Gere outra prévia.',
+          'Esta prévia não pode mais ser usada. Confira o arquivo e gere uma nova prévia.',
           409,
         );
       if (preview.consumedAt) return preview.result;
@@ -546,12 +550,12 @@ export async function confirmSheetImport(
       const prepared = plan(input, current);
       if (prepared.counts.conflicts)
         throw new SheetImportError(
-          'Resolva os conflitos antes de confirmar.',
+          'Resolva as pendências da prévia antes de confirmar.',
           409,
         );
       if (prepared.counts.identityChanges && acceptIdentityChanges !== true)
         throw new SheetImportError(
-          'Confirme explicitamente as alterações de nome, nascimento ou filiação.',
+          'Marque a confirmação das alterações de nome, nascimento ou nome dos pais.',
           409,
         );
       if (
@@ -559,7 +563,7 @@ export async function confirmSheetImport(
         acceptCalendarDifferences !== true
       )
         throw new SheetImportError(
-          'O módulo ou período da planilha diverge do calendário. Confirme a conferência escolar para manter a exceção.',
+          'O módulo ou período da planilha é diferente do calendário. Confira os registros escolares e marque a confirmação para continuar.',
           409,
         );
       const metadataChanges = new Set(

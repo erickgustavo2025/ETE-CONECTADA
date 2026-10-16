@@ -20,7 +20,10 @@ async function bodyOf(request: Request) {
     request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !==
     'application/json'
   )
-    throw new SheetImportError('Envie JSON válido.', 415);
+    throw new SheetImportError(
+      'Não foi possível ler os dados enviados. Selecione o arquivo novamente.',
+      415,
+    );
   if (Number(request.headers.get('content-length')) > SHEET_BODY_LIMIT) {
     void request.body?.cancel().catch(() => {});
     throw new SheetImportError('Upload acima do limite.', 413);

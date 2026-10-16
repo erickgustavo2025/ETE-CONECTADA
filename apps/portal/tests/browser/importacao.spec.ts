@@ -183,17 +183,17 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.getByLabel('Oferta desta aba').selectOption('new');
+    await page.getByLabel('Turma e ingresso').selectOption('new');
     await page.getByLabel('Nome da turma').fill('Turma integrada sintética');
     await page.getByLabel('Período letivo').fill('2026');
     await page.getByRole('button', { name: 'Gerar prévia' }).click();
     await expect(
-      page.getByRole('checkbox', { name: /Conferi oferta/ }),
+      page.getByRole('checkbox', { name: /Conferi turma/ }),
     ).toBeFocused();
     await expect(page.locator('#conteudo').getByRole('alert')).toContainText(
       'Marque',
     );
-    await page.getByRole('checkbox', { name: /Conferi oferta/ }).check();
+    await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
     await preview();
     await page.screenshot({
       path: testInfo.outputPath('previa-320.png'),
@@ -208,15 +208,15 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
     await page.getByLabel('Mostrar na prévia').selectOption('conflict');
     await expect(page.getByText('Página 1 de 1')).toBeVisible();
     await page
-      .getByRole('button', { name: 'Selecionar vínculo com única opção' })
+      .getByRole('button', { name: 'Selecionar matrícula encontrada' })
       .click();
     await expect(
-      page.getByLabel('Vínculo para matrícula 00001001'),
+      page.getByLabel('Escolha a matrícula do aluno 00001001'),
     ).toHaveValue(integrated.id);
     await page
-      .getByRole('button', { name: 'Revisar associações escolhidas' })
+      .getByRole('button', { name: 'Conferir matrículas escolhidas' })
       .click();
-    await page.getByRole('checkbox', { name: /Conferi oferta/ }).check();
+    await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
     await preview();
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.screenshot({
@@ -298,12 +298,12 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
       where: { id: integrated.id },
     });
     const scopeId = imported.schoolImportKey!.split(':')[1];
-    await page.getByLabel('Oferta desta aba').selectOption(scopeId);
+    await page.getByLabel('Turma e ingresso').selectOption(scopeId);
     await expect(page.getByLabel('Nome da turma')).toHaveValue(
       'Turma integrada sintética',
     );
     await expect(page.getByLabel('Período letivo')).toHaveValue('2026');
-    await page.getByRole('checkbox', { name: /Conferi oferta/ }).check();
+    await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
     await preview();
     await page.getByRole('button', { name: 'Aplicar importação' }).click();
     response = responseFor('confirm');

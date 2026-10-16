@@ -1,14 +1,14 @@
-"use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+'use client';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   validateDeclarationFields,
   DeclarationValidationError,
   type DeclarationFields,
   type StudentView,
-} from "@/lib/declarations";
-import { useFormValidation } from "./use-form-validation";
-import StaffDeclarationRequests from "./staff-declaration-requests";
-import { downloadDeclaration } from "./declaration-download";
+} from '@/lib/declarations';
+import { useFormValidation } from './use-form-validation';
+import StaffDeclarationRequests from './staff-declaration-requests';
+import { downloadDeclaration } from './declaration-download';
 
 type Results = {
   students: StudentView[];
@@ -19,52 +19,61 @@ type Results = {
 };
 const personalFields = [
   {
-    name: "naturality",
-    label: "Naturalidade (município/UF)",
+    name: 'naturality',
+    label: 'Cidade e estado de nascimento',
     required: true,
     max: 120,
   },
-  { name: "parentOne", label: "Filiação registrada", required: true, max: 180 },
-  { name: "parentTwo", label: "Segunda filiação, quando aplicável", max: 180 },
-  { name: "socialName", label: "Nome social, quando aplicável", max: 180 },
   {
-    name: "courseName",
-    label: "Nome oficial do curso técnico",
+    name: 'parentOne',
+    label: 'Nome do pai ou da mãe',
     required: true,
-    max: 120,
-  },
-  { name: "schoolPeriod", label: "Período letivo", required: true, max: 60 },
-  { name: "schedule", label: "Dias e horários, se necessário", max: 120 },
-] as const;
-const signatureFields = [
-  {
-    name: "secretaryName",
-    label: "Nome de quem assina pela secretaria",
     max: 180,
   },
   {
-    name: "secretaryRegistration",
-    label: "Matrícula/autorização da secretaria",
+    name: 'parentTwo',
+    label: 'Nome do outro pai ou da outra mãe (se houver)',
+    max: 180,
+  },
+  { name: 'socialName', label: 'Nome social, quando aplicável', max: 180 },
+  {
+    name: 'courseName',
+    label: 'Nome oficial do curso técnico',
+    required: true,
+    max: 120,
+  },
+  { name: 'schoolPeriod', label: 'Período letivo', required: true, max: 60 },
+  { name: 'schedule', label: 'Dias e horários, se necessário', max: 120 },
+] as const;
+const signatureFields = [
+  {
+    name: 'secretaryName',
+    label: 'Nome de quem assina pela secretaria',
+    max: 180,
+  },
+  {
+    name: 'secretaryRegistration',
+    label: 'Matrícula/autorização da secretaria',
     max: 60,
   },
-  { name: "directorName", label: "Nome de quem assina pela gestão", max: 180 },
+  { name: 'directorName', label: 'Nome de quem assina pela gestão', max: 180 },
   {
-    name: "directorRegistration",
-    label: "Matrícula/autorização da gestão",
+    name: 'directorRegistration',
+    label: 'Matrícula/autorização da gestão',
     max: 60,
   },
 ] as const;
 
 export default function SecretaryDeclarations() {
   const [requestsRevision, setRequestsRevision] = useState(0);
-  const [query, setQuery] = useState("");
-  const [className, setClassName] = useState("");
+  const [query, setQuery] = useState('');
+  const [className, setClassName] = useState('');
   const [classes, setClasses] = useState<string[]>([]);
   const [composing, setComposing] = useState(false);
   const [page, setPage] = useState(1);
   const [results, setResults] = useState<Results | null>(null);
   const [loading, setLoading] = useState(false);
-  const [searchError, setSearchError] = useState("");
+  const [searchError, setSearchError] = useState('');
   const [retry, setRetry] = useState(0);
   const [selectingClass, setSelectingClass] = useState(false);
   const [selected, setSelected] = useState<StudentView | null>(null);
@@ -77,7 +86,7 @@ export default function SecretaryDeclarations() {
   const [includeFrequency, setIncludeFrequency] = useState(true);
   const [batchDownloaded, setBatchDownloaded] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState<{
     student?: StudentView | null;
@@ -91,7 +100,7 @@ export default function SecretaryDeclarations() {
   const priorFocus = useRef<HTMLElement | null>(null);
   const allowUnload = useRef(false);
   const immediateSearch = useRef(false);
-  const validation = useFormValidation("declaration-form-error");
+  const validation = useFormValidation('declaration-form-error');
   const isReady = (id: string) =>
     !!drafts[id] &&
     !invalidDrafts.includes(id) &&
@@ -117,25 +126,25 @@ export default function SecretaryDeclarations() {
     if (composing || query.trim().length === 1) {
       setLoading(false);
       setResults(null);
-      setSearchError("");
+      setSearchError('');
       return () => controller.abort();
     }
     setLoading(true);
-    setSearchError("");
+    setSearchError('');
     const delay = immediateSearch.current || !query ? 0 : 300;
     immediateSearch.current = false;
     const timer = setTimeout(async () => {
       try {
-        const response = await fetch("/api/secretaria/alunos", {
-          method: "POST",
+        const response = await fetch('/api/secretaria/alunos', {
+          method: 'POST',
           signal: controller.signal,
-          headers: { "Content-Type": "application/json" },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query, className, page }),
         });
         const result = await response.json();
         if (!response.ok)
           throw new Error(
-            result.error || "Não foi possível consultar os alunos.",
+            result.error || 'Não foi possível consultar os alunos.',
           );
         if (!controller.signal.aborted) {
           setResults(result);
@@ -147,7 +156,7 @@ export default function SecretaryDeclarations() {
           setSearchError(
             error instanceof Error
               ? error.message
-              : "Não foi possível consultar. Tente novamente.",
+              : 'Não foi possível consultar. Tente novamente.',
           );
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -182,22 +191,22 @@ export default function SecretaryDeclarations() {
     const unload = (event: BeforeUnloadEvent) => {
       if (!allowUnload.current) {
         event.preventDefault();
-        event.returnValue = "";
+        event.returnValue = '';
       }
     };
     const navigation = (event: MouseEvent) => {
       if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
         return;
-      const anchor = (event.target as Element).closest("a[href]");
+      const anchor = (event.target as Element).closest('a[href]');
       if (
         !(anchor instanceof HTMLAnchorElement) ||
         anchor.download ||
-        anchor.target === "_blank"
+        anchor.target === '_blank'
       )
         return;
       const url = new URL(anchor.href);
       if (
-        !["http:", "https:"].includes(url.protocol) ||
+        !['http:', 'https:'].includes(url.protocol) ||
         url.href === location.href ||
         (url.hash && url.pathname === location.pathname)
       )
@@ -207,11 +216,11 @@ export default function SecretaryDeclarations() {
       priorFocus.current = anchor;
       setPending({ href: anchor.href });
     };
-    window.addEventListener("beforeunload", unload);
-    document.addEventListener("click", navigation, true);
+    window.addEventListener('beforeunload', unload);
+    document.addEventListener('click', navigation, true);
     return () => {
-      window.removeEventListener("beforeunload", unload);
-      document.removeEventListener("click", navigation, true);
+      window.removeEventListener('beforeunload', unload);
+      document.removeEventListener('click', navigation, true);
     };
   }, [unsaved]);
 
@@ -238,7 +247,7 @@ export default function SecretaryDeclarations() {
     setIncludeFrequency(
       student ? (drafts[student.id]?.includeFrequency ?? true) : true,
     );
-    setMessage("");
+    setMessage('');
     validation.reset();
     if (!student) searchRef.current?.focus();
   }
@@ -256,7 +265,7 @@ export default function SecretaryDeclarations() {
       if (!next.some((item) => item.id === student.id)) next.push(student);
     if (next.length > 100) {
       setMessage(
-        "O lote aceita até 100 alunos. Baixe o lote atual antes de selecionar mais.",
+        'Você pode selecionar até 100 alunos por vez. Baixe as declarações selecionadas antes de adicionar mais.',
       );
       return;
     }
@@ -266,22 +275,22 @@ export default function SecretaryDeclarations() {
   async function addClass() {
     if (!className || query || selectingClass) return;
     setSelectingClass(true);
-    setMessage("");
+    setMessage('');
     try {
-      const response = await fetch("/api/secretaria/alunos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/secretaria/alunos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ className, allClass: true }),
       });
       const result = await response.json();
       if (!response.ok)
-        throw new Error(result.error || "Não foi possível selecionar a turma.");
+        throw new Error(result.error || 'Não foi possível selecionar a turma.');
       addStudents(result.students);
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Tente selecionar a turma novamente.",
+          : 'Tente selecionar a turma novamente.',
       );
     } finally {
       setSelectingClass(false);
@@ -293,18 +302,18 @@ export default function SecretaryDeclarations() {
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
     const download =
-      (event.nativeEvent as SubmitEvent).submitter?.getAttribute("value") ===
-      "download";
+      (event.nativeEvent as SubmitEvent).submitter?.getAttribute('value') ===
+      'download';
     let values: DeclarationFields;
     try {
       values = validateDeclarationFields({
         ...data,
-        includeFrequency: data.includeFrequency === "on",
-        reviewed: data.reviewed === "on",
+        includeFrequency: data.includeFrequency === 'on',
+        reviewed: data.reviewed === 'on',
       });
     } catch (error) {
       if (error instanceof DeclarationValidationError)
-        validation.reject(error.field ?? "reviewed", error.message, form);
+        validation.reject(error.field ?? 'reviewed', error.message, form);
       return;
     }
     if (
@@ -312,7 +321,7 @@ export default function SecretaryDeclarations() {
       queue.length === 100
     ) {
       setMessage(
-        "O lote já tem 100 alunos. Remova uma seleção antes de adicionar este aluno.",
+        'Já há 100 alunos selecionados. Remova um da lista antes de adicionar outro.',
       );
       return;
     }
@@ -320,7 +329,7 @@ export default function SecretaryDeclarations() {
     setDrafts((previous) => ({ ...previous, [selected.id]: values }));
     setInvalidDrafts((previous) => previous.filter((id) => id !== selected.id));
     setDirty(false);
-    if (data.reuseCommon === "on") {
+    if (data.reuseCommon === 'on') {
       const currentClass = selected.enrollments.find(
         (enrollment) => enrollment.id === values.enrollmentId,
       )?.className;
@@ -342,16 +351,16 @@ export default function SecretaryDeclarations() {
     }
     if (!download) {
       setMessage(
-        "Conferência salva neste lote. Selecione o próximo aluno ou baixe o PDF quando todos estiverem prontos.",
+        'Conferência salva nesta seleção. Confira o próximo aluno ou baixe o PDF quando todos estiverem prontos.',
       );
       return;
     }
     setBusy(true);
-    setMessage("");
+    setMessage('');
     try {
-      const response = await fetch("/api/secretaria/declaracao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/secretaria/declaracao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...values, studentId: selected.id }),
       });
       if (!response.ok) {
@@ -360,19 +369,19 @@ export default function SecretaryDeclarations() {
           validation.reject(result.field, result.error, form);
           return;
         }
-        throw new Error(result.error || "Não foi possível gerar o PDF.");
+        throw new Error(result.error || 'Não foi possível gerar o PDF.');
       }
       await downloadDeclaration(response);
       setRequestsRevision((value) => value + 1);
       setBatchDownloaded(queue.every((student) => student.id === selected.id));
       setMessage(
-        "PDF pronto. Abra o arquivo e imprima em A4 para assinatura e carimbo dos dois responsáveis. Depois, libere a retirada na lista de solicitações. A minuta aguarda validação da escola/GRE.",
+        'PDF de teste pronto. Abra o arquivo e confira os dados. A emissão oficial depende da aprovação da escola. Baixar o PDF não libera a retirada para o aluno.',
       );
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Não foi possível gerar o PDF. Tente novamente.",
+          : 'Não foi possível gerar o PDF. Tente novamente.',
       );
     } finally {
       setBusy(false);
@@ -381,11 +390,11 @@ export default function SecretaryDeclarations() {
   async function downloadBatch() {
     if (busy || dirty || !queue.length || readyCount !== queue.length) return;
     setBusy(true);
-    setMessage("");
+    setMessage('');
     try {
-      const response = await fetch("/api/secretaria/declaracoes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/secretaria/declaracoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: queue.map((student) => ({
             ...drafts[student.id],
@@ -402,19 +411,21 @@ export default function SecretaryDeclarations() {
             queue[result.itemIndex].id,
           ]);
         }
-        throw new Error(result.error || "Não foi possível preparar o lote.");
+        throw new Error(
+          result.error || 'Não foi possível preparar as declarações.',
+        );
       }
-      await downloadDeclaration(response, "declaracoes-vinculo-minutas.pdf");
+      await downloadDeclaration(response, 'declaracoes-vinculo-minutas.pdf');
       setRequestsRevision((value) => value + 1);
       setBatchDownloaded(true);
       setMessage(
-        `PDF pronto: ${queue.length} página(s), uma por aluno. Abra o arquivo e imprima todas as páginas em A4. As assinaturas e os carimbos são feitos em cada declaração. Depois, libere a retirada na lista de solicitações.`,
+        `PDF de teste pronto: ${queue.length} declarações, uma por página. Confira os dados antes de imprimir em A4. A emissão oficial depende da aprovação da escola. Baixar o PDF não libera a retirada.`,
       );
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Não foi possível preparar o lote. Seus dados foram preservados; tente novamente.",
+          : 'Não foi possível preparar as declarações. Seus dados foram preservados; tente novamente.',
       );
     } finally {
       setBusy(false);
@@ -429,15 +440,15 @@ export default function SecretaryDeclarations() {
       <span className="eyebrow">ATENDIMENTO ESCOLAR</span>
       <h1 id="secretary-title">Declarações de vínculo</h1>
       <p className="document-intro">
-        Atenda as solicitações, confira os dados e prepare uma declaração ou um
-        lote para impressão.
+        Atenda os pedidos dos alunos, confira os dados e prepare as declarações
+        para impressão.
       </p>
       <div className="document-notice">
         <strong>Modelo em revisão pela escola</strong>
         <p>
-          Integrado disponível como minuta. Filiação e naturalidade não vieram
-          na importação. A frequência deve ser conferida no registro escolar;
-          não usamos 100% automaticamente. O subsequente aguarda confirmação.
+          Os documentos gerados aqui são de teste e ainda aguardam aprovação da
+          escola para uso oficial. Confira todos os campos antes de gerar o PDF.
+          A declaração do subsequente ainda não está disponível.
         </p>
       </div>
       <StaffDeclarationRequests
@@ -448,14 +459,14 @@ export default function SecretaryDeclarations() {
       <section className="declaration-batch" aria-labelledby="batch-title">
         <div className="batch-heading">
           <div>
-            <h2 id="batch-title">Lote de impressão</h2>
+            <h2 id="batch-title">Declarações selecionadas</h2>
             <p role="status">
-              {queue.length}{" "}
-              {queue.length === 1 ? "aluno selecionado" : "alunos selecionados"}{" "}
-              · {readyCount}{" "}
+              {queue.length}{' '}
+              {queue.length === 1 ? 'aluno selecionado' : 'alunos selecionados'}{' '}
+              · {readyCount}{' '}
               {readyCount === 1
-                ? "conferência concluída"
-                : "conferências concluídas"}
+                ? 'conferência concluída'
+                : 'conferências concluídas'}
             </p>
           </div>
           <button
@@ -468,8 +479,8 @@ export default function SecretaryDeclarations() {
             onClick={downloadBatch}
           >
             {busy
-              ? "Preparando PDF…"
-              : `Baixar lote (${queue.length} página${queue.length === 1 ? "" : "s"})`}
+              ? 'Preparando PDF…'
+              : `Baixar declarações (${queue.length} página${queue.length === 1 ? '' : 's'})`}
           </button>
         </div>
         {!queue.length ? (
@@ -495,14 +506,14 @@ export default function SecretaryDeclarations() {
                   >
                     <span>{student.fullName}</span>
                     <small>
-                      {isReady(student.id) ? "Conferida" : "Conferir dados"}
+                      {isReady(student.id) ? 'Conferida' : 'Conferir dados'}
                     </small>
                   </button>
                   <button
                     className="batch-remove ete-button ete-button--secondary ete-button--icon"
                     type="button"
                     disabled={busy}
-                    aria-label={`Remover ${student.fullName} do lote`}
+                    aria-label={`Remover ${student.fullName} da seleção`}
                     onClick={() => {
                       setQueue((items) =>
                         items.filter((item) => item.id !== student.id),
@@ -521,7 +532,7 @@ export default function SecretaryDeclarations() {
           {message}
         </p>
       </section>
-      <div className={`secretary-workspace ${selected ? "has-selection" : ""}`}>
+      <div className={`secretary-workspace ${selected ? 'has-selection' : ''}`}>
         <section
           className="student-search"
           aria-labelledby="student-search-title"
@@ -578,7 +589,7 @@ export default function SecretaryDeclarations() {
                   type="button"
                   aria-label="Limpar busca"
                   onClick={() => {
-                    setQuery("");
+                    setQuery('');
                     setResults(null);
                     setPage(1);
                     searchRef.current?.focus();
@@ -598,19 +609,19 @@ export default function SecretaryDeclarations() {
               onClick={addClass}
             >
               {selectingClass
-                ? "Selecionando turma…"
+                ? 'Selecionando turma…'
                 : `Selecionar toda a turma ${className}`}
             </button>
           )}
           <div className="search-status" role="status" aria-live="polite">
             {loading
-              ? "Consultando alunos…"
+              ? 'Consultando alunos…'
               : searchError ||
                 (query.trim().length === 1
-                  ? "Digite pelo menos 2 caracteres para buscar pelo nome ou matrícula."
+                  ? 'Digite pelo menos 2 caracteres para buscar pelo nome ou matrícula.'
                   : query.trim().length >= 2 || className
                     ? `${results?.total ?? 0} aluno(s) encontrado(s)`
-                    : "Escolha uma turma ou digite pelo menos 2 caracteres para buscar.")}
+                    : 'Escolha uma turma ou digite pelo menos 2 caracteres para buscar.')}
           </div>
           {searchError && (
             <button
@@ -660,7 +671,7 @@ export default function SecretaryDeclarations() {
                       type="checkbox"
                       checked={queue.some((item) => item.id === student.id)}
                       disabled={busy || loading}
-                      aria-label={`Selecionar ${student.fullName} para o lote`}
+                      aria-label={`Selecionar ${student.fullName} para impressão`}
                       onChange={(event) => {
                         if (event.target.checked) addStudents([student]);
                         else {
@@ -679,15 +690,15 @@ export default function SecretaryDeclarations() {
                     aria-pressed={selected?.id === student.id}
                     onClick={() => selectStudent(student)}
                   >
-                    <strong>{student.fullName || "Nome pendente"}</strong>
+                    <strong>{student.fullName || 'Nome pendente'}</strong>
                     <span>
-                      Matrícula {student.schoolRegistration} ·{" "}
+                      Matrícula {student.schoolRegistration} ·{' '}
                       {student.enrollments[0]?.className}
                     </span>
                     <span>
                       {isReady(student.id)
-                        ? "Conferência pronta"
-                        : "Conferir dados"}
+                        ? 'Conferência pronta'
+                        : 'Conferir dados'}
                     </span>
                   </button>
                 </div>
@@ -729,16 +740,16 @@ export default function SecretaryDeclarations() {
                 Voltar à busca
               </button>
               <h2 ref={headingRef} tabIndex={-1} id="editor-title">
-                {selected.fullName || "Aluno selecionado"}
+                {selected.fullName || 'Aluno selecionado'}
               </h2>
               <p className="editor-identity">
-                Matrícula {selected.schoolRegistration} · Nascimento{" "}
-                {selected.birthDate.split("-").reverse().join("/")}
+                Matrícula {selected.schoolRegistration} · Nascimento{' '}
+                {selected.birthDate.split('-').reverse().join('/')}
               </p>
               <p className="editor-hint">
-                Dados usados apenas neste lote, sem alterar o cadastro. Campos
-                com * são obrigatórios. Os dois espaços de assinatura e carimbo
-                permanecem no PDF.
+                Os campos preenchidos aqui são usados apenas na declaração e não
+                alteram o cadastro do aluno. Campos com * são obrigatórios. O
+                PDF tem espaço para assinatura e carimbo dos responsáveis.
               </p>
               <form
                 key={`${selected.id}:${selected.enrollments[0]?.id}`}
@@ -748,7 +759,7 @@ export default function SecretaryDeclarations() {
                 onChange={() => {
                   setDirty(true);
                   setBatchDownloaded(false);
-                  setMessage("");
+                  setMessage('');
                 }}
               >
                 <fieldset disabled={busy} className="declaration-fields">
@@ -759,18 +770,18 @@ export default function SecretaryDeclarations() {
                       name="enrollmentId"
                       required
                       defaultValue={initial.enrollmentId}
-                      {...validation.field("enrollmentId")}
+                      {...validation.field('enrollmentId')}
                     >
                       {selected.enrollments.map((enrollment) => (
                         <option
                           key={enrollment.id}
                           value={enrollment.id}
-                          disabled={enrollment.mode !== "INTEGRADO"}
+                          disabled={enrollment.mode !== 'INTEGRADO'}
                         >
-                          {enrollment.className} ·{" "}
-                          {enrollment.mode === "INTEGRADO"
-                            ? "Integrado"
-                            : "Subsequente — modelo pendente"}
+                          {enrollment.className} ·{' '}
+                          {enrollment.mode === 'INTEGRADO'
+                            ? 'Integrado'
+                            : 'Subsequente — modelo pendente'}
                         </option>
                       ))}
                     </select>
@@ -779,15 +790,15 @@ export default function SecretaryDeclarations() {
                     <div className="declaration-field" key={field.name}>
                       <label htmlFor={`declaration-${field.name}`}>
                         {field.label}
-                        {"required" in field && field.required ? " *" : ""}
+                        {'required' in field && field.required ? ' *' : ''}
                       </label>
                       <input
                         id={`declaration-${field.name}`}
                         name={field.name}
                         type="text"
-                        defaultValue={initial[field.name] ?? ""}
+                        defaultValue={initial[field.name] ?? ''}
                         maxLength={field.max}
-                        required={"required" in field && field.required}
+                        required={'required' in field && field.required}
                         {...validation.field(field.name)}
                       />
                     </div>
@@ -824,20 +835,20 @@ export default function SecretaryDeclarations() {
                           type="text"
                           inputMode="decimal"
                           maxLength={6}
-                          defaultValue={initial.frequencyPercent ?? ""}
+                          defaultValue={initial.frequencyPercent ?? ''}
                           required
                           disabled={!includeFrequency}
-                          {...validation.field("frequencyPercent")}
+                          {...validation.field('frequencyPercent')}
                         />
                       </div>
                       <div className="frequency-dates">
-                        {(["frequencyStart", "frequencyEnd"] as const).map(
+                        {(['frequencyStart', 'frequencyEnd'] as const).map(
                           (name, index) => (
                             <div className="declaration-field" key={name}>
                               <label htmlFor={name}>
                                 {index === 0
-                                  ? "Início da apuração"
-                                  : "Fim da apuração"}{" "}
+                                  ? 'Frequência: data inicial'
+                                  : 'Frequência: data final'}{' '}
                                 *
                               </label>
                               <input
@@ -846,7 +857,7 @@ export default function SecretaryDeclarations() {
                                 type="date"
                                 required
                                 disabled={!includeFrequency}
-                                defaultValue={initial[name] ?? ""}
+                                defaultValue={initial[name] ?? ''}
                                 {...validation.field(name)}
                               />
                             </div>
@@ -873,7 +884,7 @@ export default function SecretaryDeclarations() {
                           id={`declaration-${field.name}`}
                           name={field.name}
                           type="text"
-                          defaultValue={initial[field.name] ?? ""}
+                          defaultValue={initial[field.name] ?? ''}
                           maxLength={field.max}
                           {...validation.field(field.name)}
                         />
@@ -890,8 +901,8 @@ export default function SecretaryDeclarations() {
                       type="checkbox"
                       defaultChecked
                     />
-                    Reaproveitar curso, período, horários, intervalo de apuração
-                    e responsáveis nos próximos alunos desta turma.
+                    Usar também o curso, período, horários, datas da frequência
+                    e nomes de quem assina nas próximas declarações desta turma.
                   </label>
                   <label
                     className="declaration-reviewed"
@@ -903,7 +914,7 @@ export default function SecretaryDeclarations() {
                       type="checkbox"
                       required
                       defaultChecked={initial.reviewed ?? false}
-                      {...validation.field("reviewed")}
+                      {...validation.field('reviewed')}
                     />
                     Conferi a matrícula, os dados pessoais e a frequência
                     informada nos registros escolares.
@@ -926,10 +937,10 @@ export default function SecretaryDeclarations() {
                     value="save"
                     disabled={
                       busy ||
-                      !selected.enrollments.some((e) => e.mode === "INTEGRADO")
+                      !selected.enrollments.some((e) => e.mode === 'INTEGRADO')
                     }
                   >
-                    Salvar conferência no lote
+                    Salvar conferência
                   </button>
                   <button
                     className="ete-button ete-button--secondary"
@@ -939,10 +950,10 @@ export default function SecretaryDeclarations() {
                     aria-busy={busy}
                     disabled={
                       busy ||
-                      !selected.enrollments.some((e) => e.mode === "INTEGRADO")
+                      !selected.enrollments.some((e) => e.mode === 'INTEGRADO')
                     }
                   >
-                    {busy ? "Preparando PDF…" : "Baixar só esta declaração"}
+                    {busy ? 'Preparando PDF…' : 'Baixar só esta declaração'}
                   </button>
                 </div>
               </form>
@@ -971,8 +982,8 @@ export default function SecretaryDeclarations() {
           <h2 id="discard-title">Descartar os campos preenchidos?</h2>
           <p id="discard-description">
             {pending?.href
-              ? "Os dados deste lote ficam apenas nesta tela. Ao sair, os campos e a seleção serão perdidos."
-              : "A conferência deste aluno ainda não foi salva no lote. Ao trocar de aluno, os novos campos serão perdidos."}
+              ? 'Os dados preenchidos e os alunos selecionados ficam apenas nesta tela. Se sair, será necessário selecionar e preencher novamente.'
+              : 'A conferência deste aluno ainda não foi salva. Se trocar de aluno, os campos que você preencheu serão perdidos.'}
           </p>
           <div className="discard-actions">
             <button

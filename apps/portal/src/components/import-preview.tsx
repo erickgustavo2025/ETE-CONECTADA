@@ -76,12 +76,12 @@ export default function ImportPreview({
       <dl className={styles.counts}>
         {[
           ['Alunos novos', counts.createdStudents],
-          ['Vínculos novos', counts.createdEnrollments],
+          ['Matrículas novas', counts.createdEnrollments],
           ['Alunos a atualizar', counts.updatedStudents],
-          ['Vínculos a atualizar', counts.updatedEnrollments],
+          ['Matrículas a atualizar', counts.updatedEnrollments],
           ['Sem alteração', counts.unchanged],
-          ['Ausentes preservados', counts.absent],
-          ['Conflitos', counts.conflicts],
+          ['Fora da planilha, mantidos', counts.absent],
+          ['Pendências', counts.conflicts],
         ].map(([label, value]) => (
           <div key={label}>
             <dt>{label}</dt>
@@ -120,10 +120,10 @@ export default function ImportPreview({
                   </td>
                   <td>
                     {c.differs
-                      ? 'Divergência: exige confirmação e pausa da progressão'
+                      ? 'Módulo ou período diferente: confira antes de importar'
                       : c.configured
-                        ? 'Compatível'
-                        : 'Sem progressão automática'}
+                        ? 'De acordo com o calendário'
+                        : 'Sem mudança automática de módulo'}
                   </td>
                 </tr>
               ))}
@@ -138,20 +138,22 @@ export default function ImportPreview({
           {counts.identityChanges === 1
             ? 'aluno existente'
             : 'alunos existentes'}
-          . Elas exigirão confirmação adicional e nova conferência dos vínculos.
+          . Confirme essas alterações e confira as matrículas antes de emitir
+          declarações.
         </p>
       )}
       {counts.conflicts > 0 && (
         <p role="status">
-          Resolva os conflitos antes de importar. Vínculos encerrados ou dados
-          corrigidos pela secretaria podem exigir atendimento separado.
+          Resolva as pendências antes de importar. Confira as matrículas
+          encerradas e as informações já corrigidas pela secretaria.
         </p>
       )}
       {singles.length > 0 && (
         <div className={styles.notice}>
           <p>
-            {singles.length} alunos têm uma única opção de vínculo compatível
-            sem associação à planilha. Confira os vínculos antes de associar.
+            {singles.length} alunos já têm uma matrícula que pode corresponder a
+            esta lista. Confira as opções antes de atualizar, para evitar
+            matrículas duplicadas.
           </p>
           <button
             className="ete-button ete-button--secondary"
@@ -172,8 +174,8 @@ export default function ImportPreview({
             }
           >
             {singles.length === 1
-              ? 'Selecionar vínculo com única opção'
-              : `Selecionar os ${singles.length} vínculos com única opção`}
+              ? 'Selecionar matrícula encontrada'
+              : `Selecionar as ${singles.length} matrículas encontradas`}
           </button>
         </div>
       )}
@@ -243,7 +245,7 @@ export default function ImportPreview({
                           .reverse()
                           .join('/')}
                       </dd>
-                      <dt>Filiação informada</dt>
+                      <dt>Nome do pai ou da mãe</dt>
                       <dd>
                         {[entry.incoming.parentOne, entry.incoming.parentTwo]
                           .filter(Boolean)
@@ -254,7 +256,7 @@ export default function ImportPreview({
                     {entry.changes.map((change) => (
                       <p key={change.field}>
                         <strong>
-                          {IMPORT_FIELD_LABELS[change.field] || change.field}:
+                          {IMPORT_FIELD_LABELS[change.field] || 'Dado escolar'}:
                         </strong>{' '}
                         {change.before ?? 'Não informado'} →{' '}
                         {change.after ?? 'Não informado'}
@@ -271,7 +273,7 @@ export default function ImportPreview({
                   {entry.needsBinding && (
                     <div className={styles.binding}>
                       <label htmlFor={`binding-${entry.sheet}-${entry.line}`}>
-                        Vínculo para matrícula{' '}
+                        Escolha a matrícula do aluno{' '}
                         {entry.incoming.schoolRegistration}
                       </label>
                       <select
@@ -297,11 +299,11 @@ export default function ImportPreview({
                             ·{' '}
                             {candidate.status === 'ENDED'
                               ? 'Encerrado'
-                              : 'Vínculo existente'}
+                              : 'Matrícula já cadastrada'}
                           </option>
                         ))}
                         <option value="new">
-                          É outro vínculo: incluir separadamente
+                          É outra matrícula: cadastrar separadamente
                         </option>
                       </select>
                     </div>
@@ -335,8 +337,8 @@ export default function ImportPreview({
       </nav>
       {choices.length > 0 && (
         <p>
-          {choices.length} associações escolhidas. Elas só valerão depois de
-          conferir as abas e gerar uma nova prévia.
+          {choices.length} matrículas escolhidas. Confira as turmas e gere uma
+          nova prévia para ver o resultado antes de importar.
         </p>
       )}
       <div className={styles.actions}>
@@ -347,7 +349,7 @@ export default function ImportPreview({
             type="button"
             onClick={() => onBindMany(choices)}
           >
-            Revisar associações escolhidas
+            Conferir matrículas escolhidas
           </button>
         ) : (
           <button

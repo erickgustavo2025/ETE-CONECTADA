@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   serverExternalPackages: ['xlsx'],
   outputFileTracingIncludes: {
     '/api/secretaria/importacao': ['../../node_modules/xlsx/**/*'],

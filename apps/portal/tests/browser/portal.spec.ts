@@ -307,12 +307,12 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
       ).toBe(true);
     }
     await page.setViewportSize({ width: 320, height: 900 });
-    await page.getByLabel('Naturalidade (município/UF)').fill('Recife/PE');
+    await page.getByLabel('Cidade e estado de nascimento').fill('Recife/PE');
     await page
-      .getByLabel('Filiação registrada')
+      .getByLabel('Nome do pai ou da mãe')
       .fill('Responsável sintético Um');
     await page
-      .getByLabel('Segunda filiação, quando aplicável')
+      .getByLabel('Nome do outro pai ou da outra mãe (se houver)')
       .fill('Responsável sintético Dois');
     await page
       .getByLabel('Nome oficial do curso técnico')
@@ -323,8 +323,8 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
       .fill('Dias e horários fictícios para teste');
     await page.getByLabel('Incluir frequência registrada').check();
     await page.getByLabel('Frequência (%)').fill('100');
-    await page.getByLabel('Início da apuração').fill('2026-02-01');
-    await page.getByLabel('Fim da apuração').fill('2026-10-12');
+    await page.getByLabel('Frequência: data inicial').fill('2026-02-01');
+    await page.getByLabel('Frequência: data final').fill('2026-10-12');
     await page.getByLabel(/Conferi a matrícula, os dados pessoais/).check();
     const downloadEvent = page.waitForEvent('download');
     await page
@@ -338,7 +338,9 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
       readFile(pdfPath!),
     );
     expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
-    await expect(page.getByText(/PDF pronto\. Abra o arquivo/)).toBeVisible();
+    await expect(
+      page.getByText(/PDF de teste pronto\. Abra o arquivo/),
+    ).toBeVisible();
     const request = await db.declarationRequest.findFirstOrThrow({
       where: { studentId: student.id },
     });

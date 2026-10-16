@@ -50,9 +50,7 @@ const text = (value: unknown, max: number) => {
     /\p{Cc}/u.test(value) ||
     !value.trim()
   )
-    throw new SheetImportError(
-      'Confira os textos e limites do arquivo/contexto.',
-    );
+    throw new SheetImportError('Confira os dados informados para cada turma.');
   return value.trim().replace(/\s+/g, ' ');
 };
 function object(value: unknown, keys: string[]) {
@@ -108,7 +106,9 @@ export async function decodeXls(
     file.length > SHEET_FILE_LIMIT ||
     file.subarray(0, 8).toString('hex') !== 'd0cf11e0a1b11ae1'
   )
-    throw new SheetImportError('Envie um XLS binário válido de até 2 MiB.');
+    throw new SheetImportError(
+      'Selecione uma planilha .xls válida de até 2 MB.',
+    );
   if (decoding)
     throw new SheetImportError(
       'Aguarde a leitura em andamento e tente novamente.',
@@ -224,7 +224,7 @@ export async function parseSheetInput(
     rawContexts.length < 1 ||
     rawContexts.length > 25
   )
-    throw new SheetImportError('Confira o contexto de cada aba.');
+    throw new SheetImportError('Confira os dados de cada aba da planilha.');
   const contexts = rawContexts.map((value) => {
     const c = object(value, [
       'sheetName',
@@ -249,7 +249,7 @@ export async function parseSheetInput(
       (mode === 'INTEGRADO' && c.courseLabel === 'ENF')
     )
       throw new SheetImportError(
-        'Confira modalidade, oferta, curso e série/módulo.',
+        'Confira se a lista é do integrado ou do subsequente e confirme a turma, o curso e a série ou módulo.',
       );
     const bindings: Record<string, string> = {};
     if (c.bindings !== undefined) {
@@ -259,14 +259,14 @@ export async function parseSheetInput(
         Array.isArray(c.bindings) ||
         Object.keys(c.bindings).length > 5000
       )
-        throw new SheetImportError('Confira os vínculos existentes.');
+        throw new SheetImportError('Confira as matrículas já cadastradas.');
       for (const [key, id] of Object.entries(c.bindings)) {
         if (
           !/^\d{7,8}$/.test(key) ||
           typeof id !== 'string' ||
           (id !== 'new' && !uuid.test(id))
         )
-          throw new SheetImportError('Confira os vínculos existentes.');
+          throw new SheetImportError('Confira as matrículas já cadastradas.');
         bindings[key] = id === 'new' ? id : id.toLowerCase();
       }
     }
@@ -284,7 +284,9 @@ export async function parseSheetInput(
     new Set(contexts.map((c) => c.scopeId)).size !== contexts.length ||
     new Set(contexts.map((c) => c.sheetName)).size !== contexts.length
   )
-    throw new SheetImportError('Ofertas ou abas repetidas no contexto.');
+    throw new SheetImportError(
+      'A mesma turma ou aba foi escolhida mais de uma vez. Confira as seleções.',
+    );
   const sheets = await decodeXls(file);
   if (sheets.length !== contexts.length)
     throw new SheetImportError('Confira todas as abas, sem omitir turmas.');
@@ -293,7 +295,7 @@ export async function parseSheetInput(
   for (const [sheet, s] of sheets.entries()) {
     const context = contexts.find((c) => c.sheetName === s.name);
     if (!context)
-      throw new SheetImportError(`Confira o contexto da aba ${sheet + 1}.`);
+      throw new SheetImportError(`Confira os dados da aba ${sheet + 1}.`);
     const header = sheetHeader(s, mode, sheet);
     if (
       header.stage !== context.stage ||
@@ -350,10 +352,13 @@ export async function parseSheetInput(
       )
     )
       throw new SheetImportError(
-        'Há vínculo informado sem linha correspondente.',
+        'Uma matrícula escolhida não corresponde aos alunos da planilha. Confira a seleção.',
       );
   }
-  if (!rows.length) throw new SheetImportError('Nenhum aluno reconhecido.');
+  if (!rows.length)
+    throw new SheetImportError(
+      'Não encontramos alunos no formato esperado. Confira a planilha selecionada.',
+    );
   return {
     mode,
     contexts,

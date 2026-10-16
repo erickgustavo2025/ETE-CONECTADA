@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     if (body.action === 'list')
       return json(await listCourseOfferings(getDb(), session.accountId));
     if (typeof body.offeringId !== 'string')
-      throw new CalendarError('Selecione a oferta.');
+      throw new CalendarError('Escolha a turma.');
     if (body.action === 'members') {
       if (typeof body.page !== 'number')
         throw new CalendarError('Confira a página.');
