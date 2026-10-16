@@ -278,7 +278,12 @@ async function main() {
       );
       assert.equal(typeof data.error, 'string');
     }
-    for (const path of ['/', '/declaracao', '/secretaria/declaracoes']) {
+    for (const path of [
+      '/',
+      '/declaracao',
+      '/secretaria/declaracoes',
+      '/secretaria/importacao/integrado',
+    ]) {
       const response = await request(path);
       assert.equal(response.status, 307);
       assert.equal(

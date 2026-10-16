@@ -1,12 +1,23 @@
 # Núcleo de importação da secretaria
 
-A API de desenvolvimento `POST /api/secretaria/importacao` lê XLS e prepara uma prévia antes de alterar cadastros. É exclusiva de uma sessão ativa da secretaria, exige a mesma origem e responde com `private, no-store`. O acesso em produção continua bloqueado. Ainda não há tela de upload: as entradas do integrado e do subsequente serão conectadas a este núcleo nas EC-105/106.
+A API de desenvolvimento `POST /api/secretaria/importacao` lê XLS e prepara uma prévia antes de alterar cadastros. É exclusiva de uma sessão ativa da secretaria, exige a mesma origem e responde com `private, no-store`. O acesso em produção continua bloqueado. A secretaria acessa a entrada do integrado em `/secretaria/importacao/integrado`, pelo menu do portal. A entrada do subsequente continua na EC-106, após a configuração acadêmica da EC-108.
 
 ## Leitura
 
-O corpo é JSON com `action`, `mode`, `contexts` e `fileBase64`. Limite de 3 MiB para o corpo, contado no stream mesmo sem `Content-Length`, e de 2 MiB para o XLS. Aceita somente assinatura OLE do XLS binário, até 25 abas, 5 mil linhas de dados no conjunto e nove colunas. A linha 6 deve conter Matrícula, Nome, Data de nascimento e Filiação 1 e 2 nas posições esperadas; cabeçalhos intermediários vazios não deslocam a filiação.
+O corpo de prévia/confirmação é JSON com `action`, `mode`, `contexts` e `fileBase64`. A ação `inspect` recebe somente `action`, `mode: "INTEGRADO"` e `fileBase64`: devolve cabeçalhos e contagens de abas, sem identidades de alunos ou token de prévia. Ela usa os mesmos limites, origem e autorização da aplicação. Limite de 3 MiB para o corpo, contado no stream mesmo sem `Content-Length`, e de 2 MiB para o XLS. Aceita somente assinatura OLE do XLS binário, até 25 abas, 5 mil linhas de dados no conjunto e nove colunas. A linha 6 deve conter Matrícula, Nome, Data de nascimento e Filiação 1 e 2 nas posições esperadas; cabeçalhos intermediários vazios não deslocam a filiação.
 
 A distribuição oficial [SheetJS CE](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/) 0.20.3 fica fixada por URL e integridade no lockfile. Sua execução ocorre em um worker com ambiente vazio, prazo de cinco segundos, heap de 64 MiB e uma leitura simultânea por processo; outra tentativa recebe 429. Esse limite controla o heap do worker, não representa sandbox de sistema operacional ou limite de memória total. O leitor não executa fórmulas/macros nem busca links; recusa fórmulas em células, hiperlinks, VBA, abas ocultas/especiais e erros de interpretação. Não envia arquivos a serviços externos nem os salva em disco/banco. A exportação precisa estar no layout suportado; ambiguidades são recusadas, sem importar parcialmente ou truncar linhas.
+
+## Tela do integrado
+
+1. Escolha um XLS binário do integrado e clique em **Ler arquivo**. É um arquivo por vez; seleção local não comprova o formato. Leitura e preparação da prévia podem ser canceladas, sem alterar cadastros.
+2. Para cada aba, escolha explicitamente **a oferta/turma que está sendo atualizada** ou **uma nova oferta**. Confira curso/série lidos do cabeçalho e preencha turma/período. O catálogo vem de associações já confirmadas: no máximo 10 mil vínculos relacionados e 200 ofertas; excesso é recusado, sem truncar. Nome igual não comprova que é o mesmo grupo. Variações de turma/período na mesma fonte exigem preenchimento conferido. Cadastro completo de oferta/calendário continua separado na EC-108.
+3. Marque a conferência de cada aba e gere a prévia. Ela é limitada a 5 mil linhas pelo contrato e renderizada em páginas locais de 20, com filtro por resultado, dados de entrada e diferenças. Campos, arquivo, token e página ficam somente em memória, fora de URL, storage e logs gerais.
+4. Se houver matrícula antiga sem associação, confira as opções exibidas por aluno. Uma única opção compatível não encerrada pode ser selecionada em lote por ação explícita. Escolhas precisam voltar à conferência das abas e gerar outra prévia. Se realmente for outro vínculo, a opção de inclusão separada é explícita; não encerra ou substitui automaticamente o anterior.
+5. Conflitos impedem aplicar. Após conferir, **Aplicar importação** abre confirmação com foco na opção de continuar conferindo. Alterações de identidade exigem aceite adicional. Envio em andamento impede nova confirmação e fechamento; depois de falha de rede, mantenha a prévia e repita o mesmo envio, que é idempotente. Uma resposta perdida pode corresponder a um lote já aplicado; a tela não afirma que foi desfeito.
+6. O resultado mostra contagens e permite importar outro arquivo. Matrículas importadas não são ativadas nem conferidas automaticamente; dados ausentes não são apagados. Navegação com arquivo pendente pede descarte explícito. Sessão/permissão são reconferidas no servidor; produção continua bloqueada.
+
+O catálogo e as opções de associação mostram apenas campos escolares necessários à secretaria, nunca credenciais. O importador JSON histórico continua separado; o catálogo não deduz associação por matrícula/nome de turma e não inclui vínculos do subsequente nesta entrada.
 
 ## Contexto conferido
 
@@ -71,3 +82,5 @@ A migração aditiva `20261015160000_enrollment_import_history` cria a tabela va
 O contrato completo está em [Importação das planilhas](importacao-planilhas.md). Para executar as provas, siga [Testes isolados](testes-isolados.md); nunca use a demonstração em uso ou dados reais como fixtures.
 
 `test:sheet-history` verifica pela API real mudança de turma/período/série e módulo, invalidação de conferência, isolamento entre modalidades, repetição, conflitos e prévia desatualizada. Força falha após a escrita do histórico para comprovar rollback de versões e cadastros, e verifica preservação das versões quando a conta do operador é excluída. Integra `test:integration`; `test:cleanup` também confere a tabela de histórico.
+
+A jornada de navegador da importação usa 22 linhas XLS fictícias e vínculo legado: seleção/configuração, erro de modalidade, paginação/filtro, associação explícita, diferenças, confirmação, prévia desatualizada, resposta perdida com repetição idempotente, reimportação pela mesma oferta e descarte. Verifica também autorização/sessão; arquivos reais e e-mails de alunos não são usados.

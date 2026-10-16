@@ -84,7 +84,7 @@ A secretaria pode gerar até 100 declarações por lote, uma por aluno. Quando i
 
 A versão atual prepara o documento para impressão e assinatura no papel. Os [modelos e o exemplo fictício](output/pdf/) estão disponíveis para revisão. O modelo próprio do subsequente, assinatura eletrônica e consulta por QR Code ainda fazem parte do trabalho futuro. A pesquisa sobre a emissão está em [Declaração de vínculo](docs/declaracao-vinculo/viabilidade.md).
 
-O [guia do banco](apps/portal/prisma/README.md) também explica a importação pelo backup JSON e a concessão de acesso à secretaria. O [núcleo de importação XLS](docs/importacao-nucleo.md) já valida arquivos, aplica alterações após confirmação e preserva o histórico das mudanças de matrícula pela API de desenvolvimento; as telas para integrado e subsequente ainda serão adicionadas.
+O [guia do banco](apps/portal/prisma/README.md) também explica a importação pelo backup JSON e a concessão de acesso à secretaria. O [núcleo de importação XLS](docs/importacao-nucleo.md) já valida arquivos, aplica alterações após confirmação e preserva o histórico das mudanças de matrícula pela API de desenvolvimento; a secretaria já pode usar a tela do integrado pelo menu do portal. A entrada do subsequente ainda será adicionada.
 
 ## Verificações disponíveis
 

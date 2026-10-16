@@ -3,6 +3,7 @@ import { reportTestFailure } from './test-environment';
 import { randomUUID } from 'node:crypto';
 import * as XLSX from 'xlsx';
 import {
+  inspectIntegratedSheet,
   parseSheetInput,
   decodeXls,
   SHEET_FILE_LIMIT,
@@ -64,6 +65,20 @@ export function sheetFixture(mode: 'INTEGRADO' | 'SUBSEQUENTE' = 'INTEGRADO') {
 }
 async function main() {
   const f = sheetFixture();
+  const inspection = await inspectIntegratedSheet(f.file());
+  assert.deepEqual(inspection, [
+    { sheetName: 'Fictícia', courseLabel: 'ADM', stage: 1, rows: 1 },
+  ]);
+  await assert.rejects(
+    inspectIntegratedSheet(sheetFixture('SUBSEQUENTE').file()),
+    /Modalidade/,
+  );
+  const ambiguous = sheetFixture();
+  ambiguous.wb.Sheets['Fictícia'].A3 = {
+    t: 's',
+    v: 'Ensino Médio - Administração e Desenvolvimento de Sistemas',
+  };
+  await assert.rejects(inspectIntegratedSheet(ambiguous.file()), /Curso/);
   const input = await parseSheetInput(f.file(), 'INTEGRADO', [f.context]);
   assert.equal(input.rows[0].schoolRegistration, '00001001');
   assert.equal(input.rows[0].parentTwo, 'Filiação Fictícia Dois');
