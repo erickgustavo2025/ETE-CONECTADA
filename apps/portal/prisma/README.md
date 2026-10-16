@@ -15,6 +15,10 @@ npm run db:migrate --workspace @ete-conectada/portal
 | `9900002`           | `63820517480`                      | 03/11/2007 | `aluno.teste@eteconectada.invalid` / `Teste@12345`, se a senha não tiver sido alterada |
 | `9900003`           | `29471638500`                      | 26/08/2009 | Primeiro acesso, se ainda não houver conta ativa                                       |
 
+Para experimentar o primeiro acesso dessas fixtures, o seed registra o nome
+**Filiação Fictícia de Demonstração**. Não substitua essa referência por dados
+reais no ambiente de testes. Reexecutar o seed preserva complementos existentes.
+
 O seed preserva contas, senhas e estados já existentes no banco descartável; colisões com aluno ou matrícula divergente cancelam a transação. Não use CPF no primeiro formulário: use matrícula e nascimento. No modal, informe CPF válido, e-mail, senha com pelo menos 8 caracteres e confirmação. O CPF já informado permanece vinculado mesmo se o link de e-mail expirar. Login aceita CPF ou e-mail.
 
 Para manter também um acesso fictício de secretaria, use `npm run db:demo` no banco local identificado. Preparação e credenciais iniciais estão em [acessos fixos de demonstração](../../../docs/testes-isolados.md#acessos-fixos-para-demonstração-local). O comando preserva senhas e recusa contas com papel/estado divergente.

@@ -61,6 +61,17 @@ async function main() {
           const record =
             existing ??
             (await tx.student.create({ data: { ...student, birthDate } }));
+          // Referência inteiramente fictícia para experimentar o primeiro acesso.
+          // Nunca sobrescreve complementos já conferidos da demonstração.
+          await tx.studentDetails.upsert({
+            where: { studentId: record.id },
+            create: {
+              studentId: record.id,
+              parentOne: 'Filiação Fictícia de Demonstração',
+              parentageSource: 'SCHOOL_RECORD',
+            },
+            update: {},
+          });
           const enrollment = await tx.enrollment.findUnique({
             where: { importSourceId: `seed:${student.schoolRegistration}` },
           });

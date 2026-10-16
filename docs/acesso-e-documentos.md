@@ -10,6 +10,41 @@ aceitando pai OU mãe. O nome é conferência adicional, não comprovação sufi
 de titularidade. Células de filiação vazias na exportação exigem consulta da
 secretaria ao registro escolar, sem inventar nome ou liberar um bypass geral.
 
+### Conferência implementada em desenvolvimento (EC-058)
+
+O primeiro formulário pede matrícula, nascimento e **um nome completo** registrado
+na filiação. O servidor repete a conferência ao criar ou retomar a conta, mesmo
+quando a chamada é feita diretamente à API. Aceita qualquer um dos dois nomes;
+a ordem da planilha não determina pai ou mãe. Usa somente dados com origem
+escolar ou correção da secretaria, nunca uma autodeclaração para aprovar a si mesma.
+
+Maiúsculas, acentos, espaços externos/repetidos e apóstrofo tipográfico não mudam
+a comparação. O nome inteiro precisa corresponder: não há busca aproximada,
+abreviação ou comparação só pelo primeiro e último nome. O limite é de 180 caracteres;
+controle/caractere invisível, número e texto de uma só palavra são recusados.
+Não persistimos o texto enviado como correção do cadastro.
+
+Ausência de matrícula, bloqueio e filiação divergente produzem a mesma resposta
+de não conferido, sem devolver nomes, dizer qual campo divergiu ou informar se
+há filiação no registro. O estado da conta só aparece depois da conferência.
+A confirmação por e-mail continua obrigatória; uma conta ativa não é sobrescrita,
+e uma pendente com link válido só pode renovar usando as credenciais já escolhidas.
+
+O link guarda um hash dos dados escolares usados na conferência, dentro da mesma
+transação. Mudança posterior de identidade/filiação, bloqueio ou link legado sem
+essa referência impedem a ativação. Links antigos devem ser renovados pelo novo
+fluxo; a migração aditiva preserva contas, senhas, sessões e dados escolares.
+Se o código for revertido, manter o cadastro desabilitado até recuperar essa
+validação. A coluna aditiva pode permanecer; não há necessidade de apagar contas
+nem remover a coluna durante um rollback de código.
+
+Esse mecanismo **não comprova sozinho a identidade da pessoa**: familiares podem
+ser conhecidos por terceiros. A produção continua bloqueada; limitação de tentativas
+e demais proteções de acesso seguem seus cards, especialmente EC-060. Códigos de
+exceção, autoedição de filiação e atendimento de divergências não foram liberados.
+A orientação segue as limitações de perguntas pessoais descritas pela
+[OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Choosing_and_Using_Security_Questions_Cheat_Sheet.html).
+
 A recomendação técnica é recuperação automática por link enviado ao e-mail já
 confirmado. O cadastro atual possui envio de confirmação via Resend; SMTP é uma
 alternativa de transporte, não requisito para projetar a recuperação. Reutilizar

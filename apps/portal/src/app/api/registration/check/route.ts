@@ -5,6 +5,8 @@ import {
   disabledResponse,
   normalizeSchoolRegistration,
   registrationEnabled,
+  normalizeParentName,
+  matchesRegisteredParent,
   validBirthDate,
 } from '@/lib/registration';
 
@@ -17,7 +19,8 @@ export async function POST(request: Request) {
   const body = input.body;
   if (
     !boundedString(body.schoolRegistration, 32) ||
-    !boundedString(body.birthDate, 10)
+    !boundedString(body.birthDate, 10) ||
+    !normalizeParentName(body.parentName)
   )
     return Response.json({ error: 'Dados inválidos.' }, { status: 400 });
   const schoolRegistration = normalizeSchoolRegistration(
@@ -32,18 +35,31 @@ export async function POST(request: Request) {
         birthDate: new Date(`${body.birthDate}T00:00:00Z`),
         registrationAllowed: true,
       },
-      select: { account: { select: { status: true } } },
+      select: {
+        account: { select: { status: true } },
+        details: {
+          select: { parentOne: true, parentTwo: true, parentageSource: true },
+        },
+      },
     });
-    const status = found?.account?.status;
-    return Response.json({
-      result: !found
-        ? 'unmatched'
-        : status === 'active'
-          ? 'created'
-          : status === 'pending'
-            ? 'pending'
-            : 'eligible',
-    });
+    // Mesmo resultado público para ausente, bloqueado e filiação divergente.
+    if (!found || !matchesRegisteredParent(body.parentName, found.details))
+      return Response.json(
+        { result: 'unmatched' },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    const status = found.account?.status;
+    return Response.json(
+      {
+        result:
+          status === 'active'
+            ? 'created'
+            : status === 'pending'
+              ? 'pending'
+              : 'eligible',
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch {
     return databaseErrorResponse();
   }

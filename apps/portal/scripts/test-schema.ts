@@ -17,7 +17,7 @@ const columns: Record<string, string> = {
   accounts:
     'id student_id email password_hash status created_at updated_at role',
   email_verification_tokens:
-    'token_hash account_id expires_at consumed_at created_at',
+    'token_hash account_id expires_at consumed_at created_at claim_data_hash',
   sessions: 'token_hash account_id expires_at created_at',
   enrollments:
     'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id school_import_key module_number',
@@ -75,6 +75,14 @@ async function main() {
         (row) => row.table_name === table && row.column_name === name,
       )!;
     assert.equal(column('students', 'cpf').is_nullable, 'YES');
+    assert.equal(
+      column('email_verification_tokens', 'claim_data_hash').is_nullable,
+      'YES',
+    );
+    assert.equal(
+      column('email_verification_tokens', 'claim_data_hash').udt_name,
+      'bpchar',
+    );
     assert.equal(column('students', 'cpf').udt_name, 'bpchar');
     assert.equal(column('students', 'birth_date').udt_name, 'date');
     assert.equal(column('students', 'registration_allowed').is_nullable, 'NO');
@@ -142,6 +150,10 @@ async function main() {
     assert.match(
       constraint('enrollments_module_number_check'),
       /module_number/,
+    );
+    assert.match(
+      constraint('email_verification_claim_hash_check'),
+      /claim_data_hash.*\[0-9a-f\]/,
     );
     assert.match(
       constraint('enrollments_validity_check'),

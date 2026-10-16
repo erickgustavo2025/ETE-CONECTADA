@@ -57,6 +57,13 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
         birthDate: new Date('2008-01-15T00:00:00.000Z'),
         fullName: `Estudante sintético ${suffix}`,
         registrationAllowed: true,
+        details: {
+          create: {
+            parentOne: 'Filiação Fictícia Um',
+            parentTwo: 'Filiação Fictícia Dois',
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
         enrollments: {
           create: {
             mode: 'INTEGRADO',
@@ -71,6 +78,50 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
     await page.goto(`${base}/cadastro`);
     await page.getByLabel('Matrícula').fill(student.schoolRegistration!);
     await page.getByLabel('Data de nascimento').fill('2008-01-15');
+    const parent = page.getByLabel('Nome completo do pai ou da mãe');
+    await page.getByRole('button', { name: /Conferir cadastro/ }).click();
+    await expect(parent).toBeFocused();
+    await expect(parent).toHaveAttribute('aria-invalid', 'true');
+    await parent.fill('Filiação');
+    await page.getByRole('button', { name: /Conferir cadastro/ }).click();
+    await expect(page.locator('#identity-error')).toContainText(
+      'nome completo',
+    );
+    await parent.fill('Pessoa Desconhecida');
+    await checkRegistration(page);
+    await expect(
+      page.getByText(
+        'Não foi possível confirmar os dados. Confira as informações ou procure a escola.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+    expect(await db.account.count({ where: { studentId } })).toBe(0);
+    // Falha de conexão permite repetir sem perder os dados digitados.
+    await page.route(
+      '**/api/registration/check',
+      (route) => route.abort('failed'),
+      { times: 1 },
+    );
+    await page.getByRole('button', { name: /Conferir cadastro/ }).click();
+    await expect(
+      page.getByText(/Confira a conexão e tente novamente/),
+    ).toBeVisible();
+    await expect(parent).toHaveValue('Pessoa Desconhecida');
+    for (const width of [320, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await page.screenshot({
+        path: test.info().outputPath(`cadastro-filiacao-${width}.png`),
+        fullPage: true,
+      });
+    }
+    await page
+      .getByLabel('Nome completo do pai ou da mãe')
+      .fill('Filiação Fictícia Um');
     await checkRegistration(page);
     await expect(
       page.getByRole('heading', { name: 'Escolha seus dados de acesso' }),
@@ -96,6 +147,9 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
     await page.getByRole('button', { name: 'Fechar' }).click();
     await page.getByLabel('Matrícula').fill(student.schoolRegistration!);
     await page.getByLabel('Data de nascimento').fill('2008-01-15');
+    await page
+      .getByLabel('Nome completo do pai ou da mãe')
+      .fill('FILIACAO FICTICIA DOIS');
     await checkRegistration(page);
     await expect(
       page.getByText(/ainda não foi confirmado\. Use o mesmo CPF/),

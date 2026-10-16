@@ -15,6 +15,7 @@ import {
   normalizeEmail,
   registrationEnabled,
   validBirthDate,
+  normalizeParentName,
 } from '@/lib/registration';
 
 export const runtime = 'nodejs';
@@ -30,7 +31,9 @@ export async function POST(request: Request) {
     !boundedString(body.cpf, 32) ||
     !boundedString(body.email, 320) ||
     !validAccessPassword(body.password) ||
-    !validAccessPassword(body.confirmPassword)
+    !validAccessPassword(body.confirmPassword) ||
+    !boundedString(body.parentName, 180) ||
+    !normalizeParentName(body.parentName)
   )
     return Response.json({ error: 'Dados inválidos.' }, { status: 400 });
   const cpf = normalizeCpf(body.cpf);
@@ -68,6 +71,7 @@ export async function POST(request: Request) {
       password,
       passwordHash,
       tokenHash,
+      parentName: body.parentName,
     });
 
     const url = new URL('/confirmar-email', request.url);
@@ -89,18 +93,27 @@ export async function POST(request: Request) {
         }),
       });
       if (!sent.ok)
-        return Response.json({
-          result: 'dev_link',
-          verificationUrl: url.toString(),
-          warning: 'O serviço de e-mail não aceitou a mensagem.',
-        });
-      return Response.json({ result: 'email_sent' });
+        return Response.json(
+          {
+            result: 'dev_link',
+            verificationUrl: url.toString(),
+            warning: 'O serviço de e-mail não aceitou a mensagem.',
+          },
+          { headers: { 'Cache-Control': 'no-store' } },
+        );
+      return Response.json(
+        { result: 'email_sent' },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
     }
     // Link local para testar Neon sem depender de um provedor de e-mail ainda.
-    return Response.json({
-      result: 'dev_link',
-      verificationUrl: url.toString(),
-    });
+    return Response.json(
+      {
+        result: 'dev_link',
+        verificationUrl: url.toString(),
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (error) {
     if (error instanceof RegistrationConflict) {
       return Response.json(

@@ -1,8 +1,8 @@
-import assert from "node:assert/strict";
-import { randomBytes, randomInt, createHash } from "node:crypto";
-import { openTestEnvironment, reportTestFailure } from "./test-environment";
-import { claimAccount, verifyAccount } from "../src/lib/account-registration";
-import { hashPassword } from "../src/lib/password";
+import assert from 'node:assert/strict';
+import { randomBytes, randomInt, createHash } from 'node:crypto';
+import { openTestEnvironment, reportTestFailure } from './test-environment';
+import { claimAccount, verifyAccount } from '../src/lib/account-registration';
+import { hashPassword } from '../src/lib/password';
 
 async function main() {
   const environment = await openTestEnvironment({ http: true });
@@ -14,21 +14,21 @@ async function main() {
       (cpfDigits.reduce((sum, d, i) => sum + d * (n + 1 - i), 0) * 10) % 11;
     cpfDigits.push(digit === 10 ? 0 : digit);
   }
-  const cpf = cpfDigits.join("");
+  const cpf = cpfDigits.join('');
   const schoolRegistration = String(randomInt(10000000, 99999999));
-  const birthDate = new Date("2008-01-15T00:00:00Z");
-  const email = `prisma-test-${randomBytes(8).toString("hex")}@eteconectada.invalid`;
-  const password = randomBytes(20).toString("base64url");
+  const birthDate = new Date('2008-01-15T00:00:00Z');
+  const email = `prisma-test-${randomBytes(8).toString('hex')}@eteconectada.invalid`;
+  const password = randomBytes(20).toString('base64url');
   const tokens = [
-    randomBytes(32).toString("base64url"),
-    randomBytes(32).toString("base64url"),
+    randomBytes(32).toString('base64url'),
+    randomBytes(32).toString('base64url'),
   ];
-  const hash = (v: string) => createHash("sha256").update(v).digest("hex");
+  const hash = (v: string) => createHash('sha256').update(v).digest('hex');
   async function post(path: string, data: unknown, cookie?: string) {
     return fetch(`${base}${path}`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         ...(cookie ? { Cookie: cookie } : {}),
       },
       body: JSON.stringify(data),
@@ -40,16 +40,23 @@ async function main() {
         cpf,
         schoolRegistration,
         birthDate,
-        fullName: "Teste temporário Prisma",
+        fullName: 'Teste temporário Prisma',
+        details: {
+          create: {
+            parentOne: 'Filiação Fictícia Prisma',
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
       },
     });
     studentId = student.id;
-    const check = await post("/api/registration/check", {
+    const check = await post('/api/registration/check', {
       schoolRegistration,
-      birthDate: "2008-01-15",
+      birthDate: '2008-01-15',
+      parentName: 'Filiação Fictícia Prisma',
     });
     assert.equal(check.status, 200);
-    assert.equal((await check.json()).result, "eligible");
+    assert.equal((await check.json()).result, 'eligible');
     const passwordHash = await hashPassword(password);
     const claims = await Promise.allSettled(
       tokens.map((token, index) =>
@@ -57,6 +64,7 @@ async function main() {
           schoolRegistration,
           cpf,
           birthDate,
+          parentName: 'Filiação Fictícia Prisma',
           email: index === 0 ? email : `other-${email}`,
           password,
           passwordHash,
@@ -65,30 +73,30 @@ async function main() {
       ),
     );
     assert.equal(
-      claims.filter((r) => r.status === "fulfilled").length,
+      claims.filter((r) => r.status === 'fulfilled').length,
       1,
-      "Uma única reivindicação deve vencer",
+      'Uma única reivindicação deve vencer',
     );
-    const winnerIndex = claims.findIndex((r) => r.status === "fulfilled");
+    const winnerIndex = claims.findIndex((r) => r.status === 'fulfilled');
     const loginEmail = winnerIndex === 0 ? email : `other-${email}`;
     const token = tokens[winnerIndex];
     assert.equal(
-      (await post("/api/login", { identifier: cpf, password })).status,
+      (await post('/api/login', { identifier: cpf, password })).status,
       401,
     );
     assert.equal(
-      (await post("/api/registration/verify", { token })).status,
+      (await post('/api/registration/verify', { token })).status,
       200,
     );
     await assert.rejects(verifyAccount(hash(token)), /invalid/);
     assert.equal(
-      (await post("/api/registration/verify", { token })).status,
+      (await post('/api/registration/verify', { token })).status,
       400,
     );
     const account = await db.account.findUniqueOrThrow({
       where: { studentId },
     });
-    const expiredHash = hash(randomBytes(32).toString("hex"));
+    const expiredHash = hash(randomBytes(32).toString('hex'));
     await db.emailVerificationToken.create({
       data: {
         tokenHash: expiredHash,
@@ -99,23 +107,23 @@ async function main() {
     await assert.rejects(verifyAccount(expiredHash), /invalid/);
     assert.equal(
       (
-        await post("/api/login", {
+        await post('/api/login', {
           identifier: cpf,
-          password: "senha-incorreta",
+          password: 'senha-incorreta',
         })
       ).status,
       401,
     );
-    const login = await post("/api/login", { identifier: cpf, password });
+    const login = await post('/api/login', { identifier: cpf, password });
     assert.equal(login.status, 200);
     console.log(
-      "Tempos do login sintético:",
-      login.headers.get("server-timing") ?? "indisponíveis",
+      'Tempos do login sintético:',
+      login.headers.get('server-timing') ?? 'indisponíveis',
     );
-    const cookie = login.headers.get("set-cookie")!.split(";")[0];
+    const cookie = login.headers.get('set-cookie')!.split(';')[0];
     assert.equal(
       (
-        await post("/api/login", {
+        await post('/api/login', {
           identifier: loginEmail.toUpperCase(),
           password,
         })
@@ -124,18 +132,18 @@ async function main() {
     );
     const home = await fetch(base, {
       headers: { Cookie: cookie },
-      redirect: "manual",
+      redirect: 'manual',
     });
     assert.equal(home.status, 200);
     assert.match(await home.text(), /Teste temporário Prisma/);
-    assert.equal((await post("/api/logout", {}, cookie)).status, 200);
+    assert.equal((await post('/api/logout', {}, cookie)).status, 200);
     assert.equal(
-      (await fetch(base, { headers: { Cookie: cookie }, redirect: "manual" }))
+      (await fetch(base, { headers: { Cookie: cookie }, redirect: 'manual' }))
         .status,
       307,
     );
     console.log(
-      "OK: concorrência, confirmação única, login CPF/e-mail, senha inválida, sessão e logout.",
+      'OK: concorrência, confirmação única, login CPF/e-mail, senha inválida, sessão e logout.',
     );
   } finally {
     try {
@@ -143,7 +151,9 @@ async function main() {
       if (studentId) {
         await db.student.delete({ where: { id: studentId } });
       }
-    } finally { await environment.close(); }
+    } finally {
+      await environment.close();
+    }
   }
 }
 main().catch(reportTestFailure);
