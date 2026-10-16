@@ -163,7 +163,7 @@ async function main() {
     );
     assert.equal(
       (await post({ ...inspectBody, mode: 'SUBSEQUENTE' })).status,
-      400,
+      422,
     );
     assert.equal((await post({ ...inspectBody, contexts: [] })).status, 400);
     const inspected = await post(inspectBody);

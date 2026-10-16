@@ -304,15 +304,16 @@ function plan(input: SheetInput, current: State) {
   return { counts, entries, calendarComparisons };
 }
 // Catálogo somente de associações já aplicadas, sem listar identidades de alunos.
-export async function integratedImportSources(
+export async function schoolImportSources(
   db: PrismaClient,
   actorId: string,
+  mode: SheetInput['mode'],
 ) {
   return db.$transaction(
     async (tx) => {
       await authorize(tx, actorId);
       const rows = await tx.enrollment.findMany({
-        where: { mode: 'INTEGRADO', schoolImportKey: { not: null } },
+        where: { mode, schoolImportKey: { not: null } },
         select: {
           schoolImportKey: true,
           className: true,
@@ -357,6 +358,34 @@ export async function integratedImportSources(
         throw new SheetImportError(
           'Há mais de 200 ofertas. Solicite revisão do catálogo antes de importar.',
         );
+      if (mode === 'SUBSEQUENTE') {
+        const calendars = await calendarImportState(tx);
+        return calendars
+          .map((course) => {
+            const source = sources.get(course.id);
+            if (source && source.courseLabel !== course.courseLabel)
+              throw new SheetImportError(
+                'Curso da fonte e do calendário divergentes. Solicite revisão.',
+              );
+            return {
+              scopeId: course.id,
+              courseLabel: course.courseLabel,
+              className:
+                source?.classes.size === 1 ? [...source.classes][0] : '',
+              periodLabel: '',
+              label: `${course.draft.label} · ${course.courseLabel}`,
+              calendar: {
+                revision: course.version.revision,
+                currentModule: moduleOnDate(course.draft)?.number ?? null,
+                modules: course.draft.modules.map((m) => ({
+                  number: m.number,
+                  periodLabel: m.periodLabel,
+                })),
+              },
+            };
+          })
+          .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+      }
       return [...sources.values()]
         .map((source) => ({
           scopeId: source.scopeId,
@@ -468,6 +497,7 @@ export async function previewSheetImport(
                   periodLabel: enrollment.periodLabel,
                   status: enrollment.status,
                   grade: enrollment.grade,
+                  moduleNumber: enrollment.moduleNumber,
                 })),
         })),
       };

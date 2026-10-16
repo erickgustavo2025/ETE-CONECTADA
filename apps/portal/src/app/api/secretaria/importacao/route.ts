@@ -3,14 +3,14 @@ import { getDb } from '@/lib/db';
 import { privateHeaders, sameOriginRequest } from '@/lib/private-request';
 import {
   parseSheetInput,
-  inspectIntegratedSheet,
+  inspectSchoolSheet,
   SheetImportError,
   SHEET_BODY_LIMIT,
 } from '@/lib/sheet-import-input';
 import {
   previewSheetImport,
   confirmSheetImport,
-  integratedImportSources,
+  schoolImportSources,
 } from '@/lib/sheet-import';
 export const runtime = 'nodejs';
 const json = (body: unknown, status = 200) =>
@@ -91,17 +91,21 @@ export async function POST(request: Request) {
       throw new SheetImportError('Arquivo inválido.', 400);
     if (body.action === 'inspect') {
       if (
-        body.mode !== 'INTEGRADO' ||
+        (body.mode !== 'INTEGRADO' && body.mode !== 'SUBSEQUENTE') ||
         Object.keys(body).some(
           (key) => !['action', 'mode', 'fileBase64'].includes(key),
         )
       )
         throw new SheetImportError(
-          'Use a entrada do integrado para este arquivo.',
+          'Escolha a modalidade e envie somente o arquivo para inspeção.',
           400,
         );
-      const sheets = await inspectIntegratedSheet(file);
-      const sources = await integratedImportSources(getDb(), session.accountId);
+      const sheets = await inspectSchoolSheet(file, body.mode);
+      const sources = await schoolImportSources(
+        getDb(),
+        session.accountId,
+        body.mode,
+      );
       return json({ sheets, sources });
     }
     const input = await parseSheetInput(file, body.mode, body.contexts);
