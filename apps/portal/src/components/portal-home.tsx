@@ -295,6 +295,18 @@ export default function PortalHome({
             {role === 'secretary' && (
               <Link
                 className={styles.menuService}
+                href="/secretaria/calendarios"
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className={styles.serviceIcon} aria-hidden="true">
+                  <ServiceIcon name="history" />
+                </span>
+                <span>Calendário do subsequente</span>
+              </Link>
+            )}
+            {role === 'secretary' && (
+              <Link
+                className={styles.menuService}
                 href="/secretaria/importacao/integrado"
                 onClick={() => setMenuOpen(false)}
               >

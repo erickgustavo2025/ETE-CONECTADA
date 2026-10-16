@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID, randomInt } from 'node:crypto';
 import { openTestEnvironment, reportTestFailure } from './test-environment';
 import { hashPassword } from '../src/lib/password';
+import { sheetFixture } from './test-sheet-input';
 import {
   saveCourseCalendar,
   setCourseProgression,
@@ -18,6 +19,7 @@ import {
 async function main() {
   const env = await openTestEnvironment({ http: true });
   const { db, base } = env;
+  const importedRegistrations: string[] = [];
   const students: string[] = [],
     offerIds: string[] = [];
   const post = (body: unknown, cookie = '', origin = base) =>
@@ -424,6 +426,245 @@ async function main() {
         courseLabel === 'ENF' ? 4 : 3,
       );
     }
+    const importCourse = offerIds.at(-1)!,
+      importDraft = make('ENF');
+    const sheet = sheetFixture('SUBSEQUENTE');
+    const registration = String(randomInt(10000000, 99999999));
+    assert.equal(
+      await db.student.findUnique({
+        where: { schoolRegistration: registration },
+      }),
+      null,
+    );
+    importedRegistrations.push(registration);
+    sheet.wb.Sheets['Fictícia'].A7 = { t: 's', v: registration };
+    const context = {
+      ...sheet.context,
+      scopeId: importCourse,
+      periodLabel: importDraft.modules[0].periodLabel,
+    };
+    const payload = () => ({
+      mode: 'SUBSEQUENTE',
+      contexts: [context],
+      fileBase64: sheet.file().toString('base64'),
+    });
+    const importPost = (body: unknown) =>
+      fetch(base + '/api/secretaria/importacao', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: base,
+          Cookie: cookie,
+        },
+        body: JSON.stringify(body),
+      });
+    const previewResponse = await importPost({
+      action: 'preview',
+      ...payload(),
+    });
+    assert.equal(previewResponse.status, 200);
+    const preview = await previewResponse.json();
+    assert.equal(preview.calendarComparisons[0].expectedModule, 1);
+    assert.equal(preview.calendarComparisons[0].differs, false);
+    assert.equal(
+      await db.student.findUnique({
+        where: { schoolRegistration: registration },
+      }),
+      null,
+      'Prévia não cadastra nem promove alunos.',
+    );
+    const applied = await importPost({
+      action: 'confirm',
+      ...payload(),
+      token: preview.token,
+      confirmed: true,
+    });
+    assert.equal(applied.status, 200);
+    const imported = await db.student.findUniqueOrThrow({
+      where: { schoolRegistration: registration },
+      include: { enrollments: true },
+    });
+    const importedEnrollment = imported.enrollments[0];
+    assert.equal(importedEnrollment.offeringId, importCourse);
+    assert.equal(importedEnrollment.progressionHeld, true);
+    assert.equal(
+      (await listCourseOfferings(db, staff.id, now)).offerings.find(
+        (o) => o.id === importCourse,
+      )!.needsUpdatedList,
+      false,
+    );
+    const integratedCopy = await db.enrollment.create({
+      data: {
+        studentId: imported.id,
+        mode: 'INTEGRADO',
+        className: 'Integrado fictício preservado',
+        courseLabel: 'ADM',
+        grade: 1,
+      },
+    });
+    sheet.wb.Sheets['Fictícia'].A4 = { t: 's', v: '2MODULO - TURMA-FICTICIA' };
+    context.stage = 2;
+    context.periodLabel = importDraft.modules[1].periodLabel;
+    const correctionResponse = await importPost({
+      action: 'preview',
+      ...payload(),
+    });
+    assert.equal(correctionResponse.status, 200);
+    const correction = await correctionResponse.json();
+    assert.equal(correction.calendarComparisons[0].differs, true);
+    assert.equal(
+      (
+        await db.enrollment.findUniqueOrThrow({
+          where: { id: importedEnrollment.id },
+        })
+      ).moduleNumber,
+      1,
+    );
+    assert.equal(
+      (
+        await importPost({
+          action: 'confirm',
+          ...payload(),
+          token: correction.token,
+          confirmed: true,
+        })
+      ).status,
+      409,
+      'Divergência precisa de confirmação explícita.',
+    );
+    assert.equal(
+      (
+        await importPost({
+          action: 'confirm',
+          ...payload(),
+          token: correction.token,
+          confirmed: true,
+          acceptCalendarDifferences: true,
+        })
+      ).status,
+      200,
+    );
+    const preserved = await db.enrollment.findUniqueOrThrow({
+      where: { id: importedEnrollment.id },
+    });
+    assert.equal(preserved.moduleNumber, 2);
+    assert.equal(preserved.progressionHeld, true);
+    assert.equal(
+      (
+        await db.enrollment.findUniqueOrThrow({
+          where: { id: integratedCopy.id },
+        })
+      ).grade,
+      1,
+    );
+    assert.equal(
+      (await listCourseOfferings(db, staff.id, now)).offerings.find(
+        (o) => o.id === importCourse,
+      )!.needsUpdatedList,
+      true,
+    );
+    await db.enrollment.update({
+      where: { id: importedEnrollment.id },
+      data: { progressionHeld: false },
+    });
+    const repeatedCorrectionResponse = await importPost({
+      action: 'preview',
+      ...payload(),
+    });
+    const repeatedCorrection = await repeatedCorrectionResponse.json();
+    assert.equal(
+      (
+        await importPost({
+          action: 'confirm',
+          ...payload(),
+          token: repeatedCorrection.token,
+          confirmed: true,
+          acceptCalendarDifferences: true,
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await db.enrollment.findUniqueOrThrow({
+          where: { id: importedEnrollment.id },
+        })
+      ).progressionHeld,
+      true,
+      'Planilha divergente preserva a exceção mesmo sem alteração dos campos escolares.',
+    );
+    const staleResponse = await importPost({ action: 'preview', ...payload() });
+    assert.equal(staleResponse.status, 200);
+    const stale = await staleResponse.json();
+    await saveCourseCalendar(
+      db,
+      staff.id,
+      importCourse,
+      1,
+      { ...importDraft, label: 'Revisão sintética da oferta' },
+      true,
+    );
+    assert.equal(
+      (
+        await importPost({
+          action: 'confirm',
+          ...payload(),
+          token: stale.token,
+          confirmed: true,
+          acceptCalendarDifferences: true,
+        })
+      ).status,
+      409,
+      'Calendário alterado invalida prévia antiga.',
+    );
+    const nextRegistration = String(randomInt(10000000, 99999999));
+    assert.equal(
+      await db.student.findUnique({
+        where: { schoolRegistration: nextRegistration },
+      }),
+      null,
+    );
+    importedRegistrations.push(nextRegistration);
+    sheet.wb.Sheets['Fictícia'].A7 = { t: 's', v: nextRegistration };
+    sheet.wb.Sheets['Fictícia'].A4 = { t: 's', v: '1MODULO - TURMA-FICTICIA' };
+    context.stage = 1;
+    context.periodLabel = importDraft.modules[0].periodLabel;
+    const newListResponse = await importPost({
+      action: 'preview',
+      ...payload(),
+    });
+    assert.equal(newListResponse.status, 200);
+    const newList = await newListResponse.json();
+    assert.equal(newList.counts.absent, 1);
+    assert.equal(newList.counts.createdStudents, 1);
+    assert.equal(
+      (
+        await importPost({
+          action: 'confirm',
+          ...payload(),
+          token: newList.token,
+          confirmed: true,
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await db.enrollment.findUniqueOrThrow({
+          where: { id: importedEnrollment.id },
+        })
+      ).moduleNumber,
+      2,
+      'Ausente conserva módulo/exceção/histórico.',
+    );
+    assert.equal(
+      (
+        await db.enrollment.findUniqueOrThrow({
+          where: { id: integratedCopy.id },
+        })
+      ).grade,
+      1,
+    );
     const listed = await post({ action: 'list' }, cookie);
     assert.equal(listed.status, 200);
     const publicText = JSON.stringify(await listed.json());
@@ -434,8 +675,15 @@ async function main() {
     );
   } finally {
     try {
-      if (students.length)
-        await db.student.deleteMany({ where: { id: { in: students } } });
+      if (students.length || importedRegistrations.length)
+        await db.student.deleteMany({
+          where: {
+            OR: [
+              { id: { in: students } },
+              { schoolRegistration: { in: importedRegistrations } },
+            ],
+          },
+        });
       await db.courseCalendarVersion.deleteMany({
         where: { offeringId: { in: offerIds } },
       });

@@ -1,3 +1,5 @@
+import { calendarImportState } from './course-calendars';
+import { moduleOnDate, calendarDay } from './course-calendar-input';
 import { randomBytes } from 'node:crypto';
 import { Prisma, type PrismaClient } from '../generated/prisma/client';
 import {
@@ -63,10 +65,50 @@ async function state(tx: Tx, input: SheetInput) {
   });
   if (enrollments.length > 10000)
     throw new SheetImportError('Oferta acima do limite de conferência.');
-  return { students, enrollments };
+  const calendars =
+    input.mode === 'SUBSEQUENTE'
+      ? await calendarImportState(tx, [
+          ...new Set(input.contexts.map((c) => c.scopeId)),
+        ])
+      : [];
+  return {
+    students,
+    enrollments,
+    calendars,
+    calendarDay: input.mode === 'SUBSEQUENTE' ? calendarDay(new Date()) : null,
+  };
 }
 type State = Awaited<ReturnType<typeof state>>;
 function plan(input: SheetInput, current: State) {
+  const calendarComparisons =
+    input.mode !== 'SUBSEQUENTE'
+      ? []
+      : input.contexts.map((context) => {
+          const calendar = current.calendars.find(
+            (c) => c.id === context.scopeId,
+          );
+          const expected = calendar
+            ? (moduleOnDate(
+                calendar.draft,
+                new Date(current.calendarDay + 'T12:00:00Z'),
+              ) ?? calendar.draft.modules[0])
+            : null;
+          return {
+            scopeId: context.scopeId,
+            sheetName: context.sheetName,
+            configured: !!calendar,
+            revision: calendar?.version.revision ?? null,
+            receivedModule: context.stage,
+            expectedModule: expected?.number ?? null,
+            receivedPeriod: context.periodLabel,
+            expectedPeriod: expected?.periodLabel ?? null,
+            differs:
+              !!expected &&
+              (expected.number !== context.stage ||
+                expected.periodLabel !== context.periodLabel),
+          };
+        });
+
   const studentsByRegistration = new Map(
     current.students.map((student) => [student.schoolRegistration, student]),
   );
@@ -99,6 +141,20 @@ function plan(input: SheetInput, current: State) {
       )
       .map((context) => context.scopeId),
   );
+  for (const calendar of current.calendars) {
+    const contexts = input.contexts.filter(
+      (context) => context.scopeId === calendar.id,
+    );
+    if (
+      contexts.some(
+        (context) => context.courseLabel !== calendar.courseLabel,
+      ) ||
+      new Set(
+        contexts.map((context) => `${context.stage}:${context.periodLabel}`),
+      ).size > 1
+    )
+      invalidScopes.add(calendar.id);
+  }
   const counts = {
     createdStudents: 0,
     createdEnrollments: 0,
@@ -125,6 +181,8 @@ function plan(input: SheetInput, current: State) {
         (enrollment.studentId !== student?.id ||
           enrollment.mode !== input.mode ||
           enrollment.courseLabel !== row.context.courseLabel ||
+          (enrollment.offeringId &&
+            enrollment.offeringId !== row.context.scopeId) ||
           (enrollment.schoolImportKey &&
             enrollment.schoolImportKey !== row.key))) ||
       (!enrollment &&
@@ -134,6 +192,17 @@ function plan(input: SheetInput, current: State) {
           `${student.id}:${input.mode}:${row.context.courseLabel}`,
         )),
     );
+    const calendar = current.calendars.find(
+      (c) => c.id === row.context.scopeId,
+    );
+    const offeringChanged = !!calendar && !enrollment?.offeringId;
+    const calendarException =
+      !!calendar &&
+      !!enrollment &&
+      !enrollment.progressionHeld &&
+      calendarComparisons.some(
+        (c) => c.scopeId === row.context.scopeId && c.differs,
+      );
     const metadata = {
       className: row.context.className,
       courseLabel: row.context.courseLabel,
@@ -177,7 +246,10 @@ function plan(input: SheetInput, current: State) {
         ([k, v]) => enrollment[k as keyof typeof metadata] !== v,
       );
     const enrollmentChanged =
-      metadataChanged || enrollment?.schoolImportKey !== row.key;
+      metadataChanged ||
+      offeringChanged ||
+      calendarException ||
+      enrollment?.schoolImportKey !== row.key;
     const protectedParent =
       parentsChanged &&
       student?.details?.parentageSource === 'SECRETARY_CORRECTION';
@@ -202,6 +274,9 @@ function plan(input: SheetInput, current: State) {
       student,
       enrollment,
       metadata,
+      calendar,
+      offeringChanged,
+      calendarException,
       changes,
       identityChanged,
       parentsChanged,
@@ -226,7 +301,7 @@ function plan(input: SheetInput, current: State) {
       scopes.has(enrollment.schoolImportKey.split(':')[1]) &&
       !presentKeys.has(enrollment.schoolImportKey),
   ).length;
-  return { counts, entries };
+  return { counts, entries, calendarComparisons };
 }
 // Catálogo somente de associações já aplicadas, sem listar identidades de alunos.
 export async function integratedImportSources(
@@ -335,6 +410,9 @@ export async function previewSheetImport(
         token,
         expiresAt: expiresAt.toISOString(),
         counts: prepared.counts,
+        ...(input.mode === 'SUBSEQUENTE'
+          ? { calendarComparisons: prepared.calendarComparisons }
+          : {}),
         sheets: input.contexts.map((context) => ({
           sheetName: context.sheetName,
           scopeId: context.scopeId,
@@ -404,6 +482,7 @@ export async function confirmSheetImport(
   token: unknown,
   confirmed: unknown,
   acceptIdentityChanges: unknown = false,
+  acceptCalendarDifferences: unknown = false,
 ) {
   if (
     confirmed !== true ||
@@ -445,9 +524,23 @@ export async function confirmSheetImport(
           'Confirme explicitamente as alterações de nome, nascimento ou filiação.',
           409,
         );
+      if (
+        prepared.calendarComparisons.some((item) => item.differs) &&
+        acceptCalendarDifferences !== true
+      )
+        throw new SheetImportError(
+          'O módulo ou período da planilha diverge do calendário. Confirme a conferência escolar para manter a exceção.',
+          409,
+        );
       const metadataChanges = new Set(
         prepared.entries
-          .filter((entry) => entry.enrollment && entry.metadataChanged)
+          .filter(
+            (entry) =>
+              entry.enrollment &&
+              (entry.metadataChanged ||
+                entry.offeringChanged ||
+                entry.calendarException),
+          )
           .map((entry) => entry.enrollment!.id),
       );
       const changedIdentities = new Set(
@@ -483,6 +576,9 @@ export async function confirmSheetImport(
           validUntil: enrollment.validUntil,
           status: enrollment.status,
           reviewedAt: enrollment.reviewedAt,
+          offeringId: enrollment.offeringId,
+          calendarRevision: enrollment.calendarRevision,
+          progressionHeld: enrollment.progressionHeld,
         }));
       if (history.length)
         await tx.enrollmentImportHistory.createMany({ data: history });
@@ -528,12 +624,25 @@ export async function confirmSheetImport(
               reviewedById: null,
             },
           });
+        const association =
+          entry.calendar &&
+          (!entry.enrollment?.offeringId ||
+            entry.metadataChanged ||
+            entry.calendarException)
+            ? {
+                offeringId: entry.calendar.id,
+                calendarRevision: entry.calendar.version.revision,
+                calendarModule: row.context.stage,
+                progressionHeld: true,
+              }
+            : {};
         if (!entry.enrollment)
           await tx.enrollment.create({
             data: {
               studentId: student.id,
               mode: input.mode,
               ...metadata,
+              ...association,
               schoolImportKey: row.key,
             },
           });
@@ -542,14 +651,29 @@ export async function confirmSheetImport(
             where: { id: entry.enrollment.id },
             data: {
               ...metadata,
+              ...association,
               schoolImportKey: row.key,
-              ...(entry.metadataChanged
+              ...(entry.metadataChanged ||
+              entry.offeringChanged ||
+              entry.calendarException
                 ? {
                     status: 'UNCONFIRMED' as const,
                     reviewedAt: null,
                     reviewedById: null,
                   }
                 : {}),
+            },
+          });
+      }
+      for (const calendar of current.calendars) {
+        const context = input.contexts.find((c) => c.scopeId === calendar.id);
+        if (context)
+          await tx.courseOffering.update({
+            where: { id: calendar.id },
+            data: {
+              lastImportAt: new Date(),
+              lastImportModule: context.stage,
+              lastImportPeriod: context.periodLabel,
             },
           });
       }
