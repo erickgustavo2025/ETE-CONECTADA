@@ -271,6 +271,7 @@ async function main() {
       ['/api/secretaria/declaracao', 401, {}],
       ['/api/secretaria/declaracoes', 401, {}],
       ['/api/secretaria/importacao', 401, {}],
+      ['/api/secretaria/calendarios', 401, { action: 'list' }],
     ];
     for (const [path, status, body] of cases) {
       const response = await request(path, body);
