@@ -145,3 +145,19 @@ A prova participa de `test:integration` antes dos testes HTTP e da conferência 
 ## Importação XLS
 
 `test:sheet-input` lê somente arquivos fictícios gerados em memória e integra os unitários, sem banco. `npm run test:sheet-import` exige banco novo identificado e inicia seu próprio portal; prova a API de prévia/confirmacão, autorização, limites, repetição, proteção de dados e rollback após falha intermediária. Integra `test:integration`. O teste remove seus alunos/contas/prévias no finally e nunca deve ser executado no banco de demonstração em uso. Regras em [Núcleo de importação](importacao-nucleo.md).
+
+## Recuperação de senha
+
+`npm run test:password-reset` usa o banco descartável identificado e um portal
+próprio. O transporte de entrega é substituído no serviço por uma função local;
+não lê chaves, não envia e-mail real e não expõe um endpoint de token de teste.
+Verifica recibo genérico, validade/uso único, concorrência, intervalo de envio,
+mudança de contato, senha, revogação de sessões e rollback após falha intermediária.
+Inclui recuperação de aluno e secretaria, sem redefinir contas pendentes.
+
+A suíte participa de `test:integration`. Os unitários validam entradas, bloqueio
+antes de consultar banco e o transporte Resend com `fetch` simulado. A prova de
+produção exercita as duas APIs sem acesso ao banco. O navegador testa teclado,
+telas pequenas, links abertos novamente na mesma aba e resposta perdida após
+uma troca efetiva. Fixtures e servidores próprios são encerrados em `finally`.
+Essas provas não confirmam entrega real na caixa de e-mail.

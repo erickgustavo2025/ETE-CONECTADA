@@ -1,7 +1,8 @@
 # Acesso e entrega de documentos
 
-Direção da equipe em 13/10/2026. Este texto orienta próximas implementações;
-não declara recuperação, entrega digital ou integração GOV.BR prontas.
+Direção da equipe em 13/10/2026, atualizada em 16/10. Cadastro e recuperação
+estão disponíveis em desenvolvimento. Entrega digital e integração GOV.BR
+continuam em planejamento; nenhum desses fluxos está liberado em produção.
 
 ## Recuperação de acesso
 
@@ -45,19 +46,51 @@ exceção, autoedição de filiação e atendimento de divergências não foram 
 A orientação segue as limitações de perguntas pessoais descritas pela
 [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Choosing_and_Using_Security_Questions_Cheat_Sheet.html).
 
-A recomendação técnica é recuperação automática por link enviado ao e-mail já
-confirmado. O cadastro atual possui envio de confirmação via Resend; SMTP é uma
-alternativa de transporte, não requisito para projetar a recuperação. Reutilizar
-o transporte após conferir suas configurações evita introduzir outro serviço
-apenas para senha. Isso reduz atendimentos rotineiros; envio real precisa ser
-configurado e testado no ambiente autorizado.
+### Recuperação implementada em desenvolvimento (EC-059)
 
-O link deve ser aleatório, expirar, permitir uma utilização e ter seu segredo
-armazenado de forma protegida. Usar resposta genérica, limitar solicitações e
-tentativas, consumir o token e atualizar a senha de forma atômica. Após sucesso,
-invalidar sessões e links anteriores e pedir novo login. Nunca enviar a senha
-por e-mail nem revelar uma senha existente. Não bloquear a conta só porque alguém
-enviou uma solicitação pública de recuperação.
+Em **Esqueci minha senha**, a pessoa informa o e-mail confirmado da conta ativa.
+O portal sempre responde com o mesmo recibo e só depois consulta a conta e tenta
+enviar o link pelo Resend. Não devolve e-mail encontrado, token ou link de teste,
+e não muda a senha nem bloqueia a conta ao receber o pedido. Contas pendentes
+precisam concluir o primeiro acesso. Duplicidade antiga de e-mail exige conferência
+da secretaria, sem escolher uma conta arbitrariamente.
+
+O link usa 32 bytes aleatórios, dura 30 minutos e funciona uma única vez. O banco
+armazena apenas seu hash e uma referência das credenciais: alterar o contato ou
+a senha invalida links anteriores. Há intervalo mínimo de um minuto e até três
+links válidos por conta; solicitar outro não inutiliza o primeiro. Limitação geral
+por origem e de tentativas ainda segue EC-060 e precisa preceder produção.
+
+O segredo vai no fragmento da URL, que não é enviado ao servidor. Ao abrir a tela,
+o navegador remove esse fragmento do endereço/histórico e mantém o token somente
+na memória. Abrir o link não o consome: a pessoa precisa enviar duas senhas iguais.
+Se recarregar a página antes de concluir, reabra o link recebido. Não salvamos o
+token no armazenamento do navegador nem o incluímos na página HTML.
+
+A troca de senha, o consumo de todos os links de recuperação/ativação e a revogação
+de todas as sessões acontecem na mesma transação. Uma falha desfaz tudo. O login
+reconfere a senha verificada sob o mesmo lock, impedindo que uma sessão com senha
+antiga sobreviva a uma troca concorrente. Após o sucesso não há login automático:
+a pessoa entra com a nova senha. O sistema tenta enviar um aviso da alteração,
+sem incluir senha. O instante fica em `accounts.password_reset_at`; isso não
+substitui o histórico administrativo futuro.
+
+Configure **RESEND_API_KEY**, **EMAIL_FROM** e **PORTAL_PUBLIC_URL** em ambiente
+autorizado. A última é a origem do portal, sem caminho, usada para construir os
+links; não usamos o cabeçalho Host enviado pelo visitante. Aceita HTTPS ou HTTP
+loopback para desenvolvimento. Sem configuração completa não há envio e o recibo
+continua genérico. As duas APIs continuam recusando produção antes de acessar o banco.
+
+O envio usa `after` do Next.js após responder, com tempo limite e erro genérico
+sem dados pessoais nos logs. É uma tentativa no processo do servidor, sem fila
+persistente nem garantia de entrega: encerramento do processo ou indisponibilidade
+do provedor exige nova tentativa depois do intervalo. Falha no aviso de alteração
+não desfaz uma senha já atualizada. A entrega real por e-mail ainda exige validação
+no ambiente autorizado; os testes usam transporte simulado e contas fictícias.
+
+A migração é aditiva: uma tabela de tokens e uma coluna opcional. Ao reverter
+código, mantenha as APIs de recuperação bloqueadas e as estruturas no banco;
+não restaure senhas antigas nem elimine contas/sessões para desfazer a entrega.
 
 Perda do e-mail, contato incorreto, filiação divergente e conta contestada vão à
 secretaria, presencialmente ou por solicitação no site. A solicitação abre o
@@ -68,7 +101,7 @@ presencial. Preservar histórico e registrar operador, motivo, ação e resultad
 sem documentos completos, senhas ou nomes dos familiares nos logs.
 
 Referência: [orientações OWASP para recuperação de senha](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
-Implementação: EC-059 e painel/controles relacionados.
+Painel de atendimento e controles relacionados continuam em cards próprios.
 
 ## Entrega digital desejada
 

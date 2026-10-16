@@ -15,7 +15,9 @@ const columns: Record<string, string> = {
   student_details:
     'student_id parent_one parent_two parentage_source social_name social_name_source birth_city birth_state birth_country birthplace_source updated_at updated_by_id',
   accounts:
-    'id student_id email password_hash status created_at updated_at role',
+    'id student_id email password_hash status created_at updated_at role password_reset_at',
+  password_reset_tokens:
+    'token_hash account_id credential_hash expires_at created_at',
   email_verification_tokens:
     'token_hash account_id expires_at consumed_at created_at claim_data_hash',
   sessions: 'token_hash account_id expires_at created_at',
@@ -75,6 +77,11 @@ async function main() {
         (row) => row.table_name === table && row.column_name === name,
       )!;
     assert.equal(column('students', 'cpf').is_nullable, 'YES');
+    assert.equal(column('accounts', 'password_reset_at').is_nullable, 'YES');
+    assert.equal(
+      column('password_reset_tokens', 'token_hash').udt_name,
+      'bpchar',
+    );
     assert.equal(
       column('email_verification_tokens', 'claim_data_hash').is_nullable,
       'YES',
@@ -167,6 +174,18 @@ async function main() {
       constraint('declaration_requests_dates_check'),
       /REQUESTED.*generated_at IS NULL.*IN_PREPARATION.*READY_FOR_PICKUP.*ready_at IS NOT NULL/,
     );
+    assert.match(
+      constraint('password_reset_dates_check'),
+      /expires_at > created_at/,
+    );
+    assert.match(
+      constraint('password_reset_tokens_token_hash_check'),
+      /token_hash.*\[0-9a-f\]/,
+    );
+    assert.match(
+      constraint('password_reset_tokens_credential_hash_check'),
+      /credential_hash.*\[0-9a-f\]/,
+    );
     const foreignKeys = constraints.rows.filter((row) =>
       row.definition.startsWith('FOREIGN KEY'),
     );
@@ -174,6 +193,7 @@ async function main() {
       ['accounts', 'student_id', 'students', 'CASCADE'],
       ['sessions', 'account_id', 'accounts', 'CASCADE'],
       ['email_verification_tokens', 'account_id', 'accounts', 'CASCADE'],
+      ['password_reset_tokens', 'account_id', 'accounts', 'CASCADE'],
       ['enrollments', 'student_id', 'students', 'CASCADE'],
       ['enrollments', 'reviewed_by_id', 'accounts', 'SET NULL'],
       ['sheet_import_previews', 'actor_id', 'accounts', 'CASCADE'],
@@ -221,6 +241,14 @@ async function main() {
         `Índice único: ${name}`,
       );
     }
+    assert.ok(
+      indexes.rows.some(
+        (row) =>
+          row.indexname === 'password_reset_tokens_account_id_idx' &&
+          /\(account_id\)/.test(row.indexdef),
+      ),
+      'Índice de tokens por conta.',
+    );
     const openRequest = indexes.rows.find(
       (row) => row.indexname === 'declaration_requests_open_enrollment_key',
     );
