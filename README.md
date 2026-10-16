@@ -98,7 +98,7 @@ A secretaria pode gerar até 100 declarações por lote, uma por aluno. Quando i
 
 A versão atual prepara o documento para impressão e assinatura no papel. Os [modelos e o exemplo fictício](output/pdf/) estão disponíveis para revisão. O modelo próprio do subsequente, assinatura eletrônica e consulta por QR Code ainda fazem parte do trabalho futuro. A pesquisa sobre a emissão está em [Declaração de vínculo](docs/declaracao-vinculo/viabilidade.md).
 
-O [guia do banco](apps/portal/prisma/README.md) também explica a importação pelo backup JSON e a concessão de acesso à secretaria. O [núcleo de importação XLS](docs/importacao-nucleo.md) já valida arquivos, aplica alterações após confirmação e preserva o histórico das mudanças de matrícula pela API de desenvolvimento; a secretaria já pode usar a tela do integrado pelo menu do portal. A entrada do subsequente ainda será adicionada.
+O [guia do banco](apps/portal/prisma/README.md) também explica a importação pelo backup JSON e a concessão de acesso à secretaria. O [núcleo de importação XLS](docs/importacao-nucleo.md) já valida arquivos, aplica alterações após confirmação e preserva o histórico das mudanças de matrícula pela API de desenvolvimento; a secretaria pode escolher a entrada do integrado ou do subsequente no menu do portal. Para o subsequente, cadastre antes o calendário da oferta e confira as divergências de módulo e período na prévia.
 
 ## Verificações disponíveis
 
@@ -140,7 +140,7 @@ O [guia de contribuição](docs/contribuicao.md) mostra os comandos e o processo
 
 ## O que vem depois
 
-- Conectar a importação de planilhas às telas do integrado e do subsequente e criar a exportação. O importador de backup JSON continua separado.
+- Homologar com a escola as duas entradas de importação e criar a exportação. O importador de backup JSON continua separado.
 - Adequar e validar os modelos de declaração com a escola.
 - Definir com a escola a proteção do primeiro acesso e a recuperação de contas antes de liberar o portal em produção.
 - Concluir as verificações de qualidade, a proteção da `main` e a preparação de Docker, hospedagem e publicação.

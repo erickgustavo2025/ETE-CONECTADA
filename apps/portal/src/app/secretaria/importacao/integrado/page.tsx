@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import PortalHome from '@/components/portal-home';
-import IntegratedImport from '@/components/integrated-import';
+import SchoolImport from '@/components/school-import';
 import { currentSession } from '@/lib/session';
 
 export const metadata = {
@@ -12,7 +12,7 @@ export default async function IntegratedImportPage() {
   return (
     <PortalHome studentName={session.fullName} role={session.role} internalPage>
       {session.role === 'secretary' ? (
-        <IntegratedImport />
+        <SchoolImport key="INTEGRADO" mode="INTEGRADO" />
       ) : (
         <section className="document-page">
           <h1>Acesso restrito à secretaria</h1>

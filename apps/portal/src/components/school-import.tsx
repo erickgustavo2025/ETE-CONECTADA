@@ -32,7 +32,13 @@ function readFile(file: File, signal: AbortSignal): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
-export default function IntegratedImport() {
+export default function SchoolImport({
+  mode,
+}: {
+  mode: 'INTEGRADO' | 'SUBSEQUENTE';
+}) {
+  const subsequent = mode === 'SUBSEQUENTE',
+    modeLabel = subsequent ? 'subsequente' : 'integrado';
   const [file, setFile] = useState<SelectedFile | null>(null);
   const [inspection, setInspection] = useState<ImportInspection | null>(null);
   const [contexts, setContexts] = useState<ImportContextView[]>([]);
@@ -45,6 +51,10 @@ export default function IntegratedImport() {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [action, setAction] = useState<DialogAction | null>(null);
   const [identityAccepted, setIdentityAccepted] = useState(false);
+  const [calendarAccepted, setCalendarAccepted] = useState(false);
+  const calendarDiffers = !!preview?.calendarComparisons?.some(
+    (c) => c.differs,
+  );
   const fileRef = useRef<HTMLInputElement>(null),
     heading = useRef<HTMLHeadingElement>(null);
   const dialog = useRef<HTMLDialogElement>(null),
@@ -126,6 +136,7 @@ export default function IntegratedImport() {
         ? document.activeElement
         : null;
     setIdentityAccepted(false);
+    setCalendarAccepted(false);
     setAction(value);
   }
   function reset() {
@@ -192,7 +203,7 @@ export default function IntegratedImport() {
     try {
       const base64 = await readFile(selected, controller.signal);
       const value = await send<ImportInspection>(
-        { action: 'inspect', mode: 'INTEGRADO', fileBase64: base64 },
+        { action: 'inspect', mode, fileBase64: base64 },
         controller,
       );
       if (!controller.signal.aborted) {
@@ -251,7 +262,7 @@ export default function IntegratedImport() {
       const value = await send<ImportPreviewView>(
         {
           action: 'preview',
-          mode: 'INTEGRADO',
+          mode,
           fileBase64: file.base64,
           contexts,
         },
@@ -278,7 +289,8 @@ export default function IntegratedImport() {
       !preview ||
       !file ||
       preview.counts.conflicts ||
-      (preview.counts.identityChanges && !identityAccepted)
+      (preview.counts.identityChanges && !identityAccepted) ||
+      (calendarDiffers && !calendarAccepted)
     )
       return;
     busyRef.current = true;
@@ -291,12 +303,13 @@ export default function IntegratedImport() {
       const value = await send<ImportCounts>(
         {
           action: 'confirm',
-          mode: 'INTEGRADO',
+          mode,
           contexts,
           fileBase64: file.base64,
           token: preview.token,
           confirmed: true,
           acceptIdentityChanges: identityAccepted,
+          acceptCalendarDifferences: calendarAccepted,
         },
         controller,
       );
@@ -324,9 +337,11 @@ export default function IntegratedImport() {
       className={`document-page ${styles.page}`}
       aria-labelledby="import-title"
     >
-      <p className={styles.eyebrow}>SECRETARIA · ALUNOS DO INTEGRADO</p>
+      <p className={styles.eyebrow}>
+        SECRETARIA · ALUNOS DO {modeLabel.toUpperCase()}
+      </p>
       <h1 id="import-title" ref={heading} tabIndex={-1}>
-        Importar alunos do integrado
+        Importar alunos do {modeLabel}
       </h1>
       <p className="document-intro">
         Confira as turmas e as diferenças antes de atualizar os cadastros.
@@ -379,7 +394,7 @@ export default function IntegratedImport() {
           onSubmit={inspectFile}
           className={styles.upload}
         >
-          <label htmlFor="import-file">Planilha de alunos do integrado</label>
+          <label htmlFor="import-file">Planilha de alunos do {modeLabel}</label>
           <p id="file-help">
             Um arquivo XLS binário de até 2 MiB, com até 25 abas. XLSX e backup
             JSON não são aceitos nesta entrada.
@@ -406,10 +421,19 @@ export default function IntegratedImport() {
           </p>
           <h2>Confira cada aba</h2>
           <p>
-            Escolha a oferta que esta lista atualiza. Use uma nova oferta
-            somente para outro grupo de ingresso. Nomes parecidos não comprovam
-            que é a mesma turma.
+            {subsequent
+              ? 'Escolha o grupo de ingresso cadastrado no calendário. Ofertas com nomes parecidos podem ter datas diferentes.'
+              : 'Escolha a oferta que esta lista atualiza. Use uma nova oferta somente para outro grupo de ingresso. Nomes parecidos não comprovam que é a mesma turma.'}
           </p>
+          {subsequent && (
+            <p className={styles.notice}>
+              Escolha uma oferta com calendário cadastrado para cada aba. Se
+              faltar a oferta,{' '}
+              <a href="/secretaria/calendarios">cadastre o calendário</a> e leia
+              o arquivo novamente. Nenhuma data será inventada a partir do nome
+              da turma.
+            </p>
+          )}
           <fieldset disabled={!!busy} className={styles.contexts}>
             <legend className={styles.srOnly}>Dados das turmas</legend>
             {contexts.map((context, index) => (
@@ -420,9 +444,12 @@ export default function IntegratedImport() {
                 <p>
                   {context.courseLabel === 'ADM'
                     ? 'Administração'
-                    : 'Desenvolvimento de Sistemas'}{' '}
-                  · {context.stage}ª série · {inspection.sheets[index].rows}{' '}
-                  linhas
+                    : context.courseLabel === 'ENF'
+                      ? 'Enfermagem'
+                      : 'Desenvolvimento de Sistemas'}{' '}
+                  · {context.stage}
+                  {subsequent ? 'º módulo' : 'ª série'} ·{' '}
+                  {inspection.sheets[index].rows} linhas
                 </p>
                 <div className={styles.fields}>
                   <div className={styles.wide}>
@@ -443,7 +470,12 @@ export default function IntegratedImport() {
                               ? crypto.randomUUID()
                               : e.target.value,
                           className: source?.className || '',
-                          periodLabel: source?.periodLabel || '',
+                          periodLabel:
+                            source?.calendar?.modules.find(
+                              (m) => m.number === context.stage,
+                            )?.periodLabel ||
+                            source?.periodLabel ||
+                            '',
                           bindings: {},
                         });
                       }}
@@ -464,7 +496,9 @@ export default function IntegratedImport() {
                             {s.label}
                           </option>
                         ))}
-                      <option value="new">Registrar uma nova oferta</option>
+                      {!subsequent && (
+                        <option value="new">Registrar uma nova oferta</option>
+                      )}
                     </select>
                   </div>
                   <div>
@@ -488,7 +522,7 @@ export default function IntegratedImport() {
                       name={`period-${index}`}
                       required
                       maxLength={60}
-                      placeholder="Ex.: 2026"
+                      placeholder={subsequent ? 'Ex.: 2026.2' : 'Ex.: 2026'}
                       value={context.periodLabel}
                       {...validation.field(`period-${index}`)}
                       onChange={(e) =>
@@ -514,7 +548,8 @@ export default function IntegratedImport() {
                       )
                     }
                   />
-                  Conferi oferta, turma, curso, série e período desta aba.
+                  Conferi oferta, turma, curso,{' '}
+                  {subsequent ? 'módulo' : 'série'} e período desta aba.
                 </label>
               </fieldset>
             ))}
@@ -540,6 +575,7 @@ export default function IntegratedImport() {
       )}
       {preview && (
         <ImportPreview
+          mode={mode}
           preview={preview}
           contexts={contexts}
           disabled={!!busy || sessionExpired}
@@ -639,6 +675,18 @@ export default function IntegratedImport() {
                 . Seus vínculos precisarão de nova conferência.
               </label>
             )}
+            {calendarDiffers && (
+              <label className={styles.check}>
+                <input
+                  type="checkbox"
+                  checked={calendarAccepted}
+                  disabled={!!busy}
+                  onChange={(e) => setCalendarAccepted(e.target.checked)}
+                />
+                Conferi as divergências de módulo e período com a secretaria. Os
+                vínculos divergentes serão mantidos com progressão pausada.
+              </label>
+            )}
             {error && (
               <p role="alert" className={styles.error}>
                 {error}
@@ -660,7 +708,8 @@ export default function IntegratedImport() {
                 disabled={
                   !!busy ||
                   sessionExpired ||
-                  (!!preview?.counts.identityChanges && !identityAccepted)
+                  (!!preview?.counts.identityChanges && !identityAccepted) ||
+                  (calendarDiffers && !calendarAccepted)
                 }
                 onClick={apply}
               >

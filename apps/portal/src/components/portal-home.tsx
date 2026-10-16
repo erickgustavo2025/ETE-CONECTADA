@@ -316,6 +316,18 @@ export default function PortalHome({
                 <span>Importar alunos do integrado</span>
               </Link>
             )}
+            {role === 'secretary' && (
+              <Link
+                className={styles.menuService}
+                href="/secretaria/importacao/subsequente"
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className={styles.serviceIcon} aria-hidden="true">
+                  <ServiceIcon name="history" />
+                </span>
+                <span>Importar alunos do subsequente</span>
+              </Link>
+            )}
           </div>
           <div
             id="service-details"

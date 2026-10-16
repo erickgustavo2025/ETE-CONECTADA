@@ -303,7 +303,7 @@ function plan(input: SheetInput, current: State) {
   ).length;
   return { counts, entries, calendarComparisons };
 }
-// Catálogo somente de associações já aplicadas, sem listar identidades de alunos.
+// Catálogo por fontes aplicadas no integrado e calendários no subsequente, sem identidades.
 export async function schoolImportSources(
   db: PrismaClient,
   actorId: string,

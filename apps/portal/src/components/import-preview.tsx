@@ -13,6 +13,7 @@ export type BindingChoice = {
   enrollmentId: string;
 };
 export default function ImportPreview({
+  mode,
   preview,
   contexts,
   disabled,
@@ -20,6 +21,7 @@ export default function ImportPreview({
   onConfirm,
   onBindMany,
 }: {
+  mode: 'INTEGRADO' | 'SUBSEQUENTE';
   preview: ImportPreviewView;
   contexts: ImportContextView[];
   disabled: boolean;
@@ -87,6 +89,48 @@ export default function ImportPreview({
           </div>
         ))}
       </dl>
+      {!!preview.calendarComparisons?.length && (
+        <div
+          className={styles.tableWrap}
+          tabIndex={0}
+          role="region"
+          aria-label="Comparação com o calendário"
+        >
+          <table className={styles.table}>
+            <caption>Calendário e planilha</caption>
+            <thead>
+              <tr>
+                <th>Aba</th>
+                <th>Planilha recebida</th>
+                <th>Calendário previsto</th>
+                <th>Conferência</th>
+              </tr>
+            </thead>
+            <tbody>
+              {preview.calendarComparisons.map((c) => (
+                <tr key={c.sheetName}>
+                  <td>{c.sheetName}</td>
+                  <td>
+                    Módulo {c.receivedModule} · {c.receivedPeriod}
+                  </td>
+                  <td>
+                    {c.configured
+                      ? `Módulo ${c.expectedModule} · ${c.expectedPeriod}`
+                      : 'Sem calendário configurado'}
+                  </td>
+                  <td>
+                    {c.differs
+                      ? 'Divergência: exige confirmação e pausa da progressão'
+                      : c.configured
+                        ? 'Compatível'
+                        : 'Sem progressão automática'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {counts.identityChanges > 0 && (
         <p className={styles.notice}>
           Há alterações de nome, nascimento ou filiação de{' '}
@@ -162,7 +206,10 @@ export default function ImportPreview({
         aria-label="Diferenças da planilha"
       >
         <table className={styles.table}>
-          <caption>Prévia de atualização — integrado</caption>
+          <caption>
+            Prévia de atualização —{' '}
+            {mode === 'SUBSEQUENTE' ? 'subsequente' : 'integrado'}
+          </caption>
           <thead>
             <tr>
               <th>Aba e linha</th>
@@ -217,7 +264,7 @@ export default function ImportPreview({
                       <p>
                         {entry.action === 'create'
                           ? 'Os dados informados serão incluídos.'
-                          : 'Confira também turma, série e período da aba.'}
+                          : 'Confira também turma, série/módulo e período da aba.'}
                       </p>
                     )}
                   </details>
@@ -241,8 +288,13 @@ export default function ImportPreview({
                         {entry.candidates.map((candidate) => (
                           <option key={candidate.id} value={candidate.id}>
                             {candidate.className} ·{' '}
-                            {candidate.grade ?? 'série não informada'} ·{' '}
-                            {candidate.periodLabel || 'período não informado'} ·{' '}
+                            {candidate.moduleNumber
+                              ? `${candidate.moduleNumber}º módulo`
+                              : candidate.grade
+                                ? `${candidate.grade}ª série`
+                                : 'etapa não informada'}{' '}
+                            · {candidate.periodLabel || 'período não informado'}{' '}
+                            ·{' '}
                             {candidate.status === 'ENDED'
                               ? 'Encerrado'
                               : 'Vínculo existente'}

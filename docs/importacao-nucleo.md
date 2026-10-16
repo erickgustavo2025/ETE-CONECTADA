@@ -84,3 +84,36 @@ O contrato completo está em [Importação das planilhas](importacao-planilhas.m
 `test:sheet-history` verifica pela API real mudança de turma/período/série e módulo, invalidação de conferência, isolamento entre modalidades, repetição, conflitos e prévia desatualizada. Força falha após a escrita do histórico para comprovar rollback de versões e cadastros, e verifica preservação das versões quando a conta do operador é excluída. Integra `test:integration`; `test:cleanup` também confere a tabela de histórico.
 
 A jornada de navegador da importação usa 22 linhas XLS fictícias e vínculo legado: seleção/configuração, erro de modalidade, paginação/filtro, associação explícita, diferenças, confirmação, prévia desatualizada, resposta perdida com repetição idempotente, reimportação pela mesma oferta e descarte. Verifica também autorização/sessão; arquivos reais e e-mails de alunos não são usados.
+
+## Entrada do subsequente
+
+A secretaria acessa `/secretaria/importacao/subsequente` pelo menu. A entrada do
+integrado permanece em `/secretaria/importacao/integrado`. As duas usam o mesmo
+formulário e as mesmas proteções de arquivo, prévia, confirmação e recuperação de
+resposta perdida, com a modalidade fixada pela rota.
+
+Antes de importar o subsequente, cadastre as datas oficiais em
+`/secretaria/calendarios`. A inspeção mostra ADM/DS (módulos1–3) e Enfermagem
+(módulos1–4), sem expor as linhas pessoais no catálogo. Cada aba exige escolha
+explícita da oferta correspondente; nomes parecidos não associam turmas. O
+catálogo inclui calendários ainda sem alunos. O período do módulo escolhido na
+planilha é sugerido a partir do calendário e deve ser conferido. Nenhum UUID é
+digitado pela secretaria. Para cadastrar uma oferta que falta, descarte a
+conferência, configure o calendário e leia o arquivo novamente.
+
+A prévia apresenta módulo/período da planilha e do calendário. Diferenças exigem
+aceite adicional no diálogo de aplicação e mantêm os vínculos com progressão
+pausada. Conferência acadêmica e ativação da progressão são operações separadas.
+O servidor repete as validações e recusa confirmação de prévia desatualizada,
+inclusive após mudança do calendário. Associação de vínculo antigo exige nova
+prévia; outra oferta/curso/modalidade exige vínculo separado, sem apagar o
+anterior. A identidade do aluno é compartilhada e suas mudanças exigem o aceite
+já existente; as credenciais e os metadados do integrado são preservados.
+
+Arquivos seguem em memória e são descartados após resultado/descarte. Ausentes
+são preservados, não viram desistentes automaticamente. As entradas permanecem
+em desenvolvimento; esta entrega não importa a base real nem libera produção.
+`test:subsequent-import` e a jornada de navegador usam somente fixtures criadas
+do zero, com três cursos, módulos3/4, calendários distintos, reimportação,
+exceção e preservação do integrado. A regressão ampliada/controle negativo deCI
+segue na EC109.
