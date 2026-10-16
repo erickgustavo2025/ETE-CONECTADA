@@ -8,6 +8,7 @@ O projeto está em desenvolvimento. Cadastro e login funcionam apenas nesse ambi
 
 - Site institucional com acesso ao portal.
 - Primeiro acesso com matrícula, nascimento e nome completo de um dos pais, cadastro de CPF, e-mail e senha, confirmação de e-mail e login.
+- Recuperação de senha pelo e-mail confirmado, com encerramento das sessões anteriores.
 - Solicitação de declaração pelo aluno e acompanhamento do pedido.
 - Atendimento pela secretaria, com busca por aluno ou turma e geração de PDF individual ou em lote.
 
@@ -68,6 +69,17 @@ O nome é uma conferência adicional. Se os dados estiverem ausentes ou diferent
 
 Para enviar o link por e-mail, configure `RESEND_API_KEY` e `EMAIL_FROM`. Sem essas variáveis, o link aparece na tela apenas em desenvolvimento, permitindo experimentar a ativação.
 
+### Recuperar a senha
+
+Use **Esqueci minha senha** no login. O link dura 30 minutos; depois da troca,
+é preciso entrar novamente. Quem perdeu acesso ao e-mail deve procurar a secretaria.
+
+O envio exige `RESEND_API_KEY`, `EMAIL_FROM` e `PORTAL_PUBLIC_URL`, a origem do
+portal, como `http://localhost:3002` no desenvolvimento local. A recuperação não
+mostra links de teste na tela. Sem o envio configurado, não chega e-mail; a resposta
+permanece genérica para não revelar contas. As [regras de acesso](docs/acesso-e-documentos.md)
+explicam os limites e a configuração. Produção continua bloqueada.
+
 Há três alunos fictícios para os testes. A preparação do banco local descartável está no [guia de testes isolados](docs/testes-isolados.md), e as matrículas e acessos estão no [guia do banco](apps/portal/prisma/README.md). O seed e os testes usam esse banco separado, em vez do Neon configurado para a aplicação.
 
 ## Declaração de vínculo
@@ -112,9 +124,9 @@ npm run test:integration
 npm run test:cleanup
 ```
 
-Os testes de integração executam importação, cadastro, declaração, sessão, bloqueios de produção e banco em sequência, com dados fictícios. Eles iniciam e encerram seu próprio portal; execute-os sem outro Next ativo na mesma pasta. `test:cleanup` confere se o banco novo ficou vazio.
+Os testes de integração executam importação, cadastro, recuperação de senha, declaração, sessão, bloqueios de produção e banco em sequência, com dados fictícios. Eles iniciam e encerram seu próprio portal; execute-os sem outro Next ativo na mesma pasta. `test:cleanup` confere se o banco novo ficou vazio.
 
-Para testar as telas em Chromium, use `npm run test:browser` com o mesmo banco descartável. A suíte faz o primeiro acesso, retoma a confirmação, entra e sai do portal e acompanha um pedido de declaração até a liberação para retirada. A instalação do navegador e os cuidados com os relatórios estão no [guia de testes de navegador](docs/testes-navegador.md). O CI também executa essa suíte.
+Para testar as telas em Chromium, use `npm run test:browser` com o mesmo banco descartável. A suíte faz o primeiro acesso, retoma a confirmação, redefine a senha, entra e sai do portal e acompanha um pedido de declaração até a liberação para retirada. A instalação do navegador e os cuidados com os relatórios estão no [guia de testes de navegador](docs/testes-navegador.md). O CI também executa essa suíte.
 
 O [GitHub Actions](.github/workflows/ci.yml) já compila os apps, aplica as migrações e executa a integração em PostgreSQL temporário. Isso acontece nos PRs para `main` e nos pushes para `main` ou `feature/...`. O banco de cada execução é removido ao terminar. Os workflows também são validados antes do build. As permissões e os cuidados com PRs estão no [guia de segurança do CI](docs/seguranca/workflows.md).
 

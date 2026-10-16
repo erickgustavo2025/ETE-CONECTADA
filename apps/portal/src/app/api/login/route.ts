@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { randomBytes } from 'node:crypto';
 import { getDb } from '@/lib/db';
 import { verifyPassword } from '@/lib/password';
+import { createVerifiedSession } from '@/lib/session-record';
 import {
   hashSessionToken,
   sessionCookieName,
@@ -66,13 +67,20 @@ export async function POST(request: Request) {
     }
 
     const token = randomBytes(32).toString('base64url');
-    await getDb().session.create({
-      data: {
-        tokenHash: hashSessionToken(token),
-        accountId: row!.id,
-        expiresAt: new Date(Date.now() + sessionDurationSeconds * 1000),
-      },
-    });
+    const created = await createVerifiedSession(
+      getDb(),
+      row!.id,
+      row!.passwordHash!,
+      hashSessionToken(token),
+      new Date(Date.now() + sessionDurationSeconds * 1000),
+    );
+    if (!created)
+      return NextResponse.json(
+        {
+          error: 'Não foi possível entrar. Confira os dados e tente novamente.',
+        },
+        { status: 401 },
+      );
     const sessionFinished = performance.now();
     const response = NextResponse.json({ ok: true });
     response.cookies.set(sessionCookieName, token, {

@@ -253,6 +253,16 @@ async function main() {
         },
       ],
       ['/api/registration/verify', 503, { token }],
+      ['/api/password-reset/request', 503, { email: account.email }],
+      [
+        '/api/password-reset/confirm',
+        503,
+        {
+          token,
+          password: 'synthetic-password',
+          confirmPassword: 'synthetic-password',
+        },
+      ],
       ['/api/declaracao/solicitacoes', 401],
       ['/api/declaracao/solicitacoes', 401, {}],
       ['/api/secretaria/solicitacoes', 401],
@@ -291,7 +301,12 @@ async function main() {
         '/login',
       );
     }
-    for (const path of ['/login', '/cadastro']) {
+    for (const path of [
+      '/login',
+      '/cadastro',
+      '/recuperar-acesso',
+      '/redefinir-senha',
+    ]) {
       const response = await request(path);
       assert.equal(response.status, 200);
       const html = await response.text();

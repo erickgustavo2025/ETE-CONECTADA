@@ -94,6 +94,7 @@ export default function LoginForm() {
                   placeholder="Digite sua senha"
                   required
                 />
+                <Link href="/recuperar-acesso">Esqueci minha senha</Link>
                 {validation.error && (
                   <p id="login-error" className="field-error" role="alert">
                     {validation.error}

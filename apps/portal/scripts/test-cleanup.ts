@@ -15,6 +15,7 @@ async function main() {
         (SELECT count(*) FROM enrollments) +
         (SELECT count(*) FROM sessions) +
         (SELECT count(*) FROM email_verification_tokens) +
+        (SELECT count(*) FROM password_reset_tokens) +
         (SELECT count(*) FROM declaration_requests) +
         (SELECT count(*) FROM retired_profile_photos)
       ) AS records
