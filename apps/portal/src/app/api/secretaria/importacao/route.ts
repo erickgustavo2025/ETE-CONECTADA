@@ -3,10 +3,15 @@ import { getDb } from '@/lib/db';
 import { privateHeaders, sameOriginRequest } from '@/lib/private-request';
 import {
   parseSheetInput,
+  inspectIntegratedSheet,
   SheetImportError,
   SHEET_BODY_LIMIT,
 } from '@/lib/sheet-import-input';
-import { previewSheetImport, confirmSheetImport } from '@/lib/sheet-import';
+import {
+  previewSheetImport,
+  confirmSheetImport,
+  integratedImportSources,
+} from '@/lib/sheet-import';
 export const runtime = 'nodejs';
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: privateHeaders });
@@ -69,7 +74,8 @@ export async function POST(request: Request) {
             'acceptIdentityChanges',
           ].includes(k),
       ) ||
-      (body.action !== 'preview' && body.action !== 'confirm') ||
+      typeof body.action !== 'string' ||
+      !['inspect', 'preview', 'confirm'].includes(body.action) ||
       typeof body.fileBase64 !== 'string' ||
       !body.fileBase64.length ||
       body.fileBase64.length % 4 !== 0 ||
@@ -82,6 +88,21 @@ export async function POST(request: Request) {
     const file = Buffer.from(body.fileBase64, 'base64');
     if (file.toString('base64') !== body.fileBase64)
       throw new SheetImportError('Arquivo inválido.', 400);
+    if (body.action === 'inspect') {
+      if (
+        body.mode !== 'INTEGRADO' ||
+        Object.keys(body).some(
+          (key) => !['action', 'mode', 'fileBase64'].includes(key),
+        )
+      )
+        throw new SheetImportError(
+          'Use a entrada do integrado para este arquivo.',
+          400,
+        );
+      const sheets = await inspectIntegratedSheet(file);
+      const sources = await integratedImportSources(getDb(), session.accountId);
+      return json({ sheets, sources });
+    }
     const input = await parseSheetInput(file, body.mode, body.contexts);
     const result =
       body.action === 'preview'

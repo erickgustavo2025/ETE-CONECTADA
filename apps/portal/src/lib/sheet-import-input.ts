@@ -149,6 +149,63 @@ export async function decodeXls(
     decoding = false;
   });
 }
+type DecodedSheet = { name: string; rows: string[][] };
+function sheetHeader(
+  s: DecodedSheet,
+  mode: 'INTEGRADO' | 'SUBSEQUENTE',
+  index: number,
+) {
+  text(s.name, 100);
+  const head = s.rows[5] || [];
+  if (
+    normalize(head[0] || '') !== 'matricula' ||
+    normalize(head[1] || '') !== 'nome' ||
+    normalize(head[2] || '') !== 'data de nascimento' ||
+    normalize(head[8] || '') !== 'filiacao 1 e 2'
+  )
+    throw new SheetImportError(
+      `Cabeçalhos inválidos na aba ${index + 1}, linha 6.`,
+    );
+  const title = normalize(s.rows.slice(0, 5).flat().join(' '));
+  if (
+    mode === 'INTEGRADO'
+      ? !/ensino medio|integrado/.test(title) || /subsequente/.test(title)
+      : !title.includes('subsequente')
+  )
+    throw new SheetImportError(`Modalidade divergente na aba ${index + 1}.`);
+  const stage = /\b([1-4])\s*(ano|serie|modulo)\b/.exec(
+    normalize((s.rows[3] || []).join(' ')),
+  );
+  const courses = {
+    ADM: /administracao|\badm\b/,
+    DS: /desenvolvimento de sistemas|\bds\b/,
+    ENF: /enfermagem|\benf\b/,
+  };
+  const matches = (
+    Object.keys(courses) as Array<SheetContext['courseLabel']>
+  ).filter((key) => courses[key].test(title));
+  if (
+    !stage ||
+    (stage[2] === 'modulo') !== (mode === 'SUBSEQUENTE') ||
+    matches.length !== 1 ||
+    (mode === 'INTEGRADO' && (matches[0] === 'ENF' || Number(stage[1]) > 3)) ||
+    (matches[0] !== 'ENF' && Number(stage[1]) > 3)
+  )
+    throw new SheetImportError(
+      `Curso ou série/módulo divergente na aba ${index + 1}.`,
+    );
+  return { courseLabel: matches[0], stage: Number(stage[1]) };
+}
+// Inspeção sem contexto não autoriza aplicação: apenas expõe cabeçalhos do integrado.
+export async function inspectIntegratedSheet(file: Buffer) {
+  return (await decodeXls(file)).map((s, index) => ({
+    sheetName: s.name,
+    ...sheetHeader(s, 'INTEGRADO', index),
+    rows: s.rows.slice(6).filter((row) => row.some((cell) => cell.trim()))
+      .length,
+  }));
+}
+
 export async function parseSheetInput(
   file: Buffer,
   mode: unknown,
@@ -231,36 +288,10 @@ export async function parseSheetInput(
     const context = contexts.find((c) => c.sheetName === s.name);
     if (!context)
       throw new SheetImportError(`Confira o contexto da aba ${sheet + 1}.`);
-    const head = s.rows[5] || [];
+    const header = sheetHeader(s, mode, sheet);
     if (
-      normalize(head[0] || '') !== 'matricula' ||
-      normalize(head[1] || '') !== 'nome' ||
-      normalize(head[2] || '') !== 'data de nascimento' ||
-      normalize(head[8] || '') !== 'filiacao 1 e 2'
-    )
-      throw new SheetImportError(
-        `Cabeçalhos inválidos na aba ${sheet + 1}, linha 6.`,
-      );
-    const title = normalize(s.rows.slice(0, 5).flat().join(' '));
-    if (
-      mode === 'INTEGRADO'
-        ? !/ensino medio|integrado/.test(title) || /subsequente/.test(title)
-        : !title.includes('subsequente')
-    )
-      throw new SheetImportError(`Modalidade divergente na aba ${sheet + 1}.`);
-    const stage = /\b([1-4])\s*(ano|serie|modulo)\b/.exec(
-      normalize((s.rows[3] || []).join(' ')),
-    );
-    const courses = {
-      ADM: /administracao|\badm\b/,
-      DS: /desenvolvimento de sistemas|\bds\b/,
-      ENF: /enfermagem|\benf\b/,
-    };
-    if (
-      !stage ||
-      Number(stage[1]) !== context.stage ||
-      (stage[2] === 'modulo') !== (mode === 'SUBSEQUENTE') ||
-      !courses[context.courseLabel].test(title)
+      header.stage !== context.stage ||
+      header.courseLabel !== context.courseLabel
     )
       throw new SheetImportError(
         `Curso ou série/módulo divergente na aba ${sheet + 1}.`,

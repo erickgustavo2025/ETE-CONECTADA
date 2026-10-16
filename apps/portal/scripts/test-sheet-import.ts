@@ -139,6 +139,50 @@ async function main() {
       (await post({ ...payload(), action: ['preview'] })).status,
       400,
     );
+    const importPage = await fetch(`${base}/secretaria/importacao/integrado`, {
+      headers: { Cookie: actors[0].cookie },
+    });
+    assert.equal(importPage.status, 200);
+    const html = await importPage.text();
+    const form = html.match(/<form\b[^>]*>/i)?.[0];
+    assert.ok(
+      form && /method="post"/i.test(form),
+      'Sem JavaScript o formulário não deve enviar nome de arquivo na URL.',
+    );
+    const inspectBody = {
+      action: 'inspect',
+      mode: 'INTEGRADO',
+      fileBase64: fixture.file().toString('base64'),
+    };
+    assert.equal((await post(inspectBody, '')).status, 401);
+    assert.equal((await post(inspectBody, actors[2].cookie)).status, 403);
+    assert.equal(
+      (await post(inspectBody, actors[0].cookie, 'https://example.invalid'))
+        .status,
+      403,
+    );
+    assert.equal(
+      (await post({ ...inspectBody, mode: 'SUBSEQUENTE' })).status,
+      400,
+    );
+    assert.equal((await post({ ...inspectBody, contexts: [] })).status, 400);
+    const inspected = await post(inspectBody);
+    assert.equal(inspected.status, 200);
+    assert.match(
+      inspected.headers.get('cache-control') || '',
+      /private.*no-store/,
+    );
+    const inspection = await inspected.json();
+    assert.deepEqual(inspection.sources, []);
+    assert.deepEqual(inspection.sheets, [
+      { sheetName: 'Fictícia', courseLabel: 'ADM', stage: 1, rows: 1 },
+    ]);
+    assert.equal(JSON.stringify(inspection).includes('Pessoa Fictícia'), false);
+    assert.equal(
+      await db.sheetImportPreview.count(),
+      0,
+      'Inspeção não cria token nem altera cadastros.',
+    );
     const first = await preview();
     assert.equal(first.value.counts.createdStudents, 1);
     assert.equal(first.value.counts.identityChanges, 0);
@@ -178,6 +222,10 @@ async function main() {
       appliedCounts,
       'Repetição da confirmação não duplica.',
     );
+    const knownSources = await (await post(inspectBody)).json();
+    assert.equal(knownSources.sources.length, 1);
+    assert.equal(knownSources.sources[0].scopeId, fixture.context.scopeId);
+    assert.equal(knownSources.sources[0].className, fixture.context.className);
     const imported = await db.student.findUniqueOrThrow({
       where: { schoolRegistration: '00001001' },
       include: { enrollments: true, details: true, account: true },
@@ -433,10 +481,20 @@ async function main() {
       mode: 'INTEGRADO',
       contexts: [legacyFixture.context],
     };
+    const legacyConflict = (await preview(legacyBody)).value;
     assert.equal(
-      (await preview(legacyBody)).value.counts.conflicts,
+      legacyConflict.counts.conflicts,
       1,
       'Vínculo legado exige associação conferida.',
+    );
+    assert.equal(legacyConflict.entries[0].needsBinding, true);
+    assert.equal(
+      legacyConflict.entries[0].candidates[0].id,
+      legacy.enrollments[0].id,
+    );
+    assert.equal(
+      legacyConflict.entries[0].candidates[0].className,
+      legacyFixture.context.className,
     );
     const linked = await preview({
       ...legacyBody,

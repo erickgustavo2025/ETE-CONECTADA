@@ -208,6 +208,14 @@ function plan(input: SheetInput, current: State) {
       metadataChanged,
       enrollmentChanged,
       blocked,
+      needsBinding: Boolean(
+        conflict &&
+        !enrollment &&
+        !row.enrollmentId &&
+        student &&
+        !protectedParent &&
+        !invalidScopes.has(row.context.scopeId),
+      ),
     };
   });
   const presentKeys = new Set(input.rows.map((row) => row.key));
@@ -220,6 +228,81 @@ function plan(input: SheetInput, current: State) {
   ).length;
   return { counts, entries };
 }
+// Catálogo somente de associações já aplicadas, sem listar identidades de alunos.
+export async function integratedImportSources(
+  db: PrismaClient,
+  actorId: string,
+) {
+  return db.$transaction(
+    async (tx) => {
+      await authorize(tx, actorId);
+      const rows = await tx.enrollment.findMany({
+        where: { mode: 'INTEGRADO', schoolImportKey: { not: null } },
+        select: {
+          schoolImportKey: true,
+          className: true,
+          courseLabel: true,
+          periodLabel: true,
+        },
+        orderBy: { id: 'asc' },
+        take: 10001,
+      });
+      if (rows.length > 10000)
+        throw new SheetImportError('Catálogo acima do limite de conferência.');
+      const sources = new Map<
+        string,
+        {
+          scopeId: string;
+          courseLabel: string;
+          classes: Set<string>;
+          periods: Set<string>;
+        }
+      >();
+      for (const row of rows) {
+        const scopeId = row.schoolImportKey?.split(':')[1] || '';
+        if (!uuid.test(scopeId))
+          throw new SheetImportError(
+            'Associação escolar inválida. Solicite revisão.',
+          );
+        const source = sources.get(scopeId) || {
+          scopeId,
+          courseLabel: row.courseLabel,
+          classes: new Set<string>(),
+          periods: new Set<string>(),
+        };
+        if (source.courseLabel !== row.courseLabel)
+          throw new SheetImportError(
+            'Oferta com cursos divergentes. Solicite revisão.',
+          );
+        source.classes.add(row.className);
+        source.periods.add(row.periodLabel || '');
+        sources.set(scopeId, source);
+      }
+      if (sources.size > 200)
+        throw new SheetImportError(
+          'Há mais de 200 ofertas. Solicite revisão do catálogo antes de importar.',
+        );
+      return [...sources.values()]
+        .map((source) => ({
+          scopeId: source.scopeId,
+          courseLabel: source.courseLabel,
+          className: source.classes.size === 1 ? [...source.classes][0] : '',
+          periodLabel: source.periods.size === 1 ? [...source.periods][0] : '',
+          label: `${[...source.classes].slice(0, 2).join(' / ')} · ${source.courseLabel} · ${[
+            ...source.periods,
+          ]
+            .slice(0, 2)
+            .map((p) => p || 'período não conferido')
+            .join(
+              ' / ',
+            )}${source.classes.size > 2 || source.periods.size > 2 ? ' · outras variações' : ''}`,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+    },
+    { isolationLevel: 'Serializable', timeout: 30000 },
+  );
+}
+
 export async function previewSheetImport(
   db: PrismaClient,
   actorId: string,
@@ -282,6 +365,32 @@ export async function previewSheetImport(
             e.student && (e.identityChanged || e.parentsChanged),
           ),
           changes: e.changes,
+          conflictReason: !e.blocked
+            ? null
+            : e.enrollment?.status === 'ENDED' && e.metadataChanged
+              ? 'Vínculo encerrado: os dados escolares não podem ser substituídos.'
+              : e.parentsChanged &&
+                  e.student?.details?.parentageSource === 'SECRETARY_CORRECTION'
+                ? 'Filiação corrigida pela secretaria diverge da planilha. Confira a fonte.'
+                : 'Confira a associação do vínculo, a oferta e a modalidade antes de continuar.',
+          needsBinding: e.needsBinding,
+          candidates: !e.needsBinding
+            ? []
+            : current.enrollments
+                .filter(
+                  (enrollment) =>
+                    enrollment.studentId === e.student?.id &&
+                    enrollment.mode === input.mode &&
+                    enrollment.courseLabel === e.row.context.courseLabel &&
+                    !enrollment.schoolImportKey,
+                )
+                .map((enrollment) => ({
+                  id: enrollment.id,
+                  className: enrollment.className,
+                  periodLabel: enrollment.periodLabel,
+                  status: enrollment.status,
+                  grade: enrollment.grade,
+                })),
         })),
       };
     },
