@@ -4,6 +4,11 @@ import {
   validAccessPassword,
 } from '@/lib/access-input';
 import { NextResponse } from 'next/server';
+import {
+  consumeAccessAttempt,
+  accessLimitResponse,
+  clearLoginAttempts,
+} from '@/lib/access-throttle';
 import { randomBytes } from 'node:crypto';
 import { getDb } from '@/lib/db';
 import { verifyPassword } from '@/lib/password';
@@ -42,6 +47,14 @@ export async function POST(request: Request) {
   const value = identifier.trim();
   const cpf = value.replace(/\D/g, '');
   try {
+    const db = getDb();
+    const normalizedIdentifier = value.includes('@')
+      ? value.toLowerCase()
+      : cpf;
+    const limit = accessLimitResponse(
+      await consumeAccessAttempt(db, 'login', normalizedIdentifier),
+    );
+    if (limit) return limit;
     const started = performance.now();
     const row = await getDb().account.findFirst({
       where: {
@@ -50,14 +63,28 @@ export async function POST(request: Request) {
           ? { email: { equals: value, mode: 'insensitive' as const } }
           : { student: { cpf } }),
       },
-      select: { id: true, passwordHash: true },
+      select: {
+        id: true,
+        passwordHash: true,
+        email: true,
+        student: { select: { cpf: true } },
+      },
     });
     const lookupFinished = performance.now();
-    const valid = row?.passwordHash
-      ? await verifyPassword(password, row.passwordHash)
-      : false;
+    if (row) {
+      const accountLimit = accessLimitResponse(
+        await consumeAccessAttempt(db, 'login-account', row.id),
+      );
+      if (accountLimit) return accountLimit;
+    }
+    // Ausente/inativo também executa scrypt: a resposta não pula o trabalho de senha.
+    const dummyHash = `scrypt$${'0'.repeat(32)}$${'0'.repeat(128)}`;
+    const valid = await verifyPassword(
+      password,
+      row?.passwordHash || dummyHash,
+    );
     const passwordFinished = performance.now();
-    if (!valid) {
+    if (!row || !valid) {
       return NextResponse.json(
         {
           error: 'Não foi possível entrar. Confira os dados e tente novamente.',
@@ -81,6 +108,13 @@ export async function POST(request: Request) {
         },
         { status: 401 },
       );
+    await db.$transaction((tx) =>
+      clearLoginAttempts(tx, {
+        id: row.id,
+        email: row.email,
+        cpf: row.student.cpf,
+      }),
+    );
     const sessionFinished = performance.now();
     const response = NextResponse.json({ ok: true });
     response.cookies.set(sessionCookieName, token, {

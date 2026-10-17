@@ -1,3 +1,7 @@
+import {
+  consumeAccessAttempt,
+  accessLimitResponse,
+} from '@/lib/access-throttle';
 import { after } from 'next/server';
 import { readAccessBody } from '@/lib/access-input';
 import { getDb } from '@/lib/db';
@@ -41,6 +45,14 @@ export async function POST(request: Request) {
   const problem = resetProblem({ token, password, confirmPassword });
   if (problem) return rejected(problem);
   try {
+    const limit = accessLimitResponse(
+      await consumeAccessAttempt(
+        getDb(),
+        'password-reset-token',
+        token as string,
+      ),
+    );
+    if (limit) return limit;
     const result = await completePasswordReset(getDb(), {
       token,
       password,

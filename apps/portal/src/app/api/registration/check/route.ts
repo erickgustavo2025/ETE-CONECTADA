@@ -1,3 +1,7 @@
+import {
+  consumeAccessAttempt,
+  accessLimitResponse,
+} from '@/lib/access-throttle';
 import { readAccessBody, boundedString } from '@/lib/access-input';
 import { getDb } from '@/lib/db';
 import {
@@ -29,6 +33,10 @@ export async function POST(request: Request) {
   if (!schoolRegistration || !validBirthDate(body.birthDate))
     return Response.json({ result: 'unmatched' });
   try {
+    const limit = accessLimitResponse(
+      await consumeAccessAttempt(getDb(), 'registration', schoolRegistration),
+    );
+    if (limit) return limit;
     const found = await getDb().student.findFirst({
       where: {
         schoolRegistration,

@@ -173,7 +173,7 @@ test('senha preservada e limites 8/128; recusa 7/129 e tipos não string', () =>
     assert.equal(validAccessPassword(value), false);
 });
 
-test('handlers negam entradas antes de banco/scrypt; controles válidos chegam às operações protegidas', async (t) => {
+test('handlers negam entradas antes de banco/scrypt; admissão indisponível recusa antes do cálculo de senha', async (t) => {
   const previousMode = process.env.NODE_ENV;
   const previousDb = Object.getOwnPropertyDescriptor(
     globalThis,
@@ -181,23 +181,10 @@ test('handlers negam entradas antes de banco/scrypt; controles válidos chegam �
   );
   let databaseCalls = 0;
   let hashCalls = 0;
-  let allowLoginLookup = false;
   Reflect.set(process.env, 'NODE_ENV', 'development');
   Object.defineProperty(globalThis, 'portalPrisma', {
     configurable: true,
     get() {
-      if (allowLoginLookup)
-        return {
-          account: {
-            findFirst: async () => {
-              databaseCalls++;
-              return {
-                id: 'fixture',
-                passwordHash: `scrypt$${'00'.repeat(16)}$${'00'.repeat(64)}`,
-              };
-            },
-          },
-        };
       databaseCalls++;
       throw new Error('Banco proibido nesta prova.');
     },
@@ -322,19 +309,21 @@ test('handlers negam entradas antes de banco/scrypt; controles válidos chegam �
           : [valid[i]];
       for (const body of controls) {
         databaseCalls = hashCalls = 0;
-        allowLoginLookup = i === 0;
         assert.equal(
           (await handler(jsonRequest(body))).status,
           503,
           'Sentinela deliberada deve interromper somente depois da validação.',
         );
-        assert.equal(databaseCalls, i === 2 ? 0 : 1);
+        assert.equal(
+          databaseCalls,
+          1,
+          'Controle válido deve atingir a admissão no banco.',
+        );
         assert.equal(
           hashCalls,
-          i === 0 || i === 2 ? 1 : 0,
-          'Controle válido de login/cadastro deve acionar o scrypt instrumentado.',
+          0,
+          'Admissão indisponível não deve consumir scrypt, mesmo com entrada válida.',
         );
-        allowLoginLookup = false;
       }
     }
   } finally {
@@ -344,7 +333,6 @@ test('handlers negam entradas antes de banco/scrypt; controles válidos chegam �
     if (previousDb)
       Object.defineProperty(globalThis, 'portalPrisma', previousDb);
     else Reflect.deleteProperty(globalThis, 'portalPrisma');
-    allowLoginLookup = false;
     t.mock.restoreAll();
     syncBuiltinESMExports();
   }

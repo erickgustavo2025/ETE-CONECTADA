@@ -221,6 +221,9 @@ export async function openTestEnvironment({ http = false } = {}) {
       process.off('SIGINT', interrupted);
       process.off('SIGTERM', interrupted);
       if (portal) await stopPortal(portal.child);
+      // Apenas contadores técnicos gerados por este portal sintético, após encerrar HTTP.
+      // A identidade do banco já foi conferida; test:cleanup continua somente leitura.
+      if (portal) await db.accessAttemptBucket.deleteMany();
     })();
     // A limpeza de fixtures após um sinal pode reabrir Prisma; desconecta em toda chamada.
     try {

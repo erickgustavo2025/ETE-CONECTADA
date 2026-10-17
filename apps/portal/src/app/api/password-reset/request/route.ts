@@ -1,7 +1,15 @@
 import { after } from 'next/server';
 import { boundedString, readAccessBody } from '@/lib/access-input';
 import { getDb } from '@/lib/db';
-import { normalizeEmail, disabledResponse } from '@/lib/registration';
+import {
+  normalizeEmail,
+  disabledResponse,
+  databaseErrorResponse,
+} from '@/lib/registration';
+import {
+  consumeAccessAttempt,
+  accessLimitResponse,
+} from '@/lib/access-throttle';
 import { privateHeaders, sameOriginRequest } from '@/lib/private-request';
 import { recoveryReceipt } from '@/lib/password-reset-input';
 import { requestPasswordReset } from '@/lib/password-reset';
@@ -26,6 +34,14 @@ export async function POST(request: Request) {
       { status: 400, headers: privateHeaders },
     );
   const email = normalizeEmail(input.body.email)!;
+  try {
+    const limit = accessLimitResponse(
+      await consumeAccessAttempt(getDb(), 'password-recovery', email),
+    );
+    if (limit) return limit;
+  } catch {
+    return databaseErrorResponse();
+  }
   // Mesma resposta antes de consultar a conta; latência de DB/provedor não enumera e-mails.
   const mailer = recoveryMailer();
   if (mailer)

@@ -250,3 +250,22 @@ model CourseCalendarVersion {
  @@index([createdById])
  @@map("course_calendar_versions")
 }
+
+// Configuração técnica persistente; não contém identificadores de alunos.
+model AccessThrottleState {
+  id          Int      @id @db.SmallInt
+  keyMaterial String   @map("key_material") @db.Char(64)
+  lastSweepAt DateTime @default(now()) @map("last_sweep_at") @db.Timestamptz(6)
+
+  @@map("access_throttle_state")
+}
+
+model AccessAttemptBucket {
+  key             String   @id @db.Char(64)
+  used            Int
+  windowStartedAt DateTime @map("window_started_at") @db.Timestamptz(6)
+  expiresAt       DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@index([expiresAt])
+  @@map("access_attempt_buckets")
+}

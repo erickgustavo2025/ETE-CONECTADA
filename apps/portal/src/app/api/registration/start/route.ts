@@ -1,3 +1,8 @@
+import { getDb } from '@/lib/db';
+import {
+  consumeAccessAttempt,
+  accessLimitResponse,
+} from '@/lib/access-throttle';
 import {
   readAccessBody,
   boundedString,
@@ -62,6 +67,10 @@ export async function POST(request: Request) {
   const token = randomBytes(32).toString('base64url');
   const tokenHash = createHash('sha256').update(token).digest('hex');
   try {
+    const limit = accessLimitResponse(
+      await consumeAccessAttempt(getDb(), 'registration', schoolRegistration),
+    );
+    if (limit) return limit;
     const passwordHash = await hashPassword(password);
     await claimAccount({
       schoolRegistration,
