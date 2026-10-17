@@ -4,6 +4,9 @@ import type { Prisma, PrismaClient } from '../generated/prisma/client';
 export const accessPolicies = {
   login: { limit: 10, windowMs: 5 * 60_000 },
   registration: { limit: 20, windowMs: 15 * 60_000 },
+  'email-verification': { limit: 10, windowMs: 5 * 60_000 },
+  'password-recovery': { limit: 5, windowMs: 15 * 60_000 },
+  'password-reset-token': { limit: 10, windowMs: 5 * 60_000 },
   'login-account': { limit: 10, windowMs: 5 * 60_000 },
 } as const;
 const globalPolicy = { limit: 600, windowMs: 60_000 };

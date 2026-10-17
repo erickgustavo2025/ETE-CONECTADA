@@ -115,6 +115,8 @@ async function main() {
     for (let n = 0; n < 10; n++)
       assert.equal((await login(a.email, wrong)).status, 401);
     const blocked = await login(a.email, wrong);
+    if (blocked.status !== 429)
+      console.error('EC060: limite esperado429, recebido', blocked.status);
     assert.equal(
       blocked.status,
       429,
@@ -162,6 +164,17 @@ async function main() {
         .status,
       403,
       'Papel forjado no login não libera API da secretaria.',
+    );
+    for (let n = 0; n < 10; n++)
+      assert.equal((await login(b.email, wrong)).status, 401);
+    assert.equal((await login(b.email, wrong)).status, 429);
+    const owner = await fetch(`${base}/api/declaracao/solicitacoes`, {
+      headers: { Cookie: studentCookie },
+    });
+    assert.equal(
+      owner.status,
+      200,
+      'Tentativas anônimas não revogam sessão já autorizada.',
     );
     assert.equal(
       (await db.account.findUniqueOrThrow({ where: { id: b.account.id } }))
@@ -407,6 +420,51 @@ async function main() {
     }
     console.log(
       'OK: falha após escrita desfaz os contadores e não libera login.',
+    );
+
+    for (const path of [
+      '/api/registration/verify',
+      '/api/password-reset/confirm',
+    ]) {
+      await clear();
+      const token = randomBytes(32).toString('base64url');
+      const body = { token, password, confirmPassword: password };
+      for (let n = 0; n < 10; n++)
+        assert.equal((await post(path, body)).status, 400);
+      assert.equal(
+        (await post(path, body)).status,
+        429,
+        'Verificação de link também deve limitar repetição.',
+      );
+      assert.equal(
+        JSON.stringify(await db.accessAttemptBucket.findMany()).includes(token),
+        false,
+        'O token puro não fica no contador.',
+      );
+    }
+    let receipt: unknown;
+    for (const email of [b.email, 'recuperacao-ausente@eteconectada.invalid']) {
+      await clear();
+      for (let n = 0; n < 5; n++) {
+        const response = await post('/api/password-reset/request', { email });
+        assert.equal(response.status, 200);
+        assert.match(response.headers.get('cache-control')!, /no-store/);
+        const body = await response.json();
+        if (receipt)
+          assert.deepEqual(
+            body,
+            receipt,
+            'Resposta de recuperação não revela se há conta.',
+          );
+        receipt = body;
+      }
+      assert.equal(
+        (await post('/api/password-reset/request', { email })).status,
+        429,
+      );
+    }
+    console.log(
+      'OK: links e recuperação também têm orçamento, sem revelar conta ou persistir token puro.',
     );
 
     const state = await db.accessThrottleState.findUniqueOrThrow({

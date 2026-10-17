@@ -119,12 +119,13 @@ Para testar o banco e os fluxos completos, siga primeiro a preparação do [ambi
 
 ```bash
 npm run test:schema
+npm run test:access-throttle
 npm run test:integration
 # Somente em banco novo, sem seed ou outros registros:
 npm run test:cleanup
 ```
 
-Os testes de integração executam importação, cadastro, recuperação de senha, declaração, sessão, bloqueios de produção e banco em sequência, com dados fictícios. Eles iniciam e encerram seu próprio portal; execute-os sem outro Next ativo na mesma pasta. `test:cleanup` confere se o banco novo ficou vazio.
+Os testes de integração executam importação, limites de tentativas, cadastro, recuperação de senha, declaração, sessão, bloqueios de produção e banco em sequência, com dados fictícios. Os limites e as janelas de acesso estão no [guia de tentativas de acesso](docs/seguranca/limites-acesso.md). Eles iniciam e encerram seu próprio portal; execute-os sem outro Next ativo na mesma pasta. `test:cleanup` confere se o banco novo ficou vazio.
 
 Para testar as telas em Chromium, use `npm run test:browser` com o mesmo banco descartável. A suíte faz o primeiro acesso, retoma a confirmação, redefine a senha, entra e sai do portal e acompanha um pedido de declaração até a liberação para retirada. A instalação do navegador e os cuidados com os relatórios estão no [guia de testes de navegador](docs/testes-navegador.md). O CI também executa essa suíte.
 

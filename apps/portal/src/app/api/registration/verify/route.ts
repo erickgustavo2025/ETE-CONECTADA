@@ -1,3 +1,8 @@
+import { getDb } from '@/lib/db';
+import {
+  consumeAccessAttempt,
+  accessLimitResponse,
+} from '@/lib/access-throttle';
 import { readAccessBody, boundedString } from '@/lib/access-input';
 import { createHash } from 'node:crypto';
 import {
@@ -24,6 +29,10 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Link inválido.' }, { status: 400 });
   const hash = createHash('sha256').update(body.token).digest('hex');
   try {
+    const limit = accessLimitResponse(
+      await consumeAccessAttempt(getDb(), 'email-verification', body.token),
+    );
+    if (limit) return limit;
     await verifyAccount(hash);
     return Response.json({ result: 'verified' });
   } catch (error) {

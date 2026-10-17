@@ -279,6 +279,9 @@ async function main() {
       ).body.result,
       'unmatched',
     );
+    // Separa as fixtures de filiação e retomada: não são uma única rajada real.
+    // O teste EC060 cobre a pausa sem reiniciar contadores entre tentativas.
+    await db.accessAttemptBucket.deleteMany();
     let firstToken = tokenFrom(
       await start(credentials, 'FILIACAO FICTICIA DOIS'),
     );

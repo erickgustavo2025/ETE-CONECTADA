@@ -4,7 +4,6 @@ import {
   resetOrigin,
   resetProblem,
   validResetToken,
-  recoveryReceipt,
 } from '../src/lib/password-reset-input';
 import { recoveryMailer } from '../src/lib/recovery-mail';
 
@@ -110,9 +109,13 @@ test('recuperação: validação/origem/produção recusam antes do banco, sem l
     }
     assert.equal(calls, 0);
     const receipt = await request(req({ email: 'test@eteconectada.invalid' }));
-    assert.deepEqual(await receipt.json(), { message: recoveryReceipt });
-    assert.equal(receipt.headers.get('cache-control'), 'private, no-store');
-    assert.equal(calls, 0);
+    assert.equal(
+      receipt.status,
+      503,
+      'Falha da admissão não deve ignorar o limite e aceitar a solicitação.',
+    );
+    assert.deepEqual(Object.keys(await receipt.json()), ['error']);
+    assert.equal(calls, 1);
     assert.equal(
       (
         await confirm(
@@ -125,11 +128,15 @@ test('recuperação: validação/origem/produção recusam antes do banco, sem l
       ).status,
       503,
     );
-    assert.equal(calls, 1, 'Controle positivo alcança o banco após validar.');
+    assert.equal(
+      calls,
+      2,
+      'Controles positivos alcançam a admissão somente após validar.',
+    );
     Reflect.set(process.env, 'NODE_ENV', 'production');
     assert.equal((await request(req({}))).status, 503);
     assert.equal((await confirm(req({}))).status, 503);
-    assert.equal(calls, 1);
+    assert.equal(calls, 2);
   } finally {
     if (previousMode === undefined)
       Reflect.deleteProperty(process.env, 'NODE_ENV');
