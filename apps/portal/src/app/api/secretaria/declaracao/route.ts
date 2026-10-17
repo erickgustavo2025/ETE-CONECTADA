@@ -8,7 +8,11 @@ import {
   DeclarationValidationError,
 } from '@/lib/declarations';
 import { createDeclarationPdf } from '@/lib/declaration-pdf';
-import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
+import {
+  sameOriginRequest,
+  privateHeaders,
+  readPrivateBody,
+} from '@/lib/private-request';
 
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
@@ -29,17 +33,9 @@ export async function POST(request: Request) {
         { error: 'Somente a secretaria pode preparar a declaração.' },
         { status: 403, headers: privateHeaders },
       );
-    if (Number(request.headers.get('content-length') ?? 0) > 16000)
-      return Response.json(
-        { error: 'Dados acima do limite.' },
-        { status: 413, headers: privateHeaders },
-      );
-    const body = await request.json();
-    if (!body || typeof body !== 'object' || Array.isArray(body))
-      return Response.json(
-        { error: 'Confira os dados.' },
-        { status: 400, headers: privateHeaders },
-      );
+    const input = await readPrivateBody(request, 16000);
+    if ('response' in input) return input.response;
+    const body = input.body;
     if (
       typeof body.studentId !== 'string' ||
       !/^[0-9a-f-]{36}$/i.test(body.studentId)

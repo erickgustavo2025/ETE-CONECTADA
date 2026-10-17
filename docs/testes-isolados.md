@@ -165,3 +165,18 @@ Essas provas não confirmam entrega real na caixa de e-mail.
 ## Relógio da conexão
 
 `npm run test:database-time` compara timestamps SQL/ORM e epoch, confere o pool real e opções de conexão inicialmente UTC/Fortaleza. Verifica preservação de DATE e statement_timeout, com marcador conferido antes de escrever e rollback das fixtures. A prova integra `test:integration`; não usa banco persistente. O procedimento de atualização está em [Horários do banco](seguranca/horarios-banco.md).
+
+## Leitura das APIs privadas
+
+As rotas privadas que recebem JSON limitam os bytes durante a leitura, antes de converter o corpo inteiro. Cabeçalho ausente ou subestimado não altera o teto. Corpo excessivo retorna413; JSON, UTF-8 ou raiz inválidos retornam400; mídia diferente deapplication/json retorna415. As respostas mantêm cache privado/no-store e nosniff. Sessão, papel e origem continuam conferidos antes de processar o corpo.
+
+| Operação                                       | Limite em bytes |
+| ---------------------------------------------- | --------------: |
+| Pedido de declaração e liberação para retirada |           1.000 |
+| Busca de alunos                                |           4.096 |
+| PDF individual                                 |          16.000 |
+| Lote de PDFs                                   |         400.000 |
+
+O acesso mantém4.096bytes; o importador XLS mantém seu leitor próprio de3MiB e limite de arquivo de2MiB. Os controles de tamanho não substituem autorização, validação de campos ou limites de infraestrutura.
+
+`npm run test:private-input` usa contas de aluno e secretaria fictícias, PostgreSQL identificado e portal próprio. Em cada rota, aquece a compilação e envia um stream acima do limite sem concluir o upload: o servidor precisa responder413antes deEOF. Confere origens, papel, ausência de cookie, mídia/JSON inválidos, headers e preservação de contas/sessões/solicitações. Integra a suíte serial `test:integration` e remove as fixtures no finally. Os unitários do leitor compartilhado cobrem fronteiras UTF-8 de cada limite e cancelamento antecipado, inclusive quando a promessa de cancelamento não termina. Não executar no banco persistente da demonstração.

@@ -1,18 +1,22 @@
-import { currentSession } from "@/lib/session";
-import { privateHeaders, sameOriginRequest } from "@/lib/private-request";
+import { currentSession } from '@/lib/session';
+import {
+  privateHeaders,
+  sameOriginRequest,
+  readPrivateBody,
+} from '@/lib/private-request';
 import {
   requestDeclaration,
   requestFailure,
   studentRequests,
   validRequestId,
-} from "@/lib/declaration-requests";
-export const runtime = "nodejs";
+} from '@/lib/declaration-requests';
+export const runtime = 'nodejs';
 export async function GET() {
   try {
     const session = await currentSession();
     if (!session)
       return Response.json(
-        { error: "Entre novamente para continuar." },
+        { error: 'Entre novamente para continuar.' },
         { status: 401, headers: privateHeaders },
       );
     return Response.json(
@@ -30,34 +34,22 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!sameOriginRequest(request))
     return Response.json(
-      { error: "Origem não autorizada." },
+      { error: 'Origem não autorizada.' },
       { status: 403, headers: privateHeaders },
     );
   try {
     const session = await currentSession();
     if (!session)
       return Response.json(
-        { error: "Entre novamente para continuar." },
+        { error: 'Entre novamente para continuar.' },
         { status: 401, headers: privateHeaders },
       );
-    const raw = await request.text();
-    if (raw.length > 1000)
-      return Response.json(
-        { error: "Dados acima do limite." },
-        { status: 413, headers: privateHeaders },
-      );
-    let body;
-    try {
-      body = JSON.parse(raw);
-    } catch {
-      return Response.json(
-        { error: "Confira a matrícula escolhida." },
-        { status: 400, headers: privateHeaders },
-      );
-    }
+    const input = await readPrivateBody(request, 1000);
+    if ('response' in input) return input.response;
+    const body = input.body;
     if (!body || !validRequestId(body.enrollmentId))
       return Response.json(
-        { error: "Escolha sua matrícula." },
+        { error: 'Escolha sua matrícula.' },
         { status: 400, headers: privateHeaders },
       );
     // A identidade vem da sessão. Nenhum studentId enviado pelo cliente é usado.

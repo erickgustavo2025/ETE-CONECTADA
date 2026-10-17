@@ -8,7 +8,11 @@ import {
   DeclarationValidationError,
 } from '@/lib/declarations';
 import { createDeclarationsPdf } from '@/lib/declaration-pdf';
-import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
+import {
+  sameOriginRequest,
+  privateHeaders,
+  readPrivateBody,
+} from '@/lib/private-request';
 
 export const runtime = 'nodejs';
 export async function POST(request: Request) {
@@ -29,26 +33,9 @@ export async function POST(request: Request) {
         { error: 'Somente a secretaria pode preparar as declarações.' },
         { status: 403, headers: privateHeaders },
       );
-    if (Number(request.headers.get('content-length') ?? 0) > 400000)
-      return Response.json(
-        { error: 'Dados acima do limite do lote.' },
-        { status: 413, headers: privateHeaders },
-      );
-    const raw = await request.text();
-    if (raw.length > 400000)
-      return Response.json(
-        { error: 'Dados acima do limite do lote.' },
-        { status: 413, headers: privateHeaders },
-      );
-    let body;
-    try {
-      body = JSON.parse(raw);
-    } catch {
-      return Response.json(
-        { error: 'Confira os dados do lote.' },
-        { status: 400, headers: privateHeaders },
-      );
-    }
+    const input = await readPrivateBody(request, 400000);
+    if ('response' in input) return input.response;
+    const body = input.body;
     if (
       !body ||
       !Array.isArray(body.items) ||
