@@ -99,14 +99,16 @@ test('recusa CPF com cada dígito verificador alterado, repetido ou de tipo desc
   assert.equal(normalizeCpf(12345678909), null);
 });
 
-test('aceita matrículas de 7 ou 8 dígitos, preservando zeros e removendo espaços externos', () => {
+test('aceita matrículas de 6 a 8 dígitos, preservando zeros e removendo espaços externos', () => {
+  assert.equal(normalizeSchoolRegistration('123456'), '123456');
+  assert.equal(normalizeSchoolRegistration(' 000123 '), '000123');
   assert.equal(normalizeSchoolRegistration(' 0123456 '), '0123456');
   assert.equal(normalizeSchoolRegistration('00123456'), '00123456');
 });
 
 test('recusa matrículas fora dos limites ou que não sejam strings numéricas', () => {
   for (const value of [
-    '123456',
+    '12345',
     '123456789',
     '12 34567',
     '',

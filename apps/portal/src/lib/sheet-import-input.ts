@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { Worker } from 'node:worker_threads';
+import { normalizeSchoolRegistration } from './registration';
 
 export class SheetImportError extends Error {
   constructor(
@@ -262,7 +263,7 @@ export async function parseSheetInput(
         throw new SheetImportError('Confira as matrículas já cadastradas.');
       for (const [key, id] of Object.entries(c.bindings)) {
         if (
-          !/^\d{7,8}$/.test(key) ||
+          normalizeSchoolRegistration(key) !== key ||
           typeof id !== 'string' ||
           (id !== 'new' && !uuid.test(id))
         )
@@ -307,29 +308,40 @@ export async function parseSheetInput(
     for (let i = 6; i < s.rows.length; i++) {
       const cells = s.rows[i];
       if (cells.every((x) => !x.trim())) continue;
-      const fail = () => {
+      const fail = (field = 'os dados', guidance = ''): never => {
         throw new SheetImportError(
-          `Confira os dados da aba ${sheet + 1}, linha ${i + 1}.`,
+          `Confira ${field} na aba ${sheet + 1}, linha ${i + 1}.${guidance ? ` ${guidance}` : ''}`,
         );
       };
-      const registration = cells[0]?.trim(),
+      const registration = normalizeSchoolRegistration(cells[0]),
         birth = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(cells[2] || '');
-      if (!/^\d{7,8}$/.test(registration) || !birth || seen.has(registration))
-        fail();
-      const iso = `${birth![3]}-${birth![2]}-${birth![1]}`,
+      if (!registration)
+        return fail(
+          'a matrícula',
+          'Use de 6 a 8 dígitos, sem letras ou símbolos.',
+        );
+      if (seen.has(registration))
+        fail('a matrícula', 'Ela aparece mais de uma vez na planilha.');
+      if (!birth)
+        return fail('a data de nascimento', 'Use o formato dia/mês/ano.');
+      const iso = `${birth[3]}-${birth[2]}-${birth[1]}`,
         date = new Date(`${iso}T00:00:00Z`);
       if (
         !Number.isFinite(date.valueOf()) ||
         date.toISOString().slice(0, 10) !== iso ||
         date > new Date()
       )
-        fail();
+        fail(
+          'a data de nascimento',
+          'Informe uma data existente que não esteja no futuro.',
+        );
       seen.add(registration);
       const parents = (cells[8] || '')
         .split(',')
         .map((p) => p.trim())
         .filter(Boolean);
-      if (parents.length > 2) fail();
+      if (parents.length > 2)
+        fail('a filiação', 'Informe até dois nomes separados por vírgula.');
       rows.push({
         sheet: sheet + 1,
         line: i + 1,

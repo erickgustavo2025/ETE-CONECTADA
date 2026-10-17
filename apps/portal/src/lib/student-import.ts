@@ -1,3 +1,5 @@
+import { normalizeSchoolRegistration } from './registration';
+
 type BackupStudent = {
   sourceId: string;
   schoolRegistration: string;
@@ -44,7 +46,7 @@ export function parseStudentBackup(value: unknown): BackupStudent[] {
       !/^[a-f0-9]{24}$/i.test(id) ||
       !name ||
       name.length > 180 ||
-      !/^\d{7,8}$/.test(registration) ||
+      !normalizeSchoolRegistration(registration) ||
       !classroom ||
       !date
     )

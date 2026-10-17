@@ -426,12 +426,21 @@ export default function SchoolImport({
               : 'Para atualizar alunos, escolha a turma já cadastrada. Cadastre uma nova turma somente se for outro grupo de alunos. Confira o curso e o ano de ingresso.'}
           </p>
           {subsequent && (
-            <p className={styles.notice}>
-              Escolha uma turma com calendário cadastrado para cada aba. Se a
-              turma ainda não aparecer,{' '}
-              <a href="/secretaria/calendarios">cadastre o calendário</a> e leia
-              o arquivo novamente.
-            </p>
+            <>
+              <p>
+                Ingresso é o semestre em que a turma começou o curso e não muda
+                ao passar de módulo. Período letivo é o semestre do módulo desta
+                aba. Ex.: uma turma que ingressou em 2026.2 pode cursar o
+                segundo módulo em 2027.1. Use o calendário da escola para
+                conferir as informações.
+              </p>
+              <p className={styles.notice}>
+                Escolha uma turma com calendário cadastrado para cada aba. Se a
+                turma ainda não aparecer,{' '}
+                <a href="/secretaria/calendarios">cadastre o calendário</a> e
+                leia o arquivo novamente.
+              </p>
+            </>
           )}
           <fieldset disabled={!!busy} className={styles.contexts}>
             <legend className={styles.srOnly}>Dados das turmas</legend>

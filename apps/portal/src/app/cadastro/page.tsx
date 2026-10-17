@@ -214,9 +214,9 @@ export default function CadastroPage() {
                   type="text"
                   inputMode="numeric"
                   autoComplete="off"
-                  minLength={7}
+                  minLength={6}
                   maxLength={8}
-                  pattern="[0-9]{7,8}"
+                  pattern="[0-9]{6,8}"
                   placeholder="Sua matrícula na escola"
                   required
                   disabled={busy}

@@ -14,7 +14,7 @@ async function main() {
   }
   const cpf = digits.join('');
   const identity = {
-    schoolRegistration: String(randomInt(10000000, 99999999)),
+    schoolRegistration: `0${randomInt(10000, 99999)}`,
     birthDate: '2008-01-15',
     parentName: 'Filiação Fictícia Um',
   };
