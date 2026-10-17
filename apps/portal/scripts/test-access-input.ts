@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import crypto from 'node:crypto';
 import { syncBuiltinESMExports } from 'node:module';
+import { readJsonObject } from '../src/lib/request-body';
 import {
   readAccessBody,
   validAccessPassword,
@@ -15,6 +16,28 @@ const jsonRequest = (body: unknown) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+
+test('limites por rota contam UTF-8 no teto e com cabeçalho subestimado', async () => {
+  for (const limit of [1000, 4096, 16000, 400000]) {
+    const exact = JSON.stringify({ value: 'a'.repeat(limit - 14) + 'é' });
+    assert.equal(Buffer.byteLength(exact), limit);
+    const request = (body: string) =>
+      new Request(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': '1',
+        },
+        body,
+      });
+    assert.ok('body' in (await readJsonObject(request(exact), limit)));
+    assert.deepEqual(await readJsonObject(request(exact + ' '), limit), {
+      status: 413,
+    });
+  }
+  for (const limit of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, 1.5])
+    await assert.rejects(readJsonObject(jsonRequest({}), limit), RangeError);
+});
 
 async function rejected(request: Request, status: number) {
   const result = await readAccessBody(request);
