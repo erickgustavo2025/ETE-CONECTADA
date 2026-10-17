@@ -53,7 +53,7 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
   try {
     const student = await db.student.create({
       data: {
-        schoolRegistration: String(randomInt(10000000, 99999999)),
+        schoolRegistration: `0${randomInt(10000, 99999)}`,
         birthDate: new Date('2008-01-15T00:00:00.000Z'),
         fullName: `Estudante sintético ${suffix}`,
         registrationAllowed: true,

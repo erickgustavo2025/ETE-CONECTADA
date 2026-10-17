@@ -17,15 +17,15 @@ O leitor deve preservar posições vazias da grade. Uma aba recebida tem alguns
 cabeçalhos intermediários removidos, mas a filiação permanece na nona posição.
 Não comprimir as células vazias nem deslocar a coluna de filiação.
 
-| Informação      | Fonte                                  | Tratamento                                                                                              |
-| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Matrícula       | Coluna `Matrícula`                     | Identificador textual; preservar zeros à esquerda e rejeitar ausência/ambiguidade.                      |
-| Nome civil      | Coluna `Nome`                          | Preservar grafia; normalizar apenas espaços para armazenamento.                                         |
-| Nascimento      | Coluna `Data de nascimento`            | Texto `dd/mm/aaaa`; validar dia, mês e ano e armazenar como data sem fuso.                              |
-| Filiação        | Coluna `Filiação 1 e 2`                | Campo combinado; vírgula separa os nomes no formato recebido. Um nome ou ausência também são possíveis. |
-| Curso e turma   | Cabeçalho da aba                       | Conferir antes da importação; não usar a procedência individual como curso atual.                       |
-| Série ou módulo | Cabeçalho da turma                     | Série no integrado; módulo no subsequente. Não são o mesmo atributo.                                    |
-| Modalidade      | Entrada escolhida e contexto conferido | Integrado ou subsequente, com recusa quando contexto e entrada discordarem.                             |
+| Informação      | Fonte                                  | Tratamento                                                                                                                           |
+| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Matrícula       | Coluna `Matrícula`                     | Identificador textual de 6 a 8 dígitos; preservar zeros à esquerda, sem completar ou remover dígitos. Rejeitar ausência/ambiguidade. |
+| Nome civil      | Coluna `Nome`                          | Preservar grafia; normalizar apenas espaços para armazenamento.                                                                      |
+| Nascimento      | Coluna `Data de nascimento`            | Texto `dd/mm/aaaa`; validar dia, mês e ano e armazenar como data sem fuso.                                                           |
+| Filiação        | Coluna `Filiação 1 e 2`                | Campo combinado; vírgula separa os nomes no formato recebido. Um nome ou ausência também são possíveis.                              |
+| Curso e turma   | Cabeçalho da aba                       | Conferir antes da importação; não usar a procedência individual como curso atual.                                                    |
+| Série ou módulo | Cabeçalho da turma                     | Série no integrado; módulo no subsequente. Não são o mesmo atributo.                                                                 |
+| Modalidade      | Entrada escolhida e contexto conferido | Integrado ou subsequente, com recusa quando contexto e entrada discordarem.                                                          |
 
 Ignorar `Nº de classe`, `Sexo`, `Situação`, `Raça/Cor` e
 `Procedência modalidade/curso`, conforme a seleção da equipe. Não importar a

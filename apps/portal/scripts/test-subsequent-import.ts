@@ -63,7 +63,10 @@ async function main() {
       };
       await saveCourseCalendar(db, actor.account!.id, id, 0, draft, true);
       const sheet = sheetFixture('SUBSEQUENTE'),
-        registration = String(randomInt(10000000, 99999999));
+        registration =
+          courseLabel === 'DS'
+            ? `0${randomInt(10000, 99999)}`
+            : String(randomInt(10000000, 99999999));
       sheet.wb.Sheets['Fictícia'].A3 = {
         t: 's',
         v: `Técnico em ${courseLabel} - Subsequente`,

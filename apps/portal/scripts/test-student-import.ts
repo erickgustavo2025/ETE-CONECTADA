@@ -102,6 +102,8 @@ async function main() {
       'SELECT count(*) FROM retired_profile_photos',
     );
     const first = fixture('Aluno sintético A');
+    first.matricula = `0${randomInt(10000, 99999)}`;
+    registrations.add(first.matricula);
     const second = fixture('Aluno sintético B', '2B ADM');
     const rows = [first, second];
     const initial = await importRows(rows);

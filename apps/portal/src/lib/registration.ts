@@ -16,7 +16,7 @@ export function normalizeCpf(value: unknown): string | null {
 export function normalizeSchoolRegistration(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const registration = value.trim();
-  return /^\d{7,8}$/.test(registration) ? registration : null;
+  return /^\d{6,8}$/.test(registration) ? registration : null;
 }
 
 export function validBirthDate(value: unknown): value is string {

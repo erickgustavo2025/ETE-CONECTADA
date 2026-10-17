@@ -83,6 +83,23 @@ async function main() {
   assert.equal(input.rows[0].schoolRegistration, '00001001');
   assert.equal(input.rows[0].parentTwo, 'Filiação Fictícia Dois');
   assert.equal('sex' in input.rows[0], false);
+  // Exportações escolares também contêm matrículas de seis dígitos.
+  for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
+    const short = sheetFixture(mode);
+    short.wb.Sheets['Fictícia'].A7 = { t: 's', v: '000123' };
+    const parsed = await parseSheetInput(short.file(), mode, [
+      { ...short.context, bindings: { '000123': 'new' } },
+    ]);
+    assert.equal(parsed.rows[0].schoolRegistration, '000123');
+    assert.equal(parsed.rows[0].enrollmentId, 'new');
+    for (const invalid of ['12345', '123456789', '123-456', '12 3456']) {
+      short.wb.Sheets['Fictícia'].A7 = { t: 's', v: invalid };
+      await assert.rejects(
+        parseSheetInput(short.file(), mode, [short.context]),
+        /[Mm]atrícula.*aba 1.*linha 7/,
+      );
+    }
+  }
   await assert.rejects(
     parseSheetInput(f.file(), 'SUBSEQUENTE', [f.context]),
     /Modalidade/,
