@@ -59,7 +59,12 @@ export default function PasswordRecovery({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || !validation.validate(event.currentTarget) || (reset && !token))
+    if (
+      !validation.ready ||
+      busy ||
+      !validation.validate(event.currentTarget) ||
+      (reset && !token)
+    )
       return;
     const form = event.currentTarget,
       data = new FormData(form);
@@ -213,19 +218,28 @@ export default function PasswordRecovery({
                     <button
                       className="ete-button"
                       type="submit"
-                      disabled={busy}
+                      disabled={busy || !validation.ready}
+                      aria-busy={busy || !validation.ready}
                     >
-                      {busy
-                        ? reset
-                          ? 'Alterando…'
-                          : 'Enviando…'
-                        : reset
-                          ? 'Salvar nova senha'
-                          : 'Enviar link'}
+                      {!validation.ready
+                        ? 'Carregando…'
+                        : busy
+                          ? reset
+                            ? 'Alterando…'
+                            : 'Enviando…'
+                          : reset
+                            ? 'Salvar nova senha'
+                            : 'Enviar link'}
                     </button>
                   </form>
                 )
               )}
+              <noscript>
+                <p className="form-note">
+                  Para usar este formulário, ative o JavaScript do navegador ou
+                  procure a secretaria.
+                </p>
+              </noscript>
               {message && (
                 <p role="status" className="registration-result">
                   {message}
