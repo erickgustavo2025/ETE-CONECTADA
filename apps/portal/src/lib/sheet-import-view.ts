@@ -87,13 +87,13 @@ export const IMPORT_ACTION_LABELS = {
   create: 'Incluir',
   update: 'Atualizar',
   unchanged: 'Sem alteração',
-  conflict: 'Conflito',
+  conflict: 'Conferir pendência',
 };
 export const IMPORT_FIELD_LABELS: Record<string, string> = {
   fullName: 'Nome',
   birthDate: 'Nascimento',
-  parentOne: 'Filiação registrada',
-  parentTwo: 'Segunda filiação',
+  parentOne: 'Nome do pai ou da mãe',
+  parentTwo: 'Outro nome de pai ou mãe',
   className: 'Turma',
   courseLabel: 'Curso',
   periodLabel: 'Período',

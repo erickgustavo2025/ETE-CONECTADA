@@ -30,7 +30,7 @@ async function offerings(tx: Tx, ids?: string[]) {
   });
   if (rows.length > 200)
     throw new CalendarError(
-      'Há mais de 200 ofertas; solicite revisão do catálogo.',
+      'Há mais de 200 turmas cadastradas. Procure o suporte.',
       409,
     );
   return rows.map((row) => {
@@ -39,7 +39,10 @@ async function offerings(tx: Tx, ids?: string[]) {
       throw new CalendarError('Calendário incompleto; solicite revisão.', 409);
     const draft = readCalendarDraft(version.schedule);
     if (draft.courseLabel !== row.courseLabel)
-      throw new CalendarError('Curso divergente no calendário.', 409);
+      throw new CalendarError(
+        'O curso informado é diferente do curso do calendário.',
+        409,
+      );
     return { ...row, version, draft };
   });
 }
@@ -91,7 +94,7 @@ export async function synchronizeCalendars(
   });
   if (rows.length > 10000)
     throw new CalendarError(
-      'Lote de progressão acima do limite. Solicite revisão.',
+      'Selecione até 100 matrículas por vez para mudar o módulo.',
       409,
     );
   let advanced = 0,
@@ -127,7 +130,7 @@ export async function synchronizeCalendars(
     for (const row of cohort) {
       if (row.courseLabel !== course.courseLabel)
         throw new CalendarError(
-          'Matrícula e oferta possuem cursos divergentes.',
+          'O curso da matrícula é diferente do curso desta turma.',
           409,
         );
       const decision = progressionDecision(row, course.draft, now);
@@ -141,7 +144,7 @@ export async function synchronizeCalendars(
         const old = previousDrafts.get(row.calendarRevision!);
         if (!old)
           throw new CalendarError(
-            'Referência do calendário ausente. Solicite revisão.',
+            'O calendário desta turma não foi encontrado. Atualize a página e confira a turma.',
             409,
           );
         if (
@@ -264,7 +267,7 @@ export async function saveCourseCalendar(
     confirmed !== true
   )
     throw new CalendarError(
-      'Confirme as datas oficiais e a versão do calendário.',
+      'Confira as datas do calendário escolar e confirme para salvar.',
     );
   const draft = readCalendarDraft(value);
   return db.$transaction(
@@ -274,7 +277,7 @@ export async function saveCourseCalendar(
       if (current) {
         if (current.courseLabel !== draft.courseLabel)
           throw new CalendarError(
-            'O curso da oferta não pode ser trocado. Crie outra oferta.',
+            'Não é possível trocar o curso de uma turma já cadastrada. Cadastre outra turma para o novo curso.',
             409,
           );
         if (
@@ -295,7 +298,7 @@ export async function saveCourseCalendar(
       } else {
         if (revision !== 0)
           throw new CalendarError(
-            'Oferta não encontrada. Recarregue a lista.',
+            'Turma não encontrada. Atualize a lista.',
             409,
           );
         await tx.courseOffering.create({
@@ -331,12 +334,12 @@ export async function courseMembers(
     page < 0 ||
     page > 200
   )
-    throw new CalendarError('Confira a oferta e a página.');
+    throw new CalendarError('Escolha a turma e confira a página da lista.');
   return db.$transaction(
     async (tx) => {
       await lockCalendarWrites(tx, actorId);
       const course = (await offerings(tx, [offeringId]))[0];
-      if (!course) throw new CalendarError('Oferta não encontrada.', 404);
+      if (!course) throw new CalendarError('Turma não encontrada.', 404);
       const rows = await tx.enrollment.findMany({
         where: {
           mode: 'SUBSEQUENTE',
@@ -393,7 +396,7 @@ export async function setCourseProgression(
     new Set(enrollmentIds).size !== enrollmentIds.length
   )
     throw new CalendarError(
-      'Selecione até 100 vínculos e confirme a política de progressão.',
+      'Selecione até 100 matrículas e confirme a mudança automática de módulo.',
     );
   return db.$transaction(
     async (tx) => {
@@ -401,7 +404,7 @@ export async function setCourseProgression(
       const course = (await offerings(tx, [offeringId]))[0];
       if (!course || course.version.revision !== revision)
         throw new CalendarError(
-          'A oferta ou o calendário mudou. Recarregue a lista.',
+          'Os dados da turma ou do calendário mudaram. Atualize a lista e confira novamente.',
           409,
         );
       const rows = await tx.enrollment.findMany({
@@ -422,12 +425,12 @@ export async function setCourseProgression(
             !row.schoolImportKey.startsWith(`school:${offeringId}:`))
         )
           throw new CalendarError(
-            'Confira curso, oferta, situação e módulo dos vínculos selecionados.',
+            'Confira o curso, a turma, a situação e o módulo das matrículas selecionadas.',
             409,
           );
         if (!hold && (!current || row.moduleNumber !== current.number))
           throw new CalendarError(
-            'O módulo escolar diverge do calendário. Mantenha a exceção até conferir a fonte.',
+            'O módulo do aluno é diferente do calendário. Mantenha a mudança automática pausada até conferir o registro escolar.',
             409,
           );
       }

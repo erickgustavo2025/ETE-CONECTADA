@@ -182,8 +182,9 @@ export default function PortalHome({
                 </h1>
                 <p>Bom ter você por aqui.</p>
                 <p className={styles.help}>
-                  Solicite documentos e acompanhe o atendimento da escola pelo
-                  menu de serviços.
+                  {role === 'secretary'
+                    ? 'Atenda os pedidos dos alunos e organize as turmas pelo menu de serviços.'
+                    : 'Solicite documentos e acompanhe o atendimento da escola pelo menu de serviços.'}
                 </p>
                 <button
                   className={styles.welcomeAction}
@@ -217,8 +218,9 @@ export default function PortalHome({
               <span>
                 <strong>Declaração de vínculo</strong>
                 <br />
-                Peça pelo portal e acompanhe quando estiver pronta para buscar
-                na escola.
+                {role === 'secretary'
+                  ? 'Abra o menu de serviços para conferir os pedidos e preparar as declarações dos alunos.'
+                  : 'Peça pelo portal e acompanhe quando estiver pronta para buscar na escola.'}
               </span>
             </p>
           </>

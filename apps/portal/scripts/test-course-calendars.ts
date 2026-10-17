@@ -261,7 +261,10 @@ async function main() {
         true,
         atTurn,
       ),
-      /diverge/,
+      (error: unknown) =>
+        error instanceof CalendarError &&
+        error.status === 409 &&
+        /módulo.*calendário/i.test(error.message),
     );
     await assert.rejects(
       setCourseProgression(

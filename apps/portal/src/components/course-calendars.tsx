@@ -80,7 +80,7 @@ export default function CourseCalendars() {
         );
         if (result.changes.advanced || result.changes.updatedDates)
           setNotice(
-            'Calendário atualizado. Confira novamente os vínculos alterados antes de emitir declarações.',
+            'Calendário atualizado. Confira as matrículas alteradas antes de emitir declarações.',
           );
       })
       .catch((e) => {
@@ -97,14 +97,14 @@ export default function CourseCalendars() {
       <p className={styles.eyebrow}>Secretaria · Subsequente</p>
       <h1>Calendário do subsequente</h1>
       <p>
-        Cadastre as datas oficiais de cada oferta. ADM e DS têm três módulos;
-        Enfermagem tem quatro. Turmas com entradas diferentes precisam de
-        ofertas próprias.
+        Cadastre o calendário de cada turma. Administração e Desenvolvimento de
+        Sistemas têm três módulos; Enfermagem tem quatro. Cadastre separadamente
+        as turmas que começaram em semestres diferentes.
       </p>
       <p className={styles.note}>
-        A progressão é conferida ao abrir ou atualizar esta tela. O calendário
-        não comprova conclusão do curso. Vínculos alterados precisam de nova
-        conferência; ausentes na planilha não são excluídos.
+        Ao abrir ou atualizar esta página, o sistema confere as datas para mudar
+        o módulo dos alunos autorizados. Isso não confirma a conclusão do curso.
+        Confira as matrículas alteradas antes de emitir uma declaração.
       </p>
       <div className={styles.feedback} role="status">
         {loading ? 'Conferindo calendário…' : notice}
@@ -140,7 +140,7 @@ export default function CourseCalendars() {
                 })
               }
             >
-              Nova oferta
+              Cadastrar turma
             </button>
             <button
               className="ete-button ete-button--secondary"
@@ -154,7 +154,7 @@ export default function CourseCalendars() {
             <>
               {courses.length ? (
                 <>
-                  <label htmlFor="offering">Oferta</label>
+                  <label htmlFor="offering">Turma e ingresso</label>
                   <select
                     id="offering"
                     value={selected}
@@ -173,7 +173,6 @@ export default function CourseCalendars() {
                     <>
                       <h2>{course.draft.label}</h2>
                       <p>
-                        Versão {course.revision} ·{' '}
                         {course.currentModule
                           ? `Módulo atual: ${course.currentModule}`
                           : 'Aguardando início das aulas'}
@@ -183,14 +182,15 @@ export default function CourseCalendars() {
                       </p>
                       {course.needsUpdatedList && (
                         <p className={styles.notice}>
-                          Solicite a planilha atualizada desta oferta para
-                          conferir novos alunos, ausentes e divergências.
+                          Solicite uma planilha atualizada desta turma para
+                          conferir quem entrou, quem não aparece na lista e
+                          quais dados mudaram.
                         </p>
                       )}
                       <p>
-                        {course.counts.total} vínculos associados ·{' '}
-                        {course.counts.held} com progressão pausada ·{' '}
-                        {course.counts.unconfirmed} aguardando conferência.
+                        Matrículas nesta turma: {course.counts.total} · Sem
+                        mudança automática de módulo: {course.counts.held} ·
+                        Aguardando conferência: {course.counts.unconfirmed}.
                       </p>
                       <button
                         className="ete-button ete-button--secondary"
@@ -214,8 +214,8 @@ export default function CourseCalendars() {
                 </>
               ) : (
                 <p>
-                  Nenhuma oferta cadastrada. Comece com as datas confirmadas
-                  pela secretaria.
+                  Nenhuma turma cadastrada. Clique em Cadastrar turma e informe
+                  as datas do calendário escolar.
                 </p>
               )}
             </>
@@ -273,19 +273,19 @@ function CalendarEditor({
         }
       }}
     >
-      <h2>{editor.revision ? 'Editar calendário' : 'Nova oferta'}</h2>
+      <h2>{editor.revision ? 'Editar calendário' : 'Cadastrar turma'}</h2>
       <p className={styles.fileName}>
-        Use o mesmo identificador da oferta na importação:{' '}
-        <code>{editor.id}</code>. Uma nova versão preserva as datas anteriores
-        no histórico.
+        Informe a turma, o semestre de ingresso e as datas do calendário
+        escolar. Depois, escolha esta turma ao importar a planilha de alunos.
       </p>
       <fieldset disabled={busy} className={styles.contexts}>
         <div className={styles.fields}>
           <div>
-            <label htmlFor="calendar-label">Nome da oferta</label>
+            <label htmlFor="calendar-label">Turma e ingresso</label>
             <input
               id="calendar-label"
               name="label"
+              placeholder="Ex.: DS A — ingresso 2026.2"
               required
               maxLength={120}
               value={draft.label}
@@ -390,7 +390,7 @@ function CalendarEditor({
             required
             {...validation.field('confirmed')}
           />
-          Conferi as datas e os períodos com o calendário oficial desta oferta.
+          Conferi as datas e os períodos com o calendário escolar desta turma.
         </label>
       </fieldset>
       {validation.error && (
@@ -483,13 +483,13 @@ function CalendarMembers({
   );
   return (
     <>
-      <h2>Vínculos e exceções</h2>
+      <h2>Alunos e mudança de módulo</h2>
       <p>
-        Associe cada aluno à oferta correta. A progressão automática só é
-        ativada após confirmação. Pausar preserva o módulo escolar até a
-        conferência.
+        Confira se cada matrícula pertence a esta turma. Ao ativar a mudança
+        automática, o aluno passa de módulo nas datas do calendário. Ao pausar,
+        ele permanece no módulo informado até nova conferência.
       </p>
-      {loading && <p role="status">Carregando vínculos…</p>}
+      {loading && <p role="status">Carregando alunos…</p>}
       {error && (
         <p className={styles.error} role="alert">
           {error}
@@ -501,7 +501,7 @@ function CalendarMembers({
           disabled={loading || busy}
           onClick={() => setReload((n) => n + 1)}
         >
-          Recarregar vínculos
+          Atualizar alunos
         </button>
         <button
           className="ete-button ete-button--secondary"
@@ -510,12 +510,12 @@ function CalendarMembers({
             ask(
               eligible.map((m) => m.id),
               false,
-              `${eligible.length} vínculos já associados nesta página`,
+              `Matrículas selecionadas nesta página: ${eligible.length}`,
               e.currentTarget,
             )
           }
         >
-          Ativar progressão nesta página
+          Ativar mudança de módulo nesta página
         </button>
       </div>
       {!loading && !error && (
@@ -524,15 +524,15 @@ function CalendarMembers({
             className={styles.tableWrap}
             tabIndex={0}
             role="region"
-            aria-label="Vínculos da oferta"
+            aria-label="Alunos da turma"
           >
             <table className={styles.table}>
-              <caption>Página {page + 1} · até 50 vínculos</caption>
+              <caption>Página {page + 1} · até 50 matrículas</caption>
               <thead>
                 <tr>
                   <th>Aluno</th>
                   <th>Turma e módulo</th>
-                  <th>Progressão</th>
+                  <th>Mudança de módulo</th>
                   <th>Ação</th>
                 </tr>
               </thead>
@@ -554,7 +554,7 @@ function CalendarMembers({
                     </td>
                     <td>
                       {!m.offeringId
-                        ? 'Sem oferta'
+                        ? 'Sem turma vinculada'
                         : m.progressionHeld
                           ? 'Pausada'
                           : 'Automática'}
@@ -571,14 +571,14 @@ function CalendarMembers({
                                 true,
                                 m.student.fullName ||
                                   m.student.schoolRegistration ||
-                                  'Vínculo escolar',
+                                  'Matrícula escolar',
                                 e.currentTarget,
                               )
                             }
                           >
                             {m.offeringId
-                              ? 'Pausar progressão'
-                              : 'Associar com progressão pausada'}
+                              ? 'Pausar mudança de módulo'
+                              : 'Vincular à turma sem mudar módulo'}
                           </button>
                           {m.moduleNumber === course.currentModule && (
                             <button
@@ -590,12 +590,12 @@ function CalendarMembers({
                                   false,
                                   m.student.fullName ||
                                     m.student.schoolRegistration ||
-                                    'Vínculo escolar',
+                                    'Matrícula escolar',
                                   e.currentTarget,
                                 )
                               }
                             >
-                              Ativar progressão
+                              Ativar mudança de módulo
                             </button>
                           )}
                         </>
@@ -608,8 +608,11 @@ function CalendarMembers({
           </div>
           {!data.members.length && (
             <p>
-              Nenhum vínculo disponível nesta página. A importação do
-              subsequente será disponibilizada separadamente.
+              Nenhum aluno disponível nesta página. Importe a planilha em{' '}
+              <a href="/secretaria/importacao/subsequente">
+                Importar alunos do subsequente
+              </a>{' '}
+              e confira a turma escolhida.
             </p>
           )}
           <div className={styles.actions}>
@@ -639,12 +642,12 @@ function CalendarMembers({
           if (!busy) setPending(null);
         }}
       >
-        <h2 id="policy-title">Confirmar progressão</h2>
+        <h2 id="policy-title">Confirmar mudança de módulo</h2>
         <p>{pending?.label}</p>
         <p>
           {pending?.hold
-            ? 'O vínculo será associado a esta oferta e mantido com progressão pausada.'
-            : 'Confirme que estes vínculos pertencem a esta oferta e ao módulo atual. As próximas mudanças do calendário exigirão nova conferência antes da emissão.'}
+            ? 'A matrícula ficará vinculada a esta turma. O módulo do aluno não será alterado automaticamente.'
+            : 'Confirme que as matrículas selecionadas são desta turma e estão no módulo atual. O sistema passará a mudar o módulo nas datas do calendário. Confira novamente os dados antes de emitir declarações.'}
         </p>
         {error && (
           <p role="alert" className={styles.error}>

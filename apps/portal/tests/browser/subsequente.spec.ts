@@ -94,12 +94,12 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
       page.getByRole('link', { name: 'cadastre o calendário', exact: true }),
     ).toBeVisible();
     expect(
-      await page.getByLabel('Oferta desta aba').locator('option').count(),
+      await page.getByLabel('Turma e ingresso').locator('option').count(),
     ).toBe(1);
     await page
       .getByRole('button', { name: 'Gerar prévia', exact: true })
       .click();
-    await expect(page.getByLabel('Oferta desta aba')).toBeFocused();
+    await expect(page.getByLabel('Turma e ingresso')).toBeFocused();
     await page
       .getByRole('button', { name: 'Trocar arquivo', exact: true })
       .click();
@@ -159,7 +159,7 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
         id = randomUUID();
       offers.push(id);
       const draft: CalendarDraft = {
-        label: `Oferta fictícia UI ${courseLabel}`,
+        label: `Turma fictícia UI ${courseLabel}`,
         courseLabel,
         startsOn: `${year}-01-01`,
         endsOn: `${year + count - 1}-12-31`,
@@ -184,9 +184,9 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
       true,
     );
     const configure = async (id: string, className: string) => {
-      await page.getByLabel('Oferta desta aba').selectOption(id);
+      await page.getByLabel('Turma e ingresso').selectOption(id);
       await page.getByLabel('Nome da turma').fill(className);
-      await page.getByRole('checkbox', { name: /Conferi oferta/ }).check();
+      await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
       await page
         .getByRole('button', { name: 'Gerar prévia', exact: true })
         .click();
@@ -222,7 +222,7 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
           }),
         ).toBeDisabled();
         await dialog
-          .getByRole('checkbox', { name: /Conferi as divergências/ })
+          .getByRole('checkbox', { name: /Conferi as diferenças/ })
           .check();
       }
       return dialog;
@@ -241,25 +241,27 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
         v: `${stage}MODULO - TURMA-FICTICIA`,
       };
       expect((await upload(sheet.file())).status()).toBe(200);
-      await expect(page.getByLabel('Oferta desta aba')).toHaveValue('');
+      await expect(page.getByLabel('Turma e ingresso')).toHaveValue('');
       if (courseLabel === 'DS')
         expect(
-          await page.getByLabel('Oferta desta aba').locator('option').count(),
+          await page.getByLabel('Turma e ingresso').locator('option').count(),
         ).toBe(3);
       await configure(course.id, `Turma fictícia ${courseLabel}`);
       if (courseLabel === 'DS') {
-        const binding = page.getByLabel('Vínculo para matrícula 00001001');
+        const binding = page.getByLabel(
+          'Escolha a matrícula do aluno 00001001',
+        );
         await expect(
           binding.getByRole('option', { name: /1º módulo/ }),
         ).toHaveCount(1);
         await binding.selectOption(legacy.id);
         await page
           .getByRole('button', {
-            name: 'Revisar associações escolhidas',
+            name: 'Conferir matrículas escolhidas',
             exact: true,
           })
           .click();
-        await page.getByRole('checkbox', { name: /Conferi oferta/ }).check();
+        await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
         await page
           .getByRole('button', { name: 'Gerar prévia', exact: true })
           .click();
@@ -272,7 +274,11 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
           name: 'Comparação com o calendário',
           exact: true,
         }),
-      ).toContainText(stage === 1 ? 'Compatível' : 'Divergência');
+      ).toContainText(
+        stage === 1
+          ? 'De acordo com o calendário'
+          : 'Módulo ou período diferente',
+      );
       const dialog = await openConfirmation(stage !== 1);
       if (courseLabel === 'ADM') {
         await saveCourseCalendar(

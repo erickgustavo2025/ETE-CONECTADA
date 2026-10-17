@@ -396,8 +396,8 @@ export default function SchoolImport({
         >
           <label htmlFor="import-file">Planilha de alunos do {modeLabel}</label>
           <p id="file-help">
-            Um arquivo XLS binário de até 2 MiB, com até 25 abas. XLSX e backup
-            JSON não são aceitos nesta entrada.
+            Selecione a planilha de alunos no formato .xls, com até 2 MB e 25
+            abas. Arquivos .xlsx não são aceitos aqui.
           </p>
           <input
             id="import-file"
@@ -422,16 +422,15 @@ export default function SchoolImport({
           <h2>Confira cada aba</h2>
           <p>
             {subsequent
-              ? 'Escolha o grupo de ingresso cadastrado no calendário. Ofertas com nomes parecidos podem ter datas diferentes.'
-              : 'Escolha a oferta que esta lista atualiza. Use uma nova oferta somente para outro grupo de ingresso. Nomes parecidos não comprovam que é a mesma turma.'}
+              ? 'Escolha a turma e o semestre de ingresso cadastrados no calendário. Confira as datas, mesmo que os nomes sejam parecidos.'
+              : 'Para atualizar alunos, escolha a turma já cadastrada. Cadastre uma nova turma somente se for outro grupo de alunos. Confira o curso e o ano de ingresso.'}
           </p>
           {subsequent && (
             <p className={styles.notice}>
-              Escolha uma oferta com calendário cadastrado para cada aba. Se
-              faltar a oferta,{' '}
+              Escolha uma turma com calendário cadastrado para cada aba. Se a
+              turma ainda não aparecer,{' '}
               <a href="/secretaria/calendarios">cadastre o calendário</a> e leia
-              o arquivo novamente. Nenhuma data será inventada a partir do nome
-              da turma.
+              o arquivo novamente.
             </p>
           )}
           <fieldset disabled={!!busy} className={styles.contexts}>
@@ -453,7 +452,7 @@ export default function SchoolImport({
                 </p>
                 <div className={styles.fields}>
                   <div className={styles.wide}>
-                    <label htmlFor={`scope-${index}`}>Oferta desta aba</label>
+                    <label htmlFor={`scope-${index}`}>Turma e ingresso</label>
                     <select
                       id={`scope-${index}`}
                       name={`scope-${index}`}
@@ -485,9 +484,7 @@ export default function SchoolImport({
                         !inspection.sources.some(
                           (s) => s.scopeId === context.scopeId,
                         ) && (
-                          <option value={context.scopeId}>
-                            Nova oferta para esta turma
-                          </option>
+                          <option value={context.scopeId}>Nova turma</option>
                         )}
                       {inspection.sources
                         .filter((s) => s.courseLabel === context.courseLabel)
@@ -497,7 +494,7 @@ export default function SchoolImport({
                           </option>
                         ))}
                       {!subsequent && (
-                        <option value="new">Registrar uma nova oferta</option>
+                        <option value="new">Cadastrar nova turma</option>
                       )}
                     </select>
                   </div>
@@ -548,15 +545,16 @@ export default function SchoolImport({
                       )
                     }
                   />
-                  Conferi oferta, turma, curso,{' '}
+                  Conferi turma, ingresso, curso,{' '}
                   {subsequent ? 'módulo' : 'série'} e período desta aba.
                 </label>
               </fieldset>
             ))}
           </fieldset>
           <p>
-            Uma prévia válida não confirma vínculo ativo nem libera primeiro
-            acesso. Alunos ausentes da lista serão preservados.
+            Confira a prévia antes de confirmar. Importar a lista não libera o
+            acesso ao portal nem autoriza a emissão de declarações. Quem não
+            aparecer na planilha não será excluído.
           </p>
           <div className={styles.actions}>
             <button className={button} disabled={!!busy || sessionExpired}>
@@ -608,7 +606,7 @@ export default function SchoolImport({
             );
             setPreview(null);
             setError(
-              'Associações escolhidas. Confira as abas e gere outra prévia.',
+              'Matrículas escolhidas. Confira as turmas e gere outra prévia.',
             );
           }}
           onConfirm={() => openDialog('confirm')}
@@ -619,15 +617,15 @@ export default function SchoolImport({
           <h2>Importação concluída</h2>
           <p>
             {result.createdStudents} alunos incluídos ·{' '}
-            {result.createdEnrollments} vínculos incluídos ·{' '}
+            {result.createdEnrollments} matrículas incluídas ·{' '}
             {result.updatedStudents} alunos atualizados ·{' '}
-            {result.updatedEnrollments} vínculos atualizados ·{' '}
+            {result.updatedEnrollments} matrículas atualizadas ·{' '}
             {result.unchanged} sem alteração.
           </p>
           <p>
-            {result.absent} vínculos ausentes da lista foram preservados. Os
-            registros atualizados que perderam a conferência precisam ser
-            conferidos novamente antes da emissão.
+            {result.absent} matrículas que não aparecem na lista foram mantidas.
+            Confira novamente as matrículas alteradas antes de emitir
+            declarações.
           </p>
           <button type="button" className={button} onClick={reset}>
             Importar outro arquivo
@@ -635,8 +633,8 @@ export default function SchoolImport({
         </div>
       )}
       <p className={styles.note}>
-        Ambiente de desenvolvimento. A importação mantém os dados de acesso e
-        não habilita contas ou emissão oficial.
+        Ambiente de teste. As senhas e os acessos existentes são mantidos. A
+        importação não cria contas nem autoriza a emissão oficial.
       </p>
       <dialog
         ref={dialog}
@@ -672,7 +670,8 @@ export default function SchoolImport({
                 {preview.counts.identityChanges === 1
                   ? 'aluno existente'
                   : 'alunos existentes'}
-                . Seus vínculos precisarão de nova conferência.
+                . Confira novamente as matrículas desses alunos antes de emitir
+                declarações.
               </label>
             )}
             {calendarDiffers && (
@@ -683,8 +682,9 @@ export default function SchoolImport({
                   disabled={!!busy}
                   onChange={(e) => setCalendarAccepted(e.target.checked)}
                 />
-                Conferi as divergências de módulo e período com a secretaria. Os
-                vínculos divergentes serão mantidos com progressão pausada.
+                Conferi as diferenças de módulo e período nos registros
+                escolares. As matrículas com diferenças ficarão sem mudança
+                automática de módulo.
               </label>
             )}
             {error && (

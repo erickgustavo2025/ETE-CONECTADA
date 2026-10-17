@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { hashPassword } from '../../src/lib/password';
-test('calendário de oferta exige datas conferidas e permite política explícita', async ({
+test('calendário de turma exige datas conferidas e permite política explícita', async ({
   page,
   context,
 }, testInfo) => {
@@ -48,16 +48,37 @@ test('calendário de oferta exige datas conferidas e permite política explícit
     ).toBeVisible();
 
     await page
-      .getByRole('button', { name: 'Nova oferta', exact: true })
+      .getByRole('button', { name: 'Cadastrar turma', exact: true })
       .click();
     await page
       .getByRole('button', { name: 'Salvar calendário', exact: true })
       .click();
     await expect(
-      page.getByLabel('Nome da oferta', { exact: true }),
+      page.getByLabel('Turma e ingresso', { exact: true }),
     ).toBeFocused();
-    const label = 'Oferta fictícia UI ' + randomUUID();
-    await page.getByLabel('Nome da oferta', { exact: true }).fill(label);
+    // A tela orienta a secretaria pelo nome da turma; IDs continuam internos.
+    await expect(page.locator('main')).not.toContainText(
+      /identificador|nova oferta|versão/i,
+    );
+    await expect(page.locator('main code')).toHaveCount(0);
+    await expect(
+      page.locator('nextjs-portal').getByRole('button', { name: /dev tools/i }),
+    ).toHaveCount(0);
+    for (const width of [1440, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.screenshot({
+        path: testInfo.outputPath(`secretaria-cadastro-turma-${width}.png`),
+        fullPage: true,
+      });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const label = 'Turma fictícia UI ' + randomUUID().slice(0, 8);
+    await page.getByLabel('Turma e ingresso', { exact: true }).fill(label);
     await page.getByLabel('Curso', { exact: true }).selectOption('ENF');
     await expect(
       page.getByRole('group', { name: 'Módulo 4', exact: true }),
@@ -108,7 +129,7 @@ test('calendário de oferta exige datas conferidas e permite política explícit
       .click();
     await expect(page.locator('#conteudo').getByRole('alert')).toBeVisible();
     await expect(
-      page.getByLabel('Nome da oferta', { exact: true }),
+      page.getByLabel('Turma e ingresso', { exact: true }),
     ).toHaveValue(label);
     offeringId = (
       await db.courseOffering.findFirstOrThrow({ where: { label } })
@@ -140,7 +161,7 @@ test('calendário de oferta exige datas conferidas e permite política explícit
     });
     pupilId = pupil.id;
     await page
-      .getByRole('button', { name: 'Recarregar vínculos', exact: true })
+      .getByRole('button', { name: 'Atualizar alunos', exact: true })
       .click();
     const row = page
       .getByRole('row')
@@ -148,12 +169,12 @@ test('calendário de oferta exige datas conferidas e permite política explícit
     await expect(row).toBeVisible();
     await row
       .getByRole('button', {
-        name: 'Associar com progressão pausada',
+        name: 'Vincular à turma sem mudar módulo',
         exact: true,
       })
       .click();
     const dialog = page.getByRole('dialog', {
-      name: 'Confirmar progressão',
+      name: 'Confirmar mudança de módulo',
       exact: true,
     });
     await expect(
@@ -163,13 +184,13 @@ test('calendário de oferta exige datas conferidas e permite política explícit
     await expect(dialog).not.toBeVisible();
     await expect(
       row.getByRole('button', {
-        name: 'Associar com progressão pausada',
+        name: 'Vincular à turma sem mudar módulo',
         exact: true,
       }),
     ).toBeFocused();
     await row
       .getByRole('button', {
-        name: 'Associar com progressão pausada',
+        name: 'Vincular à turma sem mudar módulo',
         exact: true,
       })
       .click();
@@ -181,11 +202,13 @@ test('calendário de oferta exige datas conferidas e permite política explícit
     ).toBeVisible();
     await page
       .getByRole('button', {
-        name: 'Ativar progressão nesta página',
+        name: 'Ativar mudança de módulo nesta página',
         exact: true,
       })
       .click();
-    await expect(dialog).toContainText('1 vínculos já associados');
+    await expect(dialog).toContainText(
+      'Matrículas selecionadas nesta página: 1',
+    );
     await dialog
       .getByRole('button', { name: 'Confirmar alteração', exact: true })
       .click();
@@ -218,7 +241,7 @@ test('calendário de oferta exige datas conferidas e permite política explícit
       .getByRole('button', { name: 'Editar calendário', exact: true })
       .click();
     await page
-      .getByLabel('Nome da oferta', { exact: true })
+      .getByLabel('Turma e ingresso', { exact: true })
       .fill(label + ' revista');
     await page.getByRole('checkbox', { name: /Conferi as datas/ }).check();
     await page
