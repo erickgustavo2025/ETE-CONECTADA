@@ -98,7 +98,7 @@ A secretaria pode gerar até 100 declarações por lote, uma por aluno. Quando i
 
 A versão atual prepara o documento para impressão e assinatura no papel. Os [modelos e o exemplo fictício](output/pdf/) estão disponíveis para revisão. O modelo próprio do subsequente, assinatura eletrônica e consulta por QR Code ainda fazem parte do trabalho futuro. A pesquisa sobre a emissão está em [Declaração de vínculo](docs/declaracao-vinculo/viabilidade.md).
 
-O [guia do banco](apps/portal/prisma/README.md) também explica a importação pelo backup JSON e a concessão de acesso à secretaria. O [núcleo de importação XLS](docs/importacao-nucleo.md) já valida arquivos, aplica alterações após confirmação e preserva o histórico das mudanças de matrícula pela API de desenvolvimento; a secretaria pode escolher a entrada do integrado ou do subsequente no menu do portal. Para o subsequente, cadastre antes o calendário da oferta e confira as divergências de módulo e período na prévia.
+O [guia do banco](apps/portal/prisma/README.md) também explica a importação pelo backup JSON e a concessão de acesso à secretaria. O [núcleo de importação XLS](docs/importacao-nucleo.md) já valida arquivos, aplica alterações após confirmação e preserva o histórico das mudanças de matrícula pela API de desenvolvimento; a secretaria pode escolher a entrada do integrado ou do subsequente no menu do portal. Para o subsequente, cadastre antes o calendário da turma e do ingresso e confira as divergências de módulo e período na prévia.
 
 ## Verificações disponíveis
 
@@ -128,7 +128,7 @@ Os testes de integração executam importação, cadastro, recuperação de senh
 
 Para testar as telas em Chromium, use `npm run test:browser` com o mesmo banco descartável. A suíte faz o primeiro acesso, retoma a confirmação, redefine a senha, entra e sai do portal e acompanha um pedido de declaração até a liberação para retirada. A instalação do navegador e os cuidados com os relatórios estão no [guia de testes de navegador](docs/testes-navegador.md). O CI também executa essa suíte.
 
-O [GitHub Actions](.github/workflows/ci.yml) já compila os apps, aplica as migrações e executa a integração em PostgreSQL temporário. Isso acontece nos PRs para `main` e nos pushes para `main` ou `feature/...`. O banco de cada execução é removido ao terminar. Os workflows também são validados antes do build. As permissões e os cuidados com PRs estão no [guia de segurança do CI](docs/seguranca/workflows.md).
+O [GitHub Actions](.github/workflows/ci.yml) já compila os apps, aplica as migrações e executa a integração em PostgreSQL temporário. Isso acontece nos PRs para `main` e nos pushes para `main`, `feature/...` ou `codex/...`. O banco de cada execução é removido ao terminar. Os workflows também são validados antes do build. As permissões e os cuidados com PRs estão no [guia de segurança do CI](docs/seguranca/workflows.md).
 
 O [Dependabot](.github/dependabot.yml) propõe atualizações semanais, que são revisadas antes do merge. A [auditoria de dependências](.github/workflows/dependency-audit.yml) também roda semanalmente e pode ser iniciada manualmente.
 
@@ -136,7 +136,7 @@ O [Dependabot](.github/dependabot.yml) propõe atualizações semanais, que são
 
 As tarefas estão no [Trello ETE CONECTADA](https://trello.com/b/gOjNklJZ/ete-conectada). Escolhemos uma tarefa por vez, trabalhamos em uma branch própria e abrimos um PR para revisão antes de integrar à `main`. Se a mudança envolver banco, dependências ou código compartilhado, combinamos os arquivos com o outro dev antes de começar.
 
-O [guia de contribuição](docs/contribuicao.md) mostra os comandos e o processo de revisão. O [template de PR](.github/PULL_REQUEST_TEMPLATE.md) ajuda a explicar o que mudou e como foi verificado.
+O [guia de contribuição](docs/contribuicao.md) mostra os comandos e o processo de revisão. O [template de PR](.github/PULL_REQUEST_TEMPLATE.md) ajuda a explicar o que mudou e como foi verificado. O [guia de segurança por funcionalidade](docs/seguranca/verificacao-por-funcionalidade.md) orienta os testes de acesso e de uso indevido de cada mudança.
 
 ## O que vem depois
 

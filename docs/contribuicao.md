@@ -19,7 +19,7 @@ Troque o nome da branch pelo card escolhido. `--ff-only` atualiza a branch somen
 
 ## Verificar e publicar
 
-Execute as verificações pertinentes à mudança e registre comando e resultado. Para código compartilhado ou alterações nas aplicações, `npm run build` verifica os dois apps; os demais comandos e a preparação do banco descartável estão no [README](../README.md#verificações-disponíveis). Para uma alteração apenas documental, revise conteúdo, links e diff. Use dados sintéticos nos testes e evidências.
+Execute as verificações pertinentes à mudança e registre comando e resultado. Para código compartilhado ou alterações nas aplicações, `npm run build` verifica os dois apps; os demais comandos e a preparação do banco descartável estão no [README](../README.md#verificações-disponíveis). Para uma alteração apenas documental, revise conteúdo, links e diff. Use dados sintéticos nos testes e evidências. Antes de encerrar uma funcionalidade, confira os usos indevidos aplicáveis no [guia de segurança por funcionalidade](seguranca/verificacao-por-funcionalidade.md) e registre as verificações no PR.
 
 ```bash
 git diff
