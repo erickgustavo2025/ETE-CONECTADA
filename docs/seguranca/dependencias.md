@@ -1,5 +1,15 @@
 # Triagem de dependências
 
+## Manutenção de 17/10/2026 — EC-118
+
+ESLint passa de 9.39.5 para **10.13.0**, com `@eslint/js` **10.0.1**. A série 10 tem suporte ativo; Node 24 e os plugins instalados `typescript-eslint` 8.71.1 e `eslint-plugin-react-hooks` 7.1.1 aceitam essa versão. Foram preservados a configuração, os comandos e os compiladores TypeScript dos apps. O parser usado pelo lint continua com sua dependência TypeScript 5.9.3 compatível; isso não troca o compilador das aplicações.
+
+A comparação da configuração efetiva em cinco arquivos de portal, site, scripts e componentes compartilhados conferiu **441 regras**, sem reduzir severidades. Controles negativos de `debugger`, hooks condicionais e dependências de efeito continuaram sendo recusados. A recomendação nova `preserve-caught-error` apontou um tratamento de falha no teste do importador JSON: ele agora mantém a causa do erro. Nenhuma regra foi desabilitada para obter aprovação.
+
+A instalação limpa usa `npm ci --ignore-scripts`, sem `--force` ou overrides. Em 17/10, audits completo e sem dependências de desenvolvimento retornaram zero alertas; assinaturas de 326 pacotes e attestations de 120 foram verificadas. Lint global e dos dois workspaces, tipos, unitários, guardas e builds locais passaram. O CI do commit final precisa ser aprovado antes do merge. Esses resultados não substituem a revisão de segurança da aplicação.
+
+Referências: [suporte de versões](https://eslint.org/version-support/), [migração para a série 10](https://eslint.org/docs/latest/use/migrate-to-10.0.0), [ESLint 10.13.0 no registro npm](https://registry.npmjs.org/eslint/10.13.0) e [@eslint/js 10.0.1](https://registry.npmjs.org/@eslint%2fjs/10.0.1).
+
 ## Atualização de 16/10/2026 — EC-117
 
 O conjunto `prisma`, `@prisma/client` e `@prisma/adapter-pg` passa de 7.10.0 para **7.10.1**, mantendo PostgreSQL e as três versões alinhadas. A atualização oficial da cadeia traz `deepmerge-ts` 8.0.2 e `mysql2` 3.24.4. Não foram usados `audit fix --force`, overrides ou downgrade para Prisma 6. Não há alteração de schema ou migração nesta entrega.

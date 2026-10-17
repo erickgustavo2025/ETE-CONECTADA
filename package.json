@@ -40,8 +40,8 @@
     "test:database-time": "npm run test:database-time --workspace @ete-conectada/portal"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.5",
-    "eslint": "9.39.5",
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.4.0",
     "prettier": "3.8.1",
