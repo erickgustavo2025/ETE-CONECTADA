@@ -15,7 +15,8 @@ export default function LoginForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || !validation.validate(event.currentTarget)) return;
+    if (!validation.ready || busy || !validation.validate(event.currentTarget))
+      return;
     setBusy(true);
     setMessage('');
     const data = new FormData(event.currentTarget);
@@ -100,7 +101,12 @@ export default function LoginForm() {
                     {validation.error}
                   </p>
                 )}
-                <button className="ete-button" type="submit" disabled={busy}>
+                <button
+                  className="ete-button"
+                  type="submit"
+                  disabled={busy || !validation.ready}
+                  aria-busy={busy || !validation.ready}
+                >
                   <Image
                     className="auth-action-icon"
                     src="/icons/login.png"
@@ -108,8 +114,18 @@ export default function LoginForm() {
                     width={800}
                     height={800}
                   />
-                  {busy ? 'Verificando…' : 'Entrar no portal'}
+                  {!validation.ready
+                    ? 'Carregando…'
+                    : busy
+                      ? 'Verificando…'
+                      : 'Entrar no portal'}
                 </button>
+                <noscript>
+                  <p className="form-note">
+                    Para usar este formulário, ative o JavaScript do navegador
+                    ou procure a secretaria.
+                  </p>
+                </noscript>
                 {message && (
                   <p className="form-note" role="alert">
                     {message}

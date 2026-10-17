@@ -49,7 +49,12 @@ export default function CadastroPage() {
 
   async function validate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || !identityValidation.validate(event.currentTarget)) return;
+    if (
+      !identityValidation.ready ||
+      busy ||
+      !identityValidation.validate(event.currentTarget)
+    )
+      return;
     const data = new FormData(event.currentTarget);
     const current = {
       schoolRegistration: String(data.get('schoolRegistration') || ''),
@@ -255,11 +260,22 @@ export default function CadastroPage() {
                   className="ete-button"
                   type="submit"
                   ref={triggerRef}
-                  disabled={busy}
+                  disabled={busy || !identityValidation.ready}
+                  aria-busy={busy || !identityValidation.ready}
                 >
-                  {busy ? 'Consultando…' : 'Conferir cadastro'}{' '}
+                  {!identityValidation.ready
+                    ? 'Carregando…'
+                    : busy
+                      ? 'Consultando…'
+                      : 'Conferir cadastro'}{' '}
                   <span aria-hidden="true">↗</span>
                 </button>
+                <noscript>
+                  <p className="form-note">
+                    Para usar este formulário, ative o JavaScript do navegador
+                    ou procure a secretaria.
+                  </p>
+                </noscript>
               </form>
               {message && (
                 <div
