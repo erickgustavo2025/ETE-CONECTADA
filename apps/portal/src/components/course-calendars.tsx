@@ -343,6 +343,12 @@ function CalendarEditor({
             </div>
           ))}
         </div>
+        <p id="calendar-period-help" className={styles.note}>
+          Período é o semestre letivo do módulo. Ex.: 2026.2 significa o segundo
+          semestre de 2026; 2027.1, o primeiro semestre de 2027. Confira cada
+          período no calendário da escola. As datas das aulas vão nos campos de
+          início e fim.
+        </p>
         {draft.modules.map((module, i) => (
           <fieldset key={module.number} className={styles.context}>
             <legend>Módulo {module.number}</legend>
@@ -362,6 +368,9 @@ function CalendarEditor({
                       id={id}
                       name={id}
                       type={name === 'periodLabel' ? 'text' : 'date'}
+                      placeholder={
+                        name === 'periodLabel' ? 'Ex.: 2026.2' : undefined
+                      }
                       required
                       maxLength={60}
                       min={name === 'periodLabel' ? undefined : '1900-01-01'}
@@ -376,6 +385,16 @@ function CalendarEditor({
                         }))
                       }
                       {...validation.field(id)}
+                      aria-describedby={
+                        name === 'periodLabel'
+                          ? [
+                              'calendar-period-help',
+                              validation.field(id)['aria-describedby'],
+                            ]
+                              .filter(Boolean)
+                              .join(' ')
+                          : validation.field(id)['aria-describedby']
+                      }
                     />
                   </div>
                 );
