@@ -86,7 +86,9 @@ async function main() {
         stderr?: string;
       };
       if (result.code !== 1)
-        throw new Error('O importador não encerrou como esperado.');
+        throw new Error('O importador não encerrou como esperado.', {
+          cause: error,
+        });
       return {
         code: 1,
         stdout: result.stdout ?? '',
