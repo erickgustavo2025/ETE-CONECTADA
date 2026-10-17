@@ -7,6 +7,7 @@ async function main() {
   try {
     const counts = await environment.db.$queryRaw<Array<{ records: bigint }>>`
       SELECT (
+        (SELECT count(*) FROM access_attempt_buckets) +
         (SELECT count(*) FROM students) +
         (SELECT count(*) FROM course_calendar_versions) +
         (SELECT count(*) FROM course_offerings) +
@@ -28,7 +29,7 @@ async function main() {
       'Os testes devem remover todos os registros sintéticos do banco novo.',
     );
     console.log(
-      'OK: banco descartável sem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos residuais.',
+      'OK: banco descartável sem alunos, contas, matrículas, sessões, tokens, solicitações, tentativas ou fotos residuais.',
     );
   } finally {
     await environment.close();

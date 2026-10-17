@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { PrismaClient } from '../generated/prisma/client';
 import { normalizeEmail } from './registration';
+import { clearLoginAttempts } from './access-throttle';
 import { hashPassword } from './password';
 import {
   resetLifetimeMs,
@@ -142,6 +143,15 @@ export async function completePasswordReset(
       });
       await tx.passwordResetToken.deleteMany({
         where: { accountId: token.accountId },
+      });
+      const student = await tx.student.findUniqueOrThrow({
+        where: { id: token.account.studentId },
+        select: { cpf: true },
+      });
+      await clearLoginAttempts(tx, {
+        id: token.accountId,
+        email: token.account.email,
+        cpf: student.cpf,
       });
       return { email: token.account.email };
     },

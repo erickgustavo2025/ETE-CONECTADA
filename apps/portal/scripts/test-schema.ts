@@ -10,6 +10,8 @@ import {
 
 // Contrato do banco migrado, incluindo arquivo histórico e regras fora do Prisma.
 const columns: Record<string, string> = {
+  access_throttle_state: 'id key_material last_sweep_at',
+  access_attempt_buckets: 'key used window_started_at expires_at',
   students:
     'id cpf birth_date created_at full_name school_registration import_source_id registration_allowed',
   student_details:
@@ -76,6 +78,14 @@ async function main() {
         `Colunas de ${table}`,
       );
     }
+    const state = await client.query<{ valid: boolean }>(
+      "SELECT count(*) = 1 AND bool_and(id = 1 AND key_material ~ '^[0-9a-f]{64}$') AS valid FROM access_throttle_state",
+    );
+    assert.equal(
+      state.rows[0].valid,
+      true,
+      'Estado técnico de tentativas deve existir sem expor sua chave.',
+    );
     const column = (table: string, name: string) =>
       actual.rows.find(
         (row) => row.table_name === table && row.column_name === name,
@@ -177,6 +187,14 @@ async function main() {
     assert.match(
       constraint('declaration_requests_dates_check'),
       /REQUESTED.*generated_at IS NULL.*IN_PREPARATION.*READY_FOR_PICKUP.*ready_at IS NOT NULL/,
+    );
+    assert.match(
+      constraint('access_attempt_dates_check'),
+      /expires_at > window_started_at/,
+    );
+    assert.match(
+      constraint('access_attempt_buckets_used_check'),
+      /used >= 1.*used <= 600/,
     );
     assert.match(
       constraint('password_reset_dates_check'),
