@@ -10,7 +10,7 @@
 
 **Verificações**
 
-<!-- Comandos executados e resultados. Se algo não foi verificado, explique o motivo. -->
+<!-- Comandos executados e resultados. Inclua os casos de uso indevido pertinentes à mudança (docs/seguranca/verificacao-por-funcionalidade.md). Se algo não foi verificado, explique o motivo. -->
 
 Trello: <!-- EC-xxx — link do card -->
 
