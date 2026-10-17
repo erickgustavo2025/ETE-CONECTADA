@@ -24,11 +24,40 @@ async function reflow(page: Page) {
   }
   for (const width of [320, 640, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
+    const before = await page.evaluate(() => ({
+      document: document.documentElement.scrollWidth,
+      viewport: window.innerWidth,
+    }));
+    const pathname = new URL(page.url()).pathname;
+    if (before.document > before.viewport)
+      test.info().annotations.push({
+        type: 'reflow',
+        description: `${pathname} largura=${width} inicial=${before.document}/${before.viewport}`,
+      });
+    // Resize e carregamento de fontes são assíncronos; medir o layout já aplicado.
+    await page.evaluate(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      await document.fonts.ready;
+    });
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          ),
+        {
+          timeout: 5000,
+          message: `Reflow ${pathname} em ${width}px não deve gerar rolagem horizontal.`,
+        },
+      )
+      .toBe(true);
+    if (before.document > before.viewport)
+      test.info().annotations.push({
+        type: 'reflow',
+        description: `${pathname} largura=${width} estabilizada sem rolagem`,
+      });
     for (const dialog of await page.getByRole('dialog').all()) {
       if (await dialog.isVisible())
         expect(
