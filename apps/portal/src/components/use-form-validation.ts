@@ -1,6 +1,8 @@
 'use client';
 import { useCallback, useState } from 'react';
+import { useClientReady } from './use-client-ready';
 export function useFormValidation(errorId: string) {
+  const ready = useClientReady();
   const [error, setError] = useState('');
   const [invalid, setInvalid] = useState('');
   function validate(form: HTMLFormElement) {
@@ -65,5 +67,5 @@ export function useFormValidation(errorId: string) {
     setInvalid('');
     setError('');
   }, []);
-  return { error, validate, field, reject, reset };
+  return { ready, error, validate, field, reject, reset };
 }
