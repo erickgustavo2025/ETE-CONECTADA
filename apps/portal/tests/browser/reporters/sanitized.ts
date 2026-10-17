@@ -14,6 +14,11 @@ export default class SanitizedReporter implements Reporter {
     console.log(
       `${result.status === 'passed' ? 'OK' : result.status.toUpperCase()}: ${test.title}`,
     );
+    // Diagnóstico estrutural gerado pelo teste, sem texto/campos da página.
+    for (const annotation of test.annotations.filter(
+      (item) => item.type === 'reflow',
+    ))
+      console.log(`[reflow] ${annotation.description}`);
     if (result.status === 'failed' || result.status === 'timedOut') {
       const stack = result.errors.map((error) => error.stack ?? '').join('\n');
       const location = stack.match(

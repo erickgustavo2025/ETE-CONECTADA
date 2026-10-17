@@ -18,7 +18,7 @@
     "test:schema": "node --import tsx scripts/test-schema.ts",
     "test:cleanup": "node --import tsx scripts/test-cleanup.ts",
     "test:guards": "node --import tsx scripts/test-test-environment.ts",
-    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts && node --import tsx scripts/test-student-details-validation.ts && node --import tsx scripts/test-enrollment-validation.ts && node --import tsx scripts/test-password-reset-validation.ts && npm run test:sheet-input && npm run test:course-calendar-input",
+    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts && node --import tsx scripts/test-student-details-validation.ts && node --import tsx scripts/test-enrollment-validation.ts && node --import tsx scripts/test-password-reset-validation.ts && npm run test:sheet-input && npm run test:course-calendar-input && node --import tsx scripts/test-database-config.ts",
     "test:student-details": "node --import tsx scripts/test-student-details.ts",
     "test:registration": "tsx scripts/test-registration.ts",
     "diagnose:login": "node --import tsx scripts/diagnose-login.ts",
@@ -44,7 +44,8 @@
     "test:course-calendar-input": "node --import tsx scripts/test-course-calendar-input.ts",
     "test:course-calendars": "node --import tsx scripts/test-course-calendars.ts",
     "test:subsequent-import": "node --import tsx scripts/test-subsequent-import.ts",
-    "test:access-throttle": "node --import tsx scripts/test-access-throttle.ts"
+    "test:access-throttle": "node --import tsx scripts/test-access-throttle.ts",
+    "test:database-time": "node --import tsx scripts/test-database-time.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

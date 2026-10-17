@@ -161,3 +161,7 @@ produção exercita as duas APIs sem acesso ao banco. O navegador testa teclado,
 telas pequenas, links abertos novamente na mesma aba e resposta perdida após
 uma troca efetiva. Fixtures e servidores próprios são encerrados em `finally`.
 Essas provas não confirmam entrega real na caixa de e-mail.
+
+## Relógio da conexão
+
+`npm run test:database-time` compara timestamps SQL/ORM e epoch, confere o pool real e opções de conexão inicialmente UTC/Fortaleza. Verifica preservação de DATE e statement_timeout, com marcador conferido antes de escrever e rollback das fixtures. A prova integra `test:integration`; não usa banco persistente. O procedimento de atualização está em [Horários do banco](seguranca/horarios-banco.md).
