@@ -42,6 +42,8 @@ npm run db:migrate --workspace @ete-conectada/portal
 
 Os comandos de desenvolvimento e build geram o cliente Prisma automaticamente. Mais detalhes sobre o banco, as migrações e o Prisma Studio estão no [guia do banco](apps/portal/prisma/README.md).
 
+Ao atualizar uma instalação existente, pare o portal antes de migrar e reinicie com o código novo. A correção de fuso da conexão encerra sessões e invalida links e prévias anteriores, preservando contas e dados escolares. Veja o [procedimento de atualização](docs/seguranca/horarios-banco.md).
+
 ### Abrir as aplicações
 
 Abra dois terminais na raiz do projeto:
