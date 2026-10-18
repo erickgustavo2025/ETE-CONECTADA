@@ -167,6 +167,11 @@ test('recuperação: Resend simulado usa destinatário fixado e aviso sem senha;
     globalThis.fetch = async (url, options) => {
       assert.equal(url, 'https://api.resend.com/emails');
       assert.equal(options?.method, 'POST');
+      assert.equal(
+        options?.redirect,
+        'error',
+        'Mensagens com token não devem seguir redirect do provedor.',
+      );
       sent.push(JSON.parse(String(options?.body)));
       return new Response('{}', { status: 200 });
     };
