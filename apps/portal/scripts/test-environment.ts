@@ -88,7 +88,7 @@ async function stopPortal(child: ChildProcess) {
   }
 }
 
-async function startPortal(signal: AbortSignal) {
+async function startPortal(signal: AbortSignal, publicOrigin?: string) {
   const cancelled = () =>
     new TestEnvironmentError('Execução sintética cancelada.');
   if (signal.aborted) throw cancelled();
@@ -123,8 +123,10 @@ async function startPortal(signal: AbortSignal) {
         NODE_ENV: 'development',
         RESEND_API_KEY: '',
         EMAIL_FROM: '',
-        PORTAL_PUBLIC_URL: `http://127.0.0.1:${port}`,
-        NEXT_PUBLIC_LAN_HOST: '',
+        PORTAL_PUBLIC_URL: publicOrigin ?? `http://127.0.0.1:${port}`,
+        NEXT_PUBLIC_LAN_HOST: publicOrigin
+          ? new URL(publicOrigin).hostname
+          : '',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     },
@@ -183,7 +185,34 @@ async function startPortal(signal: AbortSignal) {
   }
 }
 
-export async function openTestEnvironment({ http = false } = {}) {
+export async function openTestEnvironment({
+  http = false,
+  publicOrigin,
+}: {
+  http?: boolean;
+  publicOrigin?: string;
+} = {}) {
+  if (publicOrigin !== undefined) {
+    let url: URL;
+    try {
+      url = new URL(publicOrigin);
+    } catch {
+      return fail(
+        'Origem de laboratório exige HTTPS loopback e portal próprio.',
+      );
+    }
+    if (
+      !http ||
+      url.origin !== publicOrigin ||
+      url.protocol !== 'https:' ||
+      !url.port ||
+      !(
+        ['127.0.0.1', 'localhost'].includes(url.hostname) ||
+        /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.localhost$/.test(url.hostname)
+      )
+    )
+      fail('Origem de laboratório exige HTTPS loopback e portal próprio.');
+  }
   const expected = parseTestEnvironment(process.env);
   const { Client } = await import('pg');
   const client = new Client({
@@ -241,7 +270,7 @@ export async function openTestEnvironment({ http = false } = {}) {
   process.once('SIGINT', interrupted);
   process.once('SIGTERM', interrupted);
   try {
-    if (http) portal = await startPortal(controller.signal);
+    if (http) portal = await startPortal(controller.signal, publicOrigin);
     if (controller.signal.aborted) {
       if (portal) await stopPortal(portal.child);
       fail('Execução sintética cancelada.');
