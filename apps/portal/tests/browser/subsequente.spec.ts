@@ -46,6 +46,7 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
     expect(
       (
         await context.request.post(base + '/api/login', {
+          headers: { Origin: base },
           data: { identifier: email, password },
         })
       ).status(),

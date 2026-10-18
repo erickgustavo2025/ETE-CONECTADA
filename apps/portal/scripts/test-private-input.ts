@@ -79,7 +79,7 @@ async function main() {
       students.push(student.id);
       const login = await fetch(`${base}/api/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Origin: base },
         body: JSON.stringify({ identifier: email, password }),
       });
       assert.equal(login.status, 200);

@@ -1,3 +1,4 @@
+import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
 import {
   readAccessBody,
   boundedString,
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
       { status: 404 },
     );
   }
+
+  if (!sameOriginRequest(request))
+    return NextResponse.json(
+      { error: 'Solicitação não autorizada.' },
+      { status: 403, headers: privateHeaders },
+    );
 
   const input = await readAccessBody(request);
   if ('response' in input) return input.response;

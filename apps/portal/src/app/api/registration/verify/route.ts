@@ -1,3 +1,4 @@
+import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
 import { getDb } from '@/lib/db';
 import {
   consumeAccessAttempt,
@@ -19,6 +20,11 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   if (!registrationEnabled) return disabledResponse();
+  if (!sameOriginRequest(request))
+    return Response.json(
+      { error: 'Solicitação não autorizada.' },
+      { status: 403, headers: privateHeaders },
+    );
   const input = await readAccessBody(request);
   if ('response' in input) return input.response;
   const body = input.body;

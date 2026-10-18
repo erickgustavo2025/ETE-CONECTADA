@@ -34,7 +34,7 @@ async function main() {
     students.push(actor.id);
     const login = await fetch(base + '/api/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Origin: base },
       body: JSON.stringify({ identifier: actor.account!.email, password }),
     });
     assert.equal(login.status, 200);

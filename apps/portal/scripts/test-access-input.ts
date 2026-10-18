@@ -13,7 +13,7 @@ const url = 'http://127.0.0.1/api/test';
 const jsonRequest = (body: unknown) =>
   new Request(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Origin: 'http://127.0.0.1' },
     body: JSON.stringify(body),
   });
 
@@ -26,6 +26,7 @@ test('limites por rota contam UTF-8 no teto e com cabeçalho subestimado', async
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Origin: 'http://127.0.0.1',
           'Content-Length': '1',
         },
         body,
@@ -56,7 +57,10 @@ test('leitor aceita JSON objeto e recusa tipos raiz, JSON/UTF-8 inválidos e mí
     await rejected(
       new Request(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'http://127.0.0.1',
+        },
         body,
       }),
       400,
@@ -65,7 +69,10 @@ test('leitor aceita JSON objeto e recusa tipos raiz, JSON/UTF-8 inválidos e mí
   await rejected(
     new Request(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: 'http://127.0.0.1',
+      },
     }),
     400,
   );
@@ -79,7 +86,10 @@ test('limite exato em bytes; Unicode, ausência/cabeçalho subestimado não cont
       (await readAccessBody(
         new Request(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Origin: 'http://127.0.0.1',
+          },
           body: exact,
         }),
       )),
@@ -94,6 +104,7 @@ test('limite exato em bytes; Unicode, ausência/cabeçalho subestimado não cont
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Origin: 'http://127.0.0.1',
             ...(header ? { 'Content-Length': header } : {}),
           },
           body,
@@ -106,6 +117,7 @@ test('limite exato em bytes; Unicode, ausência/cabeçalho subestimado não cont
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Origin: 'http://127.0.0.1',
         'Content-Length': String(ACCESS_BODY_LIMIT + 1),
       },
       body: '{}',
@@ -132,7 +144,7 @@ test('leitor interrompe stream excessivo e libera reader, mesmo em falha de leit
   );
   const request = new Request(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Origin: 'http://127.0.0.1' },
     body: stream,
     duplex: 'half',
   } as RequestInit);
@@ -148,7 +160,10 @@ test('leitor interrompe stream excessivo e libera reader, mesmo em falha de leit
   await rejected(
     new Request(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: 'http://127.0.0.1',
+      },
       body: broken,
       duplex: 'half',
     } as RequestInit),
@@ -177,6 +192,7 @@ test(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Origin: 'http://127.0.0.1',
             ...(declared ? { 'Content-Length': declared } : {}),
           },
           body: stream,
@@ -310,6 +326,7 @@ test('handlers negam entradas antes de banco/scrypt; admissão indisponível rec
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              Origin: 'http://127.0.0.1',
               ...(header ? { 'Content-Length': header } : {}),
             },
             body: JSON.stringify({
