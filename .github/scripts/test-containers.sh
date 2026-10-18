@@ -57,7 +57,8 @@ import sys
 root, marker = Path(sys.argv[1]), sys.argv[2].encode()
 files = [p for p in root.rglob('*') if p.is_file()]
 assert files, 'Contexto exportado vazio; verificação inconclusiva.'
-assert all(marker not in p.read_bytes() for p in files), 'Canário privado entrou no contexto de build.'
+leaked = [str(p.relative_to(root)) for p in files if marker in p.read_bytes()]
+assert not leaked, f'Canário fictício entrou no contexto de build: {leaked}'
 print('OK: env, planilha, backup e dump fictícios fora do contexto Docker.')
 PY
 
