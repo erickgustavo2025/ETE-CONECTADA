@@ -144,6 +144,9 @@ A prova participa de `test:integration` antes dos testes HTTP e da conferência 
 
 ## Importação XLS
 
+A [matriz de regressão dos dois fluxos](testes-importacao.md) relaciona os critérios
+do integrado/subsequente aos testes existentes e descreve o controle negativo do CI.
+
 `test:sheet-input` lê somente arquivos fictícios gerados em memória e integra os unitários, sem banco. `npm run test:sheet-import` exige banco novo identificado e inicia seu próprio portal; prova a API de prévia/confirmacão, autorização, limites, repetição, proteção de dados e rollback após falha intermediária. Integra `test:integration`. O teste remove seus alunos/contas/prévias no finally e nunca deve ser executado no banco de demonstração em uso. Regras em [Núcleo de importação](importacao-nucleo.md).
 
 ## Recuperação de senha

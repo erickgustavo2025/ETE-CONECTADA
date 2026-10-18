@@ -192,16 +192,6 @@ async function main() {
       .rows[0].parentOne,
     undefined,
   );
-  const duplicate = sheetFixture();
-  XLSX.utils.sheet_add_aoa(
-    duplicate.wb.Sheets['Fictícia'],
-    [['00001001', 'Outro fictício', '01/01/2000']],
-    { origin: 'A8' },
-  );
-  await assert.rejects(
-    parseSheetInput(duplicate.file(), 'INTEGRADO', [duplicate.context]),
-    /linha 8/,
-  );
   await assert.rejects(
     parseSheetInput(missing.file(), 'INTEGRADO', [
       { ...missing.context, stage: 2 },
@@ -214,6 +204,23 @@ async function main() {
       .length,
     1,
   );
+  for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
+    const repeated = sheetFixture(mode);
+    XLSX.utils.sheet_add_aoa(
+      repeated.wb.Sheets['Fictícia'],
+      [['00001001', 'Outro Nome Fictício', '01/01/2000']],
+      { origin: 'A8' },
+    );
+    await assert.rejects(
+      parseSheetInput(repeated.file(), mode, [repeated.context]),
+      /matrícula na aba 1, linha 8.*mais de uma vez/,
+      `Matrícula duplicada em ${mode} deve ser recusada mesmo com outro nome.`,
+    );
+    await assert.rejects(
+      parseSheetInput(Buffer.from('arquivo.xls'), mode, [repeated.context]),
+      /planilha \.xls válida/,
+    );
+  }
   console.log(
     'OK: XLS binário sintético, posições vazias, filiação, zeros, modalidade, confirmação, limites, data inválida e link externo.',
   );
