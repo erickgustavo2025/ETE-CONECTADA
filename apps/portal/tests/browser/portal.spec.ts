@@ -181,10 +181,18 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
     ).toBeVisible();
 
     await login(page, base, email, password);
+    // Deixa uma tela privada no histórico antes do logout para conferir a proteção de cache.
+    await page.goto(`${base}/declaracao`);
+    await page.goto(`${base}/`);
     await page.getByRole('button', { name: 'Abrir menu de serviços' }).click();
     await expect(page.getByRole('button', { name: 'Sair' })).toBeVisible();
     await page.getByRole('button', { name: 'Sair' }).click();
     await expect(page).toHaveURL(/\/login$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(
+      page.getByRole('heading', { name: 'Acesso ao portal', exact: true }),
+    ).toBeVisible();
     await page.goto(`${base}/`);
     await expect(page).toHaveURL(/\/login$/);
 

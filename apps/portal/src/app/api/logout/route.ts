@@ -1,3 +1,4 @@
+import { withApiCanonicalPath } from '@/lib/api-route';
 import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -7,7 +8,7 @@ import { sessionCookiePolicy } from '@/lib/session-cookie';
 
 export const runtime = 'nodejs';
 
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   if (!sameOriginRequest(request))
     return NextResponse.json(
       { error: 'Solicitação não autorizada.' },
@@ -33,3 +34,5 @@ export async function POST(request: Request) {
   response.headers.set('Cache-Control', 'no-store');
   return response;
 }
+
+export const POST = withApiCanonicalPath(handlePOST);

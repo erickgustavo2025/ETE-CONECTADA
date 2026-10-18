@@ -311,7 +311,21 @@ async function main() {
     ]) {
       const response = await request(path);
       assert.equal(response.status, 200);
+      const csp = response.headers.get('content-security-policy') ?? '';
+      assert.match(response.headers.get('cache-control') ?? '', /no-store/);
+      assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+      const scriptPolicy =
+        csp.split('; ').find((value) => value.startsWith('script-src ')) ?? '';
+      assert.ok(!scriptPolicy.includes("'unsafe-eval'"));
+      assert.ok(!scriptPolicy.includes("'unsafe-inline'"));
+      const nonce = csp.match(/'nonce-([A-Za-z0-9+/=]+)'/)?.[1];
+      assert.ok(nonce);
       const html = await response.text();
+      const scripts = html.match(/<script\b[^>]*>/g) ?? [];
+      assert.ok(scripts.length > 0);
+      for (const script of scripts)
+        assert.ok(script.includes(`nonce="${nonce}"`));
+
       for (const privateValue of [
         token,
         tokenHash,

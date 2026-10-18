@@ -1,3 +1,4 @@
+import { withApiCanonicalPath } from '@/lib/api-route';
 import { currentSession } from '@/lib/session';
 import { getDb } from '@/lib/db';
 import { canManageDeclarations } from '@/lib/declaration-access';
@@ -15,7 +16,7 @@ import {
   readPrivateBody,
 } from '@/lib/private-request';
 export const runtime = 'nodejs';
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   try {
     const session = await currentSession();
     if (!session)
@@ -90,7 +91,7 @@ export async function GET(request: Request) {
     );
   }
 }
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   if (!sameOriginRequest(request))
     return Response.json(
       { error: 'Origem não autorizada.' },
@@ -136,3 +137,6 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const GET = withApiCanonicalPath(handleGET);
+export const POST = withApiCanonicalPath(handlePOST);
