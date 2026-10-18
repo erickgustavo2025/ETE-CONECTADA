@@ -28,6 +28,7 @@ WORKDIR /app
 RUN rm -rf /usr/local/lib/node_modules /opt/yarn-v1.22.22 \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/yarn /usr/local/bin/yarnpkg /usr/local/bin/corepack
 COPY --from=source /app/shared/fonts/*OFL.txt /app/licenses/fonts/
+COPY --from=source /app/scripts/start-standalone.mjs /app/start-standalone.mjs
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 USER node
 EXPOSE 3000
@@ -39,7 +40,7 @@ ENV HEALTHCHECK_PATH=/
 COPY --from=site-build /app/apps/site/.next/standalone /app
 COPY --from=site-build /app/apps/site/public ./public
 COPY --from=site-build /app/apps/site/.next/static ./.next/static
-CMD ["node", "server.js"]
+CMD ["node", "/app/start-standalone.mjs"]
 
 FROM runtime AS portal
 WORKDIR /app/apps/portal
@@ -47,4 +48,4 @@ ENV HEALTHCHECK_PATH=/login
 COPY --from=portal-build /app/apps/portal/.next/standalone /app
 COPY --from=portal-build /app/apps/portal/public ./public
 COPY --from=portal-build /app/apps/portal/.next/static ./.next/static
-CMD ["node", "server.js"]
+CMD ["node", "/app/start-standalone.mjs"]
