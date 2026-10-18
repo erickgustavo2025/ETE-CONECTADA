@@ -104,6 +104,8 @@ O [guia do banco](apps/portal/prisma/README.md) também explica a importação p
 
 ## Verificações disponíveis
 
+O [guia Docker](docs/docker.md) explica como construir e testar as imagens separadas do site e do portal. Essas imagens mantêm os bloqueios de produção até a liberação do projeto para uso real.
+
 Tipos, lint e formatação: veja os comandos e o escopo no [guia de qualidade](docs/qualidade.md).
 
 Estes comandos podem ser executados sem banco:
