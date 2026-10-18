@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID, randomInt } from 'node:crypto';
+import * as XLSX from 'xlsx';
 import { openTestEnvironment, reportTestFailure } from './test-environment';
 import { sheetFixture } from './test-sheet-input';
 import { hashPassword } from '../src/lib/password';
@@ -9,7 +10,11 @@ async function main() {
     { db, base } = env;
   const students: string[] = [],
     offers: string[] = [];
+  let rollbackConstraint = false;
+  let rollbackRegistrationReserved = false;
   try {
+    assert.equal(await db.student.count(), 0, 'Exige banco novo sintético.');
+    rollbackRegistrationReserved = true;
     const password = 'SubsequenteSintetico#123';
     const actor = await db.student.create({
       data: {
@@ -243,12 +248,106 @@ async function main() {
           .status,
         422,
       );
+      // O lote altera uma pessoa existente antes de falhar na segunda linha.
+      sheet.wb.Sheets['Fictícia'].A4 = {
+        t: 's',
+        v: `${count}MODULO - TURMA-FICTICIA`,
+      };
+      const snapshot = async () => ({
+        person: await db.student.findUniqueOrThrow({
+          where: { id: person.id },
+          include: { details: true, enrollments: { orderBy: { id: 'asc' } } },
+        }),
+        history: await db.enrollmentImportHistory.findMany({
+          where: { enrollmentId: sub.id },
+          orderBy: { id: 'asc' },
+        }),
+        offering: await db.courseOffering.findUniqueOrThrow({ where: { id } }),
+      });
+      const beforeRollback = await snapshot();
+      sheet.wb.Sheets['Fictícia'].B7 = {
+        t: 's',
+        v: 'Pessoa Fictícia Corrigida no Lote',
+      };
+      XLSX.utils.sheet_add_aoa(
+        sheet.wb.Sheets['Fictícia'],
+        [['00001009', 'Outra Pessoa Fictícia', '01/01/2000']],
+        { origin: 'A8' },
+      );
+      const batchResponse = await post({ action: 'preview', ...payload() });
+      assert.equal(batchResponse.status, 200);
+      const batch = await batchResponse.json();
+      assert.equal(batch.counts.createdStudents, 1);
+      assert.equal(batch.counts.updatedStudents, 1);
+      assert.deepEqual(
+        await snapshot(),
+        beforeRollback,
+        'Prévia não grava o lote.',
+      );
+      const applyBatch = () =>
+        post({
+          action: 'confirm',
+          ...payload(),
+          token: batch.token,
+          confirmed: true,
+          acceptIdentityChanges: true,
+          acceptCalendarDifferences: true,
+        });
+      await db.$executeRaw`ALTER TABLE enrollments ADD CONSTRAINT ec109_sub_rollback CHECK (school_import_key NOT LIKE '%:00001009')`;
+      rollbackConstraint = true;
+      assert.equal((await applyBatch()).status, 409);
+      assert.deepEqual(
+        await snapshot(),
+        beforeRollback,
+        `Rollback ${courseLabel} preserva pessoa, vínculos, histórico e calendário.`,
+      );
+      assert.equal(
+        await db.student.count({ where: { schoolRegistration: '00001009' } }),
+        0,
+      );
+      assert.equal(
+        (
+          await db.sheetImportPreview.findUniqueOrThrow({
+            where: { actorId: actor.account!.id },
+          })
+        ).consumedAt,
+        null,
+        'Falha não consome a autorização da prévia.',
+      );
+      await db.$executeRaw`ALTER TABLE enrollments DROP CONSTRAINT ec109_sub_rollback`;
+      rollbackConstraint = false;
+      const recovered = await applyBatch();
+      assert.equal(recovered.status, 200);
+      const counts = await recovered.json();
+      assert.equal(counts.createdStudents, 1);
+      assert.equal(counts.updatedStudents, 1);
+      assert.deepEqual(
+        await (await applyBatch()).json(),
+        counts,
+        'Repetição do token retorna o resultado sem duplicar.',
+      );
+      assert.equal(
+        await db.student.count({ where: { schoolRegistration: '00001009' } }),
+        1,
+      );
+      assert.equal(
+        (await db.student.findUniqueOrThrow({ where: { id: person.id } }))
+          .fullName,
+        'Pessoa Fictícia Corrigida no Lote',
+      );
+      await db.student.delete({ where: { schoolRegistration: '00001009' } });
     }
     console.log(
-      'OK: inspeção/catálogos privados do subsequente ADM/DS/Enfermagem, módulos3/4, modalidade, calendário, reimportação, exceção explícita, histórico e integrado/contas preservados.',
+      'OK: inspeção/catálogos privados do subsequente ADM/DS/Enfermagem, módulos3/4, modalidade, calendário, reimportação, exceção explícita, histórico, rollback de lote com recuperação e repetição, integrado/contas preservados.',
     );
   } finally {
     try {
+      if (rollbackConstraint)
+        await db.$executeRaw`ALTER TABLE enrollments DROP CONSTRAINT ec109_sub_rollback`;
+      if (rollbackRegistrationReserved)
+        await db.student.deleteMany({
+          where: { schoolRegistration: '00001009' },
+        });
       await db.student.deleteMany({ where: { id: { in: students } } });
       await db.courseCalendarVersion.deleteMany({
         where: { offeringId: { in: offers } },
