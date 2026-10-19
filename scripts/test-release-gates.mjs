@@ -1,5 +1,63 @@
 import assert from 'node:assert/strict';
-import { selectRun, verifyJobs } from './release-gates.mjs';
+import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { selectRun, verifyJobs, releaseRequested } from './release-gates.mjs';
+
+for (const [event, ref, requested] of [
+  ['workflow_dispatch', 'main', true],
+  ['push', 'feature/ec-086-artefato-verificado', true],
+  ['push', 'main', false],
+  ['push', 'feature/ec-082-proxy', false],
+  ['pull_request', 'feature/ec-086-artefato-verificado', false],
+  ['workflow_dispatch', '', false],
+])
+  assert.equal(releaseRequested(event, ref), requested);
+
+const temporary = await mkdtemp(path.join(tmpdir(), 'ete-release-request-'));
+try {
+  const output = path.join(temporary, 'output');
+  const environment = path.join(temporary, 'environment');
+  const script = fileURLToPath(new URL('./release-gates.mjs', import.meta.url));
+  for (const [ref, id, status, requested] of [
+    ['feature/ec-086-fixture', '123', 0, true],
+    ['main', '123', 0, false],
+    ['feature/ec-086-fixture', '123\nUNEXPECTED=true', 1, false],
+  ]) {
+    await writeFile(output, '');
+    await writeFile(environment, '');
+    const result = spawnSync(process.execPath, [script, 'request'], {
+      env: {
+        PATH: process.env.PATH,
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REF_NAME: ref,
+        GITHUB_RUN_ID: id,
+        GITHUB_RUN_ATTEMPT: '1',
+        RUNNER_TEMP: temporary,
+        GITHUB_OUTPUT: output,
+        GITHUB_ENV: environment,
+      },
+      encoding: 'utf8',
+      timeout: 10_000,
+    });
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, status);
+    assert.equal(
+      await readFile(output, 'utf8'),
+      status ? '' : `package=${requested}\n`,
+    );
+    assert.equal(
+      await readFile(environment, 'utf8'),
+      status
+        ? ''
+        : `TEST_IMAGE_OUTPUT_DIR=${requested ? path.join(temporary, 'ete-release-123-1') : ''}\n`,
+    );
+  }
+} finally {
+  await rm(temporary, { recursive: true, force: true });
+}
 
 const expected = {
   repository: 'erickgustavo2025/ETE-CONECTADA',

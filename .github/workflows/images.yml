@@ -44,14 +44,14 @@ jobs:
       - name: Instalar Chromium no runner de teste
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
       - name: Preparar destino temporário exclusivo do pacote
-        if: github.event_name != 'pull_request'
-        run: printf 'TEST_IMAGE_OUTPUT_DIR=%s/ete-release-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+        id: package_request
+        run: node scripts/release-gates.mjs request
       - name: Construir e testar imagens sem registry ou deploy
         run: bash .github/scripts/test-containers.sh
       - name: Ensaiar Compose e persistência em laboratório próprio
         run: bash .github/scripts/test-compose-lab.sh
       - name: Exigir CI e segurança do mesmo commit antes de liberar pacote
-        if: github.event_name != 'pull_request'
+        if: steps.package_request.outputs.package == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -59,7 +59,7 @@ jobs:
           python3 scripts/release-artifact.py seal "$TEST_IMAGE_OUTPUT_DIR" "$GITHUB_SHA" "$GITHUB_REPOSITORY"
           python3 scripts/release-artifact.py verify "$TEST_IMAGE_OUTPUT_DIR" "$GITHUB_SHA"
       - name: Guardar pacote de ensaio identificado sem publicar em registry
-        if: github.event_name != 'pull_request'
+        if: steps.package_request.outputs.package == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: imagens-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}

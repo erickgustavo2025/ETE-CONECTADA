@@ -2,6 +2,50 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+export function releaseRequested(event, ref) {
+  return (
+    typeof ref === 'string' &&
+    ref.length > 0 &&
+    (event === 'workflow_dispatch' ||
+      (event === 'push' && ref.startsWith('feature/ec-086-')))
+  );
+}
+
+async function configureRequest() {
+  const requested = releaseRequested(
+    process.env.GITHUB_EVENT_NAME,
+    process.env.GITHUB_REF_NAME,
+  );
+  let directory = '';
+  if (requested) {
+    const temporary = process.env.RUNNER_TEMP;
+    if (
+      !path.isAbsolute(temporary || '') ||
+      /[\r\n\0]/.test(temporary) ||
+      !/^\d+$/.test(process.env.GITHUB_RUN_ID || '') ||
+      !/^\d+$/.test(process.env.GITHUB_RUN_ATTEMPT || '')
+    )
+      throw new Error('Destino temporário inválido.');
+    directory = path.join(
+      temporary,
+      `ete-release-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`,
+    );
+  }
+  await writeFile(
+    process.env.GITHUB_ENV,
+    `TEST_IMAGE_OUTPUT_DIR=${directory}\n`,
+    { flag: 'a' },
+  );
+  await writeFile(process.env.GITHUB_OUTPUT, `package=${requested}\n`, {
+    flag: 'a',
+  });
+  console.log(
+    requested
+      ? 'Pacote solicitado; verificações obrigatórias continuam exigidas.'
+      : 'Somente testes: esta execução não guarda pacote de imagens.',
+  );
+}
+
 export function selectRun(runs, expected) {
   const run = runs
     .filter(
@@ -132,7 +176,7 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
 ) {
-  main().catch(() => {
+  (process.argv[2] === 'request' ? configureRequest() : main()).catch(() => {
     console.error(
       'Artefato não liberado: verificações ausentes, inválidas ou reprovadas. Confira os runs do mesmo commit.',
     );

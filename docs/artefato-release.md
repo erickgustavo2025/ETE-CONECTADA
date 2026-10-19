@@ -2,7 +2,7 @@
 
 O workflow de imagens pode guardar um pacote de ensaio com as mesmas imagens que construiu, iniciou e auditou. Não faz outro build para empacotar. O pacote serve para preparar promoção e rollback por uma versão identificada, enquanto o registry e a infraestrutura definitiva ainda não foram aprovados.
 
-O envio é feito somente em pushes ou execução manual, depois do teste das imagens e do Compose. PRs continuam sendo testados e não disponibilizam esse pacote. Antes de guardar os arquivos, o workflow exige CI e análise de segurança aprovados no mesmo commit, branch e repositório. Também confere os jobs obrigatórios; sucesso antigo, execução cancelada ou job ignorado não substituem a verificação atual.
+O envio é feito por execução manual do workflow, depois do teste das imagens e do Compose. A branch `feature/ec-086-*` também permite esse envio para comprovar esta entrega antes da integração. As outras branches, a main e os PRs mantêm todos os testes sem guardar automaticamente outro pacote de cerca de 193 MB a cada mudança. Antes de guardar os arquivos, o workflow exige CI e análise de segurança aprovados no mesmo commit, branch e repositório. Também confere os jobs obrigatórios; sucesso antigo, execução cancelada ou job ignorado não substituem a verificação atual.
 
 ## Conteúdo e identidade
 
