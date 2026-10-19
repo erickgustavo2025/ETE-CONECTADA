@@ -279,8 +279,9 @@ if (mode === 'probe') {
           });
           await expect(portalLink).toHaveAttribute(
             'href',
-            `${origin('portal')}/login`,
+            `${origin('portal')}/`,
           );
+          // A entrada do portal decide entre a sessão existente e o login.
           await portalLink.click();
           await page.waitForURL(`${origin('portal')}/login`);
           await page
