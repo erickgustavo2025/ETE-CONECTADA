@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { Client } from 'pg';
 import {
   assertDatabaseIdentity,
@@ -286,8 +287,46 @@ async function main() {
     );
     assert.deepEqual((await snapshot(target)).tables, {});
     await restore(archive);
+    const restored = await snapshot(target);
+    // Diagnóstico só de estrutura e contagens; nunca imprime linhas, hashes de contas ou SQL.
+    for (const table of Object.keys(original.tables)) {
+      if (!isDeepStrictEqual(restored.tables[table], original.tables[table]))
+        console.error(
+          'Divergência de restauração na tabela:',
+          table,
+          'contagem original/restaurada:',
+          original.tables[table].count,
+          restored.tables[table]?.count,
+        );
+    }
+    for (const [index, rows] of original.catalog.entries()) {
+      const actual = restored.catalog[index];
+      if (!isDeepStrictEqual(rows, actual)) {
+        console.error(
+          'Divergência no catálogo:',
+          index,
+          'itens original/restaurado:',
+          rows.length,
+          actual.length,
+        );
+        for (let row = 0; row < Math.max(rows.length, actual.length); row++) {
+          if (!isDeepStrictEqual(rows[row], actual[row]))
+            console.error(
+              'Item:',
+              row,
+              'campos diferentes:',
+              Object.keys(rows[row] ?? {})
+                .filter(
+                  (key) =>
+                    !isDeepStrictEqual(rows[row][key], actual[row]?.[key]),
+                )
+                .join(','),
+            );
+        }
+      }
+    }
     assert.deepEqual(
-      await snapshot(target),
+      restored,
       original,
       'Dados e catálogo restaurados devem coincidir integralmente.',
     );
