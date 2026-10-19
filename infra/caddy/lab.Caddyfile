@@ -1,0 +1,87 @@
+{
+	admin off
+	auto_https off
+	servers {
+		protocols h1 h2
+		strict_sni_host on
+		max_header_size 16KiB
+		timeouts {
+			read_header 5s
+			read_body 60s
+			read_body_idle 10s
+			write 60s
+			idle 30s
+		}
+	}
+}
+
+(https_lab) {
+	tls /run/secrets/proxy_certificate /run/secrets/proxy_key
+	header {
+		-Server
+		Strict-Transport-Security "max-age=15552000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+	}
+	# Importação já admite JSON de até 3 MiB (arquivo de até 2 MiB).
+	# As rotas mantêm seus limites menores e autorização antes da leitura.
+	request_body {
+		max_size 3145728
+	}
+	handle_errors {
+		header Cache-Control "private, no-store"
+		respond "Não foi possível atender esta solicitação." {err.status_code}
+	}
+}
+
+https://site.example.invalid:8443 {
+	import https_lab
+	reverse_proxy site:3000 {
+		header_up Host site.example.invalid:{$ETE_LAB_HTTPS_PORT}
+		header_up X-Forwarded-Host site.example.invalid:{$ETE_LAB_HTTPS_PORT}
+		header_up X-Forwarded-Proto https
+		header_up -Forwarded
+		header_up -X-Real-IP
+		transport http {
+			dial_timeout 3s
+			response_header_timeout 30s
+		}
+	}
+}
+
+https://portal.example.invalid:8443 {
+	import https_lab
+	reverse_proxy portal:3000 {
+		header_up Host portal.example.invalid:{$ETE_LAB_HTTPS_PORT}
+		header_up X-Forwarded-Host portal.example.invalid:{$ETE_LAB_HTTPS_PORT}
+		header_up X-Forwarded-Proto https
+		header_up -Forwarded
+		header_up -X-Real-IP
+		transport http {
+			dial_timeout 3s
+			response_header_timeout 30s
+		}
+	}
+}
+
+http://:8080 {
+	header {
+		-Server
+		Cache-Control "private, no-store"
+		X-Content-Type-Options nosniff
+	}
+	@site host site.example.invalid
+	handle @site {
+		redir https://site.example.invalid:{$ETE_LAB_HTTPS_PORT}{uri} 308
+	}
+	@portal host portal.example.invalid
+	handle @portal {
+		redir https://portal.example.invalid:{$ETE_LAB_HTTPS_PORT}{uri} 308
+	}
+	handle {
+		respond "Endereço não autorizado." 421
+	}
+}

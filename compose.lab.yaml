@@ -6,7 +6,7 @@ services:
       context: .
       target: site
       args:
-        NEXT_PUBLIC_PORTAL_LOGIN_URL: https://portal.example.invalid/login
+        NEXT_PUBLIC_PORTAL_LOGIN_URL: ${ETE_LAB_PORTAL_LOGIN_URL:-https://portal.example.invalid/login}
       labels:
         ete.test.id: ${ETE_LAB_RUN_ID:?Informe identificador exclusivo do laboratório}
     labels:
