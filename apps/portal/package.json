@@ -61,7 +61,7 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.0",
+    "@playwright/test": "1.64.1",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.15.5",
     "@types/react": "^19.0.0",
