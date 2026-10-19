@@ -1,5 +1,7 @@
 # Imagens Docker
 
+Para preparar acessos, recuperação e manutenção do servidor autorizado, consulte o [procedimento de operação da VPS](operacao/acessos-vps.md).
+
 Site e portal têm imagens separadas, construídas pelo `Dockerfile` da raiz. Elas usam Node 24 e o servidor standalone do Next.js. Não é preciso instalar dependências ao iniciar o container.
 
 O portal continua com cadastro, login e operações de produção bloqueados. Este empacotamento permite conferir a versão de produção com segurança; a liberação para alunos, o banco definitivo, o domínio e o deploy seguem suas etapas próprias. O healthcheck confirma que a página inicial responde, sem atestar conexão com banco ou autorização de uso real.
