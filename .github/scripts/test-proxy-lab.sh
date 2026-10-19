@@ -16,6 +16,11 @@ export ETE_LAB_HTTP_PORT=0
 export ETE_LAB_PROXY_CONFIG_FILE="$work/Caddyfile" ETE_LAB_TLS_CERT_FILE="$work/certificate.pem" ETE_LAB_TLS_KEY_FILE="$work/key.pem"
 export PROXY_TEST_CA_FILE="$work/ca.pem" PROXY_TEST_HTTP_PORT PROXY_TEST_SPKI PROXY_TEST_PREVIOUS_FINGERPRINT
 compose=("${base[@]}" --file "$root/compose.proxy-lab.yaml")
+recreate_proxy() {
+  "${compose[@]}" up --detach --force-recreate --no-deps proxy
+  # A publicação HTTP em porta 0 é novamente alocada a cada recriação.
+  PROXY_TEST_HTTP_PORT=$("${compose[@]}" port proxy 8080 | cut -d: -f2)
+}
 probe_pid=''
 cleanup_probe() {
   # O processo Node de teste vive no container próprio, removido pelo trap externo.
@@ -81,7 +86,7 @@ chmod u+w "$ETE_LAB_PROXY_CONFIG_FILE"
 cp "$ETE_LAB_PROXY_CONFIG_FILE" "$work/probe-positive.Caddyfile"
 sed 's/max_size 3145728/max_size 6291456/' "$work/probe-positive.Caddyfile" > "$ETE_LAB_PROXY_CONFIG_FILE"
 chmod 444 "$ETE_LAB_PROXY_CONFIG_FILE"
-"${compose[@]}" up --detach --force-recreate --no-deps proxy
+recreate_proxy
 for attempt in $(seq 1 30); do
   if curl --silent --fail --noproxy '*' --cacert "$PROXY_TEST_CA_FILE" \
     --resolve "site.example.invalid:$ETE_LAB_HTTPS_PORT:127.0.0.1" "https://site.example.invalid:$ETE_LAB_HTTPS_PORT/" >/dev/null; then break; fi
@@ -96,7 +101,7 @@ echo 'OK: controle negativo real reprovou o limite de upload permissivo.'
 chmod u+w "$ETE_LAB_PROXY_CONFIG_FILE"
 cp infra/caddy/lab.Caddyfile "$ETE_LAB_PROXY_CONFIG_FILE"
 chmod 444 "$ETE_LAB_PROXY_CONFIG_FILE"
-"${compose[@]}" up --detach --force-recreate --no-deps proxy
+recreate_proxy
 # O bind da chave não muda de inode: a troca abaixo é seguida de recriação real.
 PROXY_TEST_SPKI=$(openssl x509 -in "$ETE_LAB_TLS_CERT_FILE" -pubkey -noout | openssl pkey -pubin -outform DER 2>/dev/null | openssl dgst -sha256 -binary | openssl base64 -A)
 for attempt in $(seq 1 30); do
@@ -126,7 +131,7 @@ PY
 old_proxy=$("${compose[@]}" ps -q proxy)
 PROXY_TEST_PREVIOUS_FINGERPRINT=$(openssl x509 -in "$ETE_LAB_TLS_CERT_FILE" -noout -fingerprint -sha256 | cut -d= -f2)
 certificate
-"${compose[@]}" up --detach --force-recreate --no-deps proxy
+recreate_proxy
 [[ "$("${compose[@]}" ps -q proxy)" != "$old_proxy" ]]
 for attempt in $(seq 1 30); do
   if curl --silent --fail --noproxy '*' --cacert "$PROXY_TEST_CA_FILE" \
