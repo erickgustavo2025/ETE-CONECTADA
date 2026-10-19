@@ -41,7 +41,8 @@
     "test:private-input": "npm run test:private-input --workspace @ete-conectada/portal",
     "test:origin": "npm run test:origin --workspace @ete-conectada/portal",
     "test:security-headers": "npm run test:security-headers --workspace @ete-conectada/portal",
-    "test:mail-failures": "npm run test:mail-failures --workspace @ete-conectada/portal"
+    "test:mail-failures": "npm run test:mail-failures --workspace @ete-conectada/portal",
+    "test:backup": "npm run test:backup --workspace @ete-conectada/portal"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
