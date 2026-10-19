@@ -6,6 +6,7 @@ cd "$root"
 docker info --format '{{.ServerVersion}}' >/dev/null
 work=$(mktemp -d)
 run_id=$(python3 -c 'import uuid; print(uuid.uuid4().hex)')
+source_commit=$(git rev-parse HEAD)
 marker="PRIVATE_CONTAINER_FIXTURE_$run_id"
 containers=()
 images=()
@@ -80,13 +81,16 @@ python3 scripts/check-container-layers.py "$work/negative.tar" "$marker" || resu
 [[ "$result" == 1 ]] || { echo 'Controle negativo não reprovou no vazamento esperado.' >&2; exit 1; }
 echo 'OK: controle negativo detectou dado apagado que persistiu na camada anterior.'
 
-declare -A urls
+declare -A urls image_ids
 for app in site portal; do
   image="ete-$app:$run_id"
   docker build --file "$work/context/Dockerfile" --target "$app" \
     --build-arg NEXT_PUBLIC_PORTAL_LOGIN_URL=https://portal.example.invalid/login \
+    --label "org.opencontainers.image.revision=$source_commit" \
+    --label "org.opencontainers.image.title=ete-$app" \
     --label "ete.test.id=$run_id" --tag "$image" "$work/context"
-  images+=("$(docker image inspect --format '{{.Id}}' "$image")")
+  image_ids[$app]=$(docker image inspect --format '{{.Id}}' "$image")
+  images+=("${image_ids[$app]}")
   docker image save "$image" --output "$work/$app.tar"
   python3 scripts/check-container-layers.py "$work/$app.tar" "$marker"
   id=$(docker run --detach --init --read-only --cap-drop ALL --security-opt no-new-privileges \
@@ -113,6 +117,10 @@ tar -xzf "$work/trivy.tar.gz" -C "$work" trivy
 "$work/trivy" --version
 for app in site portal; do
   "$work/trivy" image --image-src docker --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
-    --timeout 5m --cache-dir "$work/trivy-cache" --no-progress "ete-$app:$run_id"
+    --timeout 5m --cache-dir "$work/trivy-cache" --no-progress \
+    --format json --output "$work/$app-audit.json" "ete-$app:$run_id"
 done
 echo 'OK: duas imagens reais, contexto/camadas privados, runtime/navegador e auditoria de vulnerabilidades aprovados.'
+if [[ -n "${TEST_IMAGE_OUTPUT_DIR:-}" ]]; then
+  python3 scripts/release-artifact.py create "$work" "$source_commit" "$TEST_IMAGE_OUTPUT_DIR" "${image_ids[site]}" "${image_ids[portal]}"
+fi

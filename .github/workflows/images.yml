@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      actions: read
     timeout-minutes: 25
     env:
       NEXT_TELEMETRY_DISABLED: '1'
@@ -36,9 +37,41 @@ jobs:
         run: bash .github/scripts/check-workflows.sh .github/workflows/images.yml
       - name: Instalar ferramentas de teste pelo lockfile
         run: npm ci --ignore-scripts
+      - name: Conferir condições e integridade do artefato com fixtures
+        run: |
+          node scripts/test-release-gates.mjs
+          python3 scripts/test-release-artifact.py
       - name: Instalar Chromium no runner de teste
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Preparar destino temporário exclusivo do pacote
+        if: github.event_name != 'pull_request'
+        run: printf 'TEST_IMAGE_OUTPUT_DIR=%s/ete-release-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
       - name: Construir e testar imagens sem registry ou deploy
         run: bash .github/scripts/test-containers.sh
       - name: Ensaiar Compose e persistência em laboratório próprio
         run: bash .github/scripts/test-compose-lab.sh
+      - name: Exigir CI e segurança do mesmo commit antes de liberar pacote
+        if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/release-gates.mjs
+          python3 scripts/release-artifact.py seal "$TEST_IMAGE_OUTPUT_DIR" "$GITHUB_SHA" "$GITHUB_REPOSITORY"
+          python3 scripts/release-artifact.py verify "$TEST_IMAGE_OUTPUT_DIR" "$GITHUB_SHA"
+      - name: Guardar pacote de ensaio identificado sem publicar em registry
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: imagens-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/site.tar.gz
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/portal.tar.gz
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/site-audit.json
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/portal-audit.json
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/release.json
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/SHA256SUMS
+          if-no-files-found: error
+          include-hidden-files: false
+          overwrite: false
+          compression-level: 0
+          retention-days: 3
