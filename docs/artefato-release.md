@@ -15,6 +15,8 @@ O artefato `imagens-COMMIT-RUN-TENTATIVA` contém apenas:
 
 As imagens recebem o commit e a identificação do app em seus rótulos. O verificador exige correspondência entre arquivo, configuração da imagem, app, commit, auditoria e todas as camadas. Ele confere cada camada pelo hash de seus bytes descomprimidos, sem extrair arquivos no computador.
 
+Após o upload, o próprio runner baixa somente o artefato recém-criado pelo seu ID, reprova divergência no digest e verifica novamente seus arquivos. O manifesto e a lista de hashes baixados também precisam ser idênticos aos originais. Essa conferência não exige baixar as imagens na conexão do desenvolvedor.
+
 O **ID da imagem**, o **hash do arquivo comprimido**, o **digest do artefato GitHub** e um futuro **digest de manifesto no registry** são identificadores diferentes. Este pacote guarda os dois primeiros; o GitHub fornece o digest de seu próprio artefato. Ele não inventa um digest de registry antes de publicar uma imagem.
 
 ## Obter e verificar
