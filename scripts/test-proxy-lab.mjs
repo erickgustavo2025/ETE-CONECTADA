@@ -33,6 +33,8 @@ async function request(app, pathname = '/', options = {}) {
         ca,
         lookup,
         agent: false,
+        // O Host forjado não deve também trocar o SNI automático do cliente Node.
+        ...(secure ? { servername: `${app}.example.invalid` } : {}),
         method: options.body || options.chunks ? 'POST' : 'GET',
         headers: {
           Host: `${app}.example.invalid:${secure ? port : httpPort}`,
