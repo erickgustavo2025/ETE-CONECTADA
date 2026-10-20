@@ -1,3 +1,4 @@
+import { withApiCanonicalPath } from '@/lib/api-route';
 import { currentSession } from '@/lib/session';
 import { getDb } from '@/lib/db';
 import { privateHeaders, sameOriginRequest } from '@/lib/private-request';
@@ -51,7 +52,7 @@ async function bodyOf(request: Request) {
     reader.releaseLock();
   }
 }
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   if (!sameOriginRequest(request))
     return json({ error: 'Origem não autorizada.' }, 403);
   try {
@@ -140,3 +141,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = withApiCanonicalPath(handlePOST);

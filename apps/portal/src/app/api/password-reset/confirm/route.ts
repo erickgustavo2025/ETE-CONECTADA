@@ -1,3 +1,4 @@
+import { withApiCanonicalPath } from '@/lib/api-route';
 import {
   consumeAccessAttempt,
   accessLimitResponse,
@@ -32,7 +33,7 @@ function rejected(reason: ResetProblem) {
 }
 
 export const runtime = 'nodejs';
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   if (process.env.NODE_ENV !== 'development') return disabledResponse();
   if (!sameOriginRequest(request))
     return Response.json(
@@ -73,3 +74,5 @@ export async function POST(request: Request) {
     return databaseErrorResponse();
   }
 }
+
+export const POST = withApiCanonicalPath(handlePOST);

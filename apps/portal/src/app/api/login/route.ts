@@ -1,3 +1,4 @@
+import { withApiCanonicalPath } from '@/lib/api-route';
 import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
 import {
   readAccessBody,
@@ -20,7 +21,7 @@ import { sessionCookiePolicy } from '@/lib/session-cookie';
 
 export const runtime = 'nodejs';
 
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   // Fluxo de desenvolvimento definido pela equipe; produção continua bloqueada.
   if (process.env.NODE_ENV !== 'development') {
     return NextResponse.json(
@@ -142,3 +143,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = withApiCanonicalPath(handlePOST);

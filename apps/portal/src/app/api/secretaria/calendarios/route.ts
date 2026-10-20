@@ -1,3 +1,4 @@
+import { withApiCanonicalPath } from '@/lib/api-route';
 import { currentSession } from '@/lib/session';
 import { getDb } from '@/lib/db';
 import { readAccessBody } from '@/lib/access-input';
@@ -12,7 +13,7 @@ import {
 export const runtime = 'nodejs';
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: privateHeaders });
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   if (!sameOriginRequest(request))
     return json({ error: 'Origem não autorizada.' }, 403);
   try {
@@ -97,3 +98,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = withApiCanonicalPath(handlePOST);

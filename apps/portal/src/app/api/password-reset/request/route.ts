@@ -1,3 +1,4 @@
+import { withApiCanonicalPath } from '@/lib/api-route';
 import { after } from 'next/server';
 import { boundedString, readAccessBody } from '@/lib/access-input';
 import { getDb } from '@/lib/db';
@@ -16,7 +17,7 @@ import { requestPasswordReset } from '@/lib/password-reset';
 import { recoveryMailer } from '@/lib/recovery-mail';
 
 export const runtime = 'nodejs';
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   if (process.env.NODE_ENV !== 'development') return disabledResponse();
   if (!sameOriginRequest(request))
     return Response.json(
@@ -57,3 +58,5 @@ export async function POST(request: Request) {
     { headers: privateHeaders },
   );
 }
+
+export const POST = withApiCanonicalPath(handlePOST);

@@ -11,7 +11,7 @@ import { hashPassword } from '../../src/lib/password';
 import { openTestEnvironment } from '../../scripts/test-environment';
 
 // TLS só no loopback, CA efêmera e dados fictícios. Não altera certificados do sistema.
-test('HTTPS isola o cookie de sessão e encerra acesso no navegador e no banco', async ({
+test('HTTPS protege a sessão, recusa scripts indevidos e bloqueia enquadramento', async ({
   browser,
 }) => {
   const directory = await mkdtemp(join(tmpdir(), 'ete-tls-'));
@@ -19,6 +19,7 @@ test('HTTPS isola o cookie de sessão e encerra acesso no navegador e no banco',
   const certPath = join(directory, 'cert.pem');
   let environment: Awaited<ReturnType<typeof openTestEnvironment>> | undefined;
   let upstream = '';
+  let publicBase = '';
   const tunnels = new Set<Duplex>();
   let studentId: string | undefined;
   let server: ReturnType<typeof createServer> | undefined;
@@ -51,7 +52,15 @@ test('HTTPS isola o cookie de sessão e encerra acesso no navegador e no banco',
     server = createServer(
       { key: await readFile(keyPath), cert: await readFile(certPath) },
       (req, res) => {
+        if (req.url === '/__frame') {
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(
+            `<!doctype html><title>Laboratório</title><iframe src="${publicBase}/login"></iframe>`,
+          );
+          return;
+        }
         // Página do subdomínio irmão tenta injetar cookie no domínio pai.
+
         if (req.url === '/__cookie-parent') {
           res.writeHead(200, {
             'Content-Type': 'text/html',
@@ -69,9 +78,45 @@ test('HTTPS isola o cookie de sessão e encerra acesso no navegador e no banco',
           upstream + req.url,
           {
             method: req.method,
-            headers: { ...req.headers, 'x-forwarded-proto': 'https' },
+            headers: {
+              ...req.headers,
+              'x-forwarded-proto': 'https',
+              ...(req.url === '/login'
+                ? { 'accept-encoding': 'identity' }
+                : {}),
+            },
           },
           (response) => {
+            // Alteração controlada do HTML no proxy próprio; CSP/nonce originais preservados.
+            // Evita atribuir origem pública à resposta TLS local via interceptação do navegador.
+            if (
+              req.url === '/login' &&
+              response.headers['content-type']?.includes('text/html')
+            ) {
+              if (response.headers['content-encoding']) {
+                response.resume();
+                res.writeHead(502);
+                res.end();
+                return;
+              }
+              const chunks: Buffer[] = [];
+              response.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+              response.once('end', () => {
+                const html = Buffer.concat(chunks)
+                  .toString('utf8')
+                  .replace(
+                    '</head>',
+                    '<script>window.__cspProbe=true</script></head>',
+                  );
+                const headers = { ...response.headers };
+                delete headers['content-length'];
+                delete headers['transfer-encoding'];
+                res.writeHead(response.statusCode ?? 502, headers);
+                res.end(html);
+              });
+              response.once('error', () => res.destroy());
+              return;
+            }
             res.writeHead(response.statusCode ?? 502, response.headers);
             response.pipe(res);
           },
@@ -130,6 +175,7 @@ test('HTTPS isola o cookie de sessão e encerra acesso no navegador e no banco',
       throw new Error('TLS sem porta própria.');
     const base = `https://portal.ete-test.localhost:${address.port}`;
     const sibling = `https://site.ete-test.localhost:${address.port}`;
+    publicBase = base;
     environment = await openTestEnvironment({ http: true, publicOrigin: base });
     upstream = environment.base;
     const { db } = environment;
@@ -154,7 +200,32 @@ test('HTTPS isola o cookie de sessão e encerra acesso no navegador e no banco',
     // Exceção de certificado exclusivamente neste contexto e nesta CA efêmera.
     context = await browser.newContext({ ignoreHTTPSErrors: true });
     const page = await context.newPage();
+    await page.addInitScript(() => {
+      Reflect.set(window, '__cspViolations', 0);
+      document.addEventListener('securitypolicyviolation', (event) => {
+        if (event.effectiveDirective.startsWith('script-src'))
+          Reflect.set(
+            window,
+            '__cspViolations',
+            Number(Reflect.get(window, '__cspViolations')) + 1,
+          );
+      });
+    });
     await page.goto(base + '/login');
+    await expect(
+      page.getByRole('button', { name: 'Entrar no portal' }),
+    ).toBeEnabled({ timeout: 60_000 });
+    expect(
+      await page.evaluate(() => Reflect.get(window, '__cspProbe') === true),
+    ).toBe(false);
+    await expect
+      .poll(() =>
+        page.evaluate(() => Number(Reflect.get(window, '__cspViolations'))),
+      )
+      .toBeGreaterThan(0);
+    expect(
+      await page.evaluate(() => Reflect.get(window, '__cspProbe') === true),
+    ).toBe(false);
     await page.getByLabel('CPF ou e-mail').fill(email);
     await page.getByLabel('Senha', { exact: true }).fill(password);
     await expect(
@@ -167,6 +238,9 @@ test('HTTPS isola o cookie de sessão e encerra acesso no navegador e no banco',
     await page.getByRole('button', { name: 'Entrar no portal' }).click();
     expect((await login).status()).toBe(200);
     await expect(page).toHaveURL(base + '/');
+    await expect(
+      page.getByRole('button', { name: 'Abrir menu de serviços' }),
+    ).toBeEnabled();
     const cookies = await context.cookies(base);
     const cookie = cookies.find((c) => c.name === name);
     expect(
@@ -192,6 +266,18 @@ test('HTTPS isola o cookie de sessão e encerra acesso no navegador e no banco',
     expect(
       (await context.cookies(base)).find((c) => c.name === name)?.value,
     ).toBe(cookie!.value);
+    let frameBlocked = false;
+    other.on('console', (message) => {
+      if (/frame-ancestors|X-Frame-Options/.test(message.text()))
+        frameBlocked = true;
+    });
+    await other.goto(sibling + '/__frame');
+    await expect.poll(() => frameBlocked).toBe(true);
+    await expect(
+      other
+        .frameLocator('iframe')
+        .getByRole('heading', { name: 'Acesso ao portal' }),
+    ).toHaveCount(0);
     await other.close();
     // Cookie antigo não autentica em HTTPS. Um token alterado também não.
     await context.clearCookies();

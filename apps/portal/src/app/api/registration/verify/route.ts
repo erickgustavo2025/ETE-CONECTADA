@@ -1,3 +1,4 @@
+import { withApiCanonicalPath } from '@/lib/api-route';
 import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
 import { getDb } from '@/lib/db';
 import {
@@ -18,7 +19,7 @@ import {
 
 export const runtime = 'nodejs';
 
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   if (!registrationEnabled) return disabledResponse();
   if (!sameOriginRequest(request))
     return Response.json(
@@ -56,3 +57,5 @@ export async function POST(request: Request) {
     return databaseErrorResponse();
   }
 }
+
+export const POST = withApiCanonicalPath(handlePOST);
