@@ -5,6 +5,7 @@ import { request as plainRequest } from 'node:http';
 import { connect as tlsConnect } from 'node:tls';
 import { X509Certificate } from 'node:crypto';
 import { chromium, expect } from '@playwright/test';
+import { waitForNetworkStability } from './network-stability.mjs';
 
 const mode = process.argv[2];
 assert.ok(['probe', 'apps', 'rotated'].includes(mode));
@@ -244,6 +245,9 @@ if (mode === 'probe') {
       ],
     });
     try {
+      // Docker recriou interfaces; aguarda sua estabilização após iniciar o navegador.
+      // Console e requisições continuam estritos, sem retry após erro.
+      await waitForNetworkStability();
       // As três passagens precisam passar; não há repetição automática após falha.
       const journeys = Array.from({ length: 3 }, () => [
         'site',
@@ -323,6 +327,11 @@ if (mode === 'probe') {
           errors,
           [],
           `Console sem erros; recursos recusados: ${JSON.stringify(failedResources)}`,
+        );
+        assert.deepEqual(
+          failedResources,
+          [],
+          'Recursos da jornada precisam carregar sem erro.',
         );
         await context.close();
       }
