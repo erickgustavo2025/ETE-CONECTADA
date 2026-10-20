@@ -1,10 +1,13 @@
 import type { NextConfig } from 'next';
+import path from 'node:path';
 import {
   baseSecurityHeaders,
   apiSecurityHeaders,
 } from '../../shared/security-headers';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  outputFileTracingRoot: path.join(__dirname, '../..'),
   devIndicators: false,
   skipTrailingSlashRedirect: true,
   skipProxyUrlNormalize: true,

@@ -1,0 +1,42 @@
+name: Imagens Docker
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, 'feature/**']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  images:
+    name: Construir e testar site e portal
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Preparar Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Conferir workflow
+        run: bash .github/scripts/check-workflows.sh .github/workflows/images.yml
+      - name: Instalar ferramentas de teste pelo lockfile
+        run: npm ci --ignore-scripts
+      - name: Instalar Chromium no runner de teste
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Construir e testar imagens sem registry ou deploy
+        run: bash .github/scripts/test-containers.sh
