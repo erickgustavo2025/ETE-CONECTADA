@@ -102,6 +102,10 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
           create: {
             parentOne: 'Filiação Fictícia Acessibilidade',
             parentageSource: 'SCHOOL_RECORD',
+            birthCity: 'Recife',
+            birthState: 'PE',
+            birthCountry: 'BR',
+            birthplaceSource: 'SCHOOL_RECORD',
           },
         },
         enrollments: {
@@ -276,6 +280,10 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
         });
         await page
           .getByRole('button', { name: 'Solicitar declaração', exact: true })
+          .click();
+        await page.getByLabel(/Confirmo/).check();
+        await page
+          .getByRole('button', { name: 'Enviar solicitação', exact: true })
           .click();
         const submit = page.getByRole('button', {
           name: 'Enviando solicitação…',

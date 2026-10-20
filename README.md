@@ -96,7 +96,7 @@ A liberação para retirada depende da confirmação da secretaria, depois de pr
 
 Para gerar e liberar o documento, a matrícula precisa estar conferida pela secretaria, ativa e dentro da vigência registrada. O período do PDF deve corresponder ao cadastrado. Registros antigos começam como não conferidos; importar um aluno não confirma seu vínculo. Veja as [regras de situação e vigência](docs/vigencia-matriculas.md).
 
-A secretaria pode gerar até 100 declarações por lote, uma por aluno. Quando incluir frequência, precisa informar o percentual e o período de apuração. Os dados complementares preenchidos no editor ficam na tela e são perdidos ao sair; eles não alteram o cadastro dos alunos.
+A secretaria pode gerar até 100 declarações por lote, uma por aluno. No integrado, a frequência é de 100%, conforme orientação da secretaria. O aluno confirma seu estado e município de nascimento no pedido; os dados disponíveis no cadastro já aparecem preenchidos para a conferência. Ajustes feitos no editor valem apenas para aquela minuta. Veja o [guia de preenchimento](docs/declaracao-vinculo/preenchimento.md).
 
 A versão atual prepara o documento para impressão e assinatura no papel. Os [modelos e o exemplo fictício](output/pdf/) estão disponíveis para revisão. O modelo próprio do subsequente, assinatura eletrônica e consulta por QR Code ainda fazem parte do trabalho futuro. A pesquisa sobre a emissão está em [Declaração de vínculo](docs/declaracao-vinculo/viabilidade.md).
 

@@ -227,6 +227,17 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
         schoolRegistration: String(randomInt(10000000, 99999999)),
         birthDate: new Date('2008-05-20T00:00:00.000Z'),
         fullName: `Aluno de declaração ${suffix}`,
+        details: {
+          create: {
+            birthCity: 'Recife',
+            birthState: 'PE',
+            birthCountry: 'BR',
+            birthplaceSource: 'SCHOOL_RECORD',
+            parentOne: 'Responsável sintético Um',
+            parentTwo: 'Responsável sintético Dois',
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
         enrollments: {
           create: {
             mode: 'INTEGRADO',
@@ -293,6 +304,10 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
       page.getByRole('heading', { name: 'Declaração de vínculo' }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Solicitar declaração' }).click();
+    await page.getByLabel(/Confirmo/).check();
+    await page
+      .getByRole('button', { name: 'Enviar solicitação', exact: true })
+      .click();
     await expect(
       page.getByText('Solicitação enviada. Acompanhe o atendimento abaixo.'),
     ).toBeVisible();
@@ -315,24 +330,27 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
       ).toBe(true);
     }
     await page.setViewportSize({ width: 320, height: 900 });
-    await page.getByLabel('Cidade e estado de nascimento').fill('Recife/PE');
-    await page
-      .getByLabel('Nome do pai ou da mãe')
-      .fill('Responsável sintético Um');
-    await page
-      .getByLabel('Nome do outro pai ou da outra mãe (se houver)')
-      .fill('Responsável sintético Dois');
-    await page
-      .getByLabel('Nome oficial do curso técnico')
-      .fill('Desenvolvimento de Sistemas');
-    await page.getByLabel('Período letivo').fill('2026');
+    await expect(page.getByLabel('Cidade e estado de nascimento')).toHaveValue(
+      'Recife/PE',
+    );
+    await expect(page.getByLabel('Nome do pai ou da mãe')).toHaveValue(
+      'Responsável sintético Um',
+    );
+    await expect(
+      page.getByLabel('Nome do outro pai ou da outra mãe (se houver)'),
+    ).toHaveValue('Responsável sintético Dois');
+    await expect(page.getByLabel('Nome oficial do curso técnico')).toHaveValue(
+      'Desenvolvimento de Sistemas',
+    );
+    await expect(page.getByLabel('Período letivo')).not.toHaveValue('');
     await page
       .getByLabel('Dias e horários, se necessário')
       .fill('Dias e horários fictícios para teste');
-    await page.getByLabel('Incluir frequência registrada').check();
-    await page.getByLabel('Frequência (%)').fill('100');
-    await page.getByLabel('Frequência: data inicial').fill('2026-02-01');
-    await page.getByLabel('Frequência: data final').fill('2026-10-12');
+    await expect(
+      page.getByText('100%, conforme orientação da secretaria', {
+        exact: false,
+      }),
+    ).toBeVisible();
     await page.getByLabel(/Conferi a matrícula, os dados pessoais/).check();
     const downloadEvent = page.waitForEvent('download');
     await page

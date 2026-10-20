@@ -5,6 +5,7 @@ import {
   DeclarationValidationError,
   type DeclarationFields,
   type StudentView,
+  declarationDefaults,
 } from '@/lib/declarations';
 import { useFormValidation } from './use-form-validation';
 import StaffDeclarationRequests from './staff-declaration-requests';
@@ -83,7 +84,6 @@ export default function SecretaryDeclarations() {
   const [common, setCommon] = useState<
     Record<string, Partial<DeclarationFields>>
   >({});
-  const [includeFrequency, setIncludeFrequency] = useState(true);
   const [batchDownloaded, setBatchDownloaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -118,7 +118,10 @@ export default function SecretaryDeclarations() {
         (enrollment) => enrollment.id === savedDraft.enrollmentId,
       )
       ? savedDraft
-      : (common[selected.enrollments[0]?.className] ?? {})
+      : {
+          ...(common[selected.enrollments[0]?.className] ?? {}),
+          ...declarationDefaults(selected),
+        }
     : {};
 
   useEffect(() => {
@@ -228,9 +231,7 @@ export default function SecretaryDeclarations() {
     if (
       student &&
       drafts[student.id] &&
-      !student.enrollments.some(
-        (enrollment) => enrollment.id === drafts[student.id].enrollmentId,
-      )
+      student.enrollments[0]?.id !== drafts[student.id].enrollmentId
     ) {
       // Ao abrir um pedido de outra matrícula, não reutiliza a conferência anterior.
       setDrafts((previous) => {
@@ -244,9 +245,6 @@ export default function SecretaryDeclarations() {
       setBatchDownloaded(false);
     }
     setSelected(student);
-    setIncludeFrequency(
-      student ? (drafts[student.id]?.includeFrequency ?? true) : true,
-    );
     setMessage('');
     validation.reset();
     if (!student) searchRef.current?.focus();
@@ -747,7 +745,8 @@ export default function SecretaryDeclarations() {
                 {selected.birthDate.split('-').reverse().join('/')}
               </p>
               <p className="editor-hint">
-                Os campos preenchidos aqui são usados apenas na declaração e não
+                Os dados disponíveis no cadastro já aparecem preenchidos.
+                Confira-os antes de gerar a declaração. Ajustes nesta tela não
                 alteram o cadastro do aluno. Campos com * são obrigatórios. O
                 PDF tem espaço para assinatura e carimbo dos responsáveis.
               </p>
@@ -769,7 +768,22 @@ export default function SecretaryDeclarations() {
                       id="enrollment-id"
                       name="enrollmentId"
                       required
-                      defaultValue={initial.enrollmentId}
+                      value={selected.enrollments[0]?.id ?? ''}
+                      onChange={(event) => {
+                        const chosen = selected.enrollments.find(
+                          (row) => row.id === event.target.value,
+                        );
+                        if (chosen)
+                          selectStudent({
+                            ...selected,
+                            enrollments: [
+                              chosen,
+                              ...selected.enrollments.filter(
+                                (row) => row.id !== chosen.id,
+                              ),
+                            ],
+                          });
+                      }}
                       {...validation.field('enrollmentId')}
                     >
                       {selected.enrollments.map((enrollment) => (
@@ -803,69 +817,13 @@ export default function SecretaryDeclarations() {
                       />
                     </div>
                   ))}
-                  <fieldset className="frequency-fields">
-                    <legend>Frequência</legend>
-                    <label
-                      className="declaration-reviewed"
-                      htmlFor="include-frequency"
-                    >
-                      <input
-                        id="include-frequency"
-                        name="includeFrequency"
-                        type="checkbox"
-                        checked={includeFrequency}
-                        onChange={(event) =>
-                          setIncludeFrequency(event.target.checked)
-                        }
-                      />
-                      Incluir frequência registrada
-                    </label>
-                    <p className="editor-hint">
-                      Informe o percentual real deste aluno e o intervalo
-                      consultado no registro escolar.
+                  <div className="frequency-fields">
+                    <h3>Frequência do integrado</h3>
+                    <p>
+                      100%, conforme orientação da secretaria. O percentual já
+                      será incluído no documento.
                     </p>
-                    <div hidden={!includeFrequency}>
-                      <div className="declaration-field">
-                        <label htmlFor="frequency-percent">
-                          Frequência (%) *
-                        </label>
-                        <input
-                          id="frequency-percent"
-                          name="frequencyPercent"
-                          type="text"
-                          inputMode="decimal"
-                          maxLength={6}
-                          defaultValue={initial.frequencyPercent ?? ''}
-                          required
-                          disabled={!includeFrequency}
-                          {...validation.field('frequencyPercent')}
-                        />
-                      </div>
-                      <div className="frequency-dates">
-                        {(['frequencyStart', 'frequencyEnd'] as const).map(
-                          (name, index) => (
-                            <div className="declaration-field" key={name}>
-                              <label htmlFor={name}>
-                                {index === 0
-                                  ? 'Frequência: data inicial'
-                                  : 'Frequência: data final'}{' '}
-                                *
-                              </label>
-                              <input
-                                id={name}
-                                name={name}
-                                type="date"
-                                required
-                                disabled={!includeFrequency}
-                                defaultValue={initial[name] ?? ''}
-                                {...validation.field(name)}
-                              />
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    </div>
-                  </fieldset>
+                  </div>
                   <details className="signature-options">
                     <summary>
                       Preencher nomes dos responsáveis (opcional)

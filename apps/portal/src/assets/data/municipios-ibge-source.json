@@ -1,0 +1,7 @@
+{
+  "url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome",
+  "retrievedOn": "2026-10-20",
+  "sourceSha256": "d9eec8439bc8c5dc2f7db6332a8e5569f5a3f637988e26aebc513412d4069d5c",
+  "municipalities": 5571,
+  "states": 27
+}

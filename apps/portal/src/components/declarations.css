@@ -809,3 +809,32 @@
     flex-direction: column;
   }
 }
+.birthplace-dialog {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+.birthplace-dialog fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.birthplace-dialog input:not([type='checkbox']),
+.birthplace-dialog select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  background: white;
+  font: inherit;
+}
+.birthplace-dialog select[size] {
+  min-height: 150px;
+}
+.birthplace-search {
+  display: flex;
+  gap: 8px;
+}

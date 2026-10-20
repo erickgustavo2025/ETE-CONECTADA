@@ -138,11 +138,11 @@ export async function updateStudentDetails(
     `;
     if (!authorized.length)
       throw new StudentDetailsError('Acesso não autorizado.');
-    const student = await tx.student.findUnique({
-      where: { id: studentId },
-      select: { id: true },
-    });
-    if (!student)
+    // Compartilha a ordem de locks com o pedido para não perder correção concorrente.
+    const student = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM students WHERE id=${studentId}::uuid FOR UPDATE
+    `;
+    if (!student.length)
       throw new StudentDetailsError('Cadastro não disponível para alteração.');
     // Apenas campos presentes são atualizados; ausência no arquivo não apaga dados.
     return tx.studentDetails.upsert({

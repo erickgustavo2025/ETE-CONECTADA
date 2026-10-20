@@ -265,6 +265,7 @@ async function main() {
         },
       ],
       ['/api/declaracao/solicitacoes', 401],
+      ['/api/localidades?uf=PE', 401],
       ['/api/declaracao/solicitacoes', 401, {}],
       ['/api/secretaria/solicitacoes', 401],
       ['/api/secretaria/solicitacoes', 401, {}],

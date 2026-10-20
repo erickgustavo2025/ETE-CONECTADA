@@ -5,6 +5,8 @@ import {
   declarationBody,
   DeclarationValidationError,
   validateDeclarationFields,
+  declarationDefaults,
+  studentView,
   type DeclarationStudent,
 } from '../src/lib/declarations';
 
@@ -31,6 +33,7 @@ const student: DeclarationStudent = {
   schoolRegistration: '00000001',
   cpf: null,
   birthDate: new Date('2008-02-29T00:00:00Z'),
+  details: null,
   enrollments: [
     {
       ...syntheticEnrollmentValidity(),
@@ -43,6 +46,42 @@ const student: DeclarationStudent = {
     },
   ],
 };
+
+test('preenche dados escolares e local de nascimento sem copiar dados de outro aluno', () => {
+  const person = {
+    ...student,
+    details: {
+      parentOne: 'Filiação do cadastro',
+      parentTwo: null,
+      socialName: 'Nome social fictício',
+      birthCity: 'Recife',
+      birthState: 'PE',
+      birthCountry: 'BR',
+      birthplaceSource: 'STUDENT_DECLARATION' as const,
+    },
+    enrollments: student.enrollments.map((row) => ({
+      ...row,
+      courseLabel: 'DS',
+    })),
+  };
+  const fields = declarationDefaults(studentView(person));
+  assert.equal(fields.parentOne, 'Filiação do cadastro');
+  assert.equal(fields.parentTwo, '');
+  assert.equal(fields.socialName, 'Nome social fictício');
+  assert.equal(fields.naturality, 'Recife/PE');
+  assert.equal(fields.courseName, 'Desenvolvimento de Sistemas');
+  assert.equal(fields.schoolPeriod, '2026');
+  assert.equal(declarationDefaults(studentView(student)).parentOne, '');
+});
+
+test('integrado sempre usa 100% inclusive diante de alteração do percentual enviado', () => {
+  const body = declarationBody(
+    student,
+    validateDeclarationFields({ ...frequency, frequencyPercent: '1' }),
+  );
+  assert.match(body, /100%/);
+  assert.doesNotMatch(body, /de 1%/);
+});
 
 function rejects(value: unknown, field?: string) {
   assert.throws(
@@ -82,7 +121,7 @@ test('normaliza espaços e preserva campos opcionais vazios sem frequência', ()
   assert.equal(fields.secretaryName, '');
   assert.equal(fields.includeFrequency, false);
   assert.equal(fields.frequencyPercent, '');
-  assert.equal(declarationBody(student, fields).includes('frequência'), false);
+  assert.match(declarationBody(student, fields), /100%/);
 });
 
 test('respeita limites dos textos e rejeita controles no conteúdo', () => {
@@ -236,7 +275,20 @@ test('compõe texto fictício com frequência validada sem inventar CPF ou segun
   );
   assert.match(body, /Estudante fictício, nascido\(a\) em 29\/02\/2008/);
   assert.match(body, /2º ano/);
-  assert.match(body, /99,25%, no período de 01\/01\/2026 a 12\/10\/2026/);
+  assert.match(body, /frequência registrada no período letivo é de 100%/);
   assert.equal(body.includes('CPF'), false);
   assert.equal(body.includes('undefined'), false);
+});
+
+test('rótulo legado de curso não é resolvido por propriedades do protótipo', () => {
+  for (const code of ['constructor', '__proto__', 'toString']) {
+    const view = studentView({
+      ...student,
+      enrollments: student.enrollments.map((row) => ({
+        ...row,
+        courseLabel: code,
+      })),
+    });
+    assert.equal(declarationDefaults(view).courseName, code);
+  }
 });

@@ -81,6 +81,17 @@ async function main() {
         fullName: `Estudante fictício João D'Ávila ${suffix}`,
         schoolRegistration: String(randomInt(10000000, 99999999)),
         birthDate: new Date('2008-01-15T00:00:00Z'),
+        details: {
+          create: {
+            birthCity: 'Recife',
+            birthState: 'PE',
+            birthCountry: 'BR',
+            birthplaceSource: 'SCHOOL_RECORD',
+            parentOne: 'Responsável sintético Um',
+            parentTwo: 'Responsável sintético Dois',
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
         enrollments: {
           create: {
             mode: 'INTEGRADO',
@@ -493,7 +504,10 @@ async function main() {
     const secondCookie = await cookie(second.id, 'student');
     const secondRequest = await post(
       '/api/declaracao/solicitacoes',
-      { enrollmentId: second.enrollments[0].id },
+      {
+        enrollmentId: second.enrollments[0].id,
+        birthplace: { state: 'PE', municipalityId: '2611606' },
+      },
       secondCookie,
     );
     assert.equal(secondRequest.status, 201);
