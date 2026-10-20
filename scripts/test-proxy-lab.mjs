@@ -248,9 +248,35 @@ if (mode === 'probe') {
         const context = await browser.newContext();
         const page = await context.newPage();
         const errors = [];
-        page.on('pageerror', () => errors.push('Erro JavaScript.'));
+        const failedResources = [];
+        // Estas jornadas abrem só páginas públicas sintéticas e não digitam dados.
+        const publicError = (message) =>
+          message
+            .replace(/https?:\/\/[^\s'"<>]+/g, '[endereço]')
+            .replace(/nonce-[^\s'";]+/g, 'nonce-[omitido]')
+            .slice(0, 400);
+        page.on('pageerror', (error) =>
+          errors.push(`JavaScript ${app}: ${publicError(error.message)}`),
+        );
         page.on('console', (message) => {
-          if (message.type() === 'error') errors.push('Erro de console.');
+          if (message.type() === 'error')
+            errors.push(`Console ${app}: ${publicError(message.text())}`);
+        });
+        page.on('response', (response) => {
+          if (response.status() >= 400 && failedResources.length < 12)
+            failedResources.push({
+              status: response.status(),
+              path: new URL(response.url()).pathname.slice(0, 180),
+            });
+        });
+        page.on('requestfailed', (request) => {
+          if (failedResources.length < 12)
+            failedResources.push({
+              error:
+                request.failure()?.errorText.match(/net::ERR_[A-Z_]+/)?.[0] ??
+                'falha de rede',
+              path: new URL(request.url()).pathname.slice(0, 180),
+            });
         });
         await page.goto(`${origin(app)}${app === 'site' ? '/' : '/login'}`, {
           waitUntil: 'networkidle',
@@ -288,7 +314,11 @@ if (mode === 'probe') {
             .getByRole('heading', { name: 'Acesso ao portal' })
             .waitFor();
         }
-        assert.deepEqual(errors, []);
+        assert.deepEqual(
+          errors,
+          [],
+          `Console sem erros; recursos recusados: ${JSON.stringify(failedResources)}`,
+        );
         await context.close();
       }
     } finally {
