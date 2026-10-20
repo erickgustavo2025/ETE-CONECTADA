@@ -76,7 +76,12 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
       await page.goto(base + '/login');
       await page.getByLabel('CPF ou e-mail').fill(email);
       await page.getByLabel('Senha', { exact: true }).fill(password);
+      const loginResponse = page.waitForResponse(
+        (response) => new URL(response.url()).pathname === '/api/login',
+      );
       await page.getByRole('button', { name: 'Entrar no portal' }).click();
+      expect((await loginResponse).status()).toBe(200);
+      await page.waitForURL(/\/$/, { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(/\/$/);
       await expect(
         page.getByRole('button', { name: 'Abrir menu de serviços' }),

@@ -76,7 +76,12 @@ test('secretaria separa modalidades, reinicia páginas e recupera falha sem most
         });
       }
     }
+    const firstRequests = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/secretaria/solicitacoes',
+    );
     await page.goto(base + '/secretaria/declaracoes');
+    expect((await firstRequests).status()).toBe(200);
     const group = page.getByRole('group', { name: 'Modalidade do aluno' });
     const integrated = group.getByRole('button', {
       name: 'Integrado',
