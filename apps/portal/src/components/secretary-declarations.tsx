@@ -112,6 +112,14 @@ export default function SecretaryDeclarations() {
     queue.some((item) => item.id === student.id),
   ).length;
   const savedDraft = selected ? drafts[selected.id] : undefined;
+  const selectedEnrollment = selected?.enrollments[0];
+  const subsequent = selectedEnrollment?.subsequent;
+  const canPrepare =
+    selectedEnrollment?.mode === 'INTEGRADO' ||
+    (selectedEnrollment?.mode === 'SUBSEQUENTE' &&
+      !!subsequent &&
+      !('error' in subsequent));
+
   const initial: Partial<DeclarationFields> = selected
     ? savedDraft &&
       selected.enrollments.some(
@@ -446,7 +454,8 @@ export default function SecretaryDeclarations() {
         <p>
           Os documentos gerados aqui são de teste e ainda aguardam aprovação da
           escola para uso oficial. Confira todos os campos antes de gerar o PDF.
-          A declaração do subsequente ainda não está disponível.
+          No subsequente, o módulo e as datas vêm do calendário conferido da
+          turma.
         </p>
       </div>
       <StaffDeclarationRequests
@@ -787,15 +796,11 @@ export default function SecretaryDeclarations() {
                       {...validation.field('enrollmentId')}
                     >
                       {selected.enrollments.map((enrollment) => (
-                        <option
-                          key={enrollment.id}
-                          value={enrollment.id}
-                          disabled={enrollment.mode !== 'INTEGRADO'}
-                        >
+                        <option key={enrollment.id} value={enrollment.id}>
                           {enrollment.className} ·{' '}
                           {enrollment.mode === 'INTEGRADO'
                             ? 'Integrado'
-                            : 'Subsequente — modelo pendente'}
+                            : `Subsequente · ${enrollment.moduleNumber ?? '—'}º módulo`}
                         </option>
                       ))}
                     </select>
@@ -811,19 +816,67 @@ export default function SecretaryDeclarations() {
                         name={field.name}
                         type="text"
                         defaultValue={initial[field.name] ?? ''}
+                        readOnly={
+                          selectedEnrollment?.mode === 'SUBSEQUENTE' &&
+                          ['courseName', 'schoolPeriod', 'schedule'].includes(
+                            field.name,
+                          )
+                        }
                         maxLength={field.max}
                         required={'required' in field && field.required}
                         {...validation.field(field.name)}
                       />
                     </div>
                   ))}
-                  <div className="frequency-fields">
-                    <h3>Frequência do integrado</h3>
-                    <p>
-                      100%, conforme orientação da secretaria. O percentual já
-                      será incluído no documento.
-                    </p>
-                  </div>
+                  {selectedEnrollment?.mode === 'SUBSEQUENTE' ? (
+                    <div className="frequency-fields">
+                      <h3>Curso subsequente</h3>
+                      {subsequent && !('error' in subsequent) ? (
+                        <>
+                          <p>
+                            {subsequent.moduleNumber}º módulo · Início do curso:{' '}
+                            {new Intl.DateTimeFormat('pt-BR', {
+                              month: 'long',
+                              year: 'numeric',
+                              timeZone: 'UTC',
+                            }).format(
+                              new Date(subsequent.startsOn + 'T00:00:00Z'),
+                            )}
+                            . Conclusão prevista:{' '}
+                            {new Intl.DateTimeFormat('pt-BR', {
+                              month: 'long',
+                              year: 'numeric',
+                              timeZone: 'UTC',
+                            }).format(
+                              new Date(subsequent.endsOn + 'T00:00:00Z'),
+                            )}
+                            .
+                          </p>
+                          <p>
+                            Curso, período, horários e datas já estão
+                            preenchidos. Este modelo não informa frequência.
+                          </p>
+                        </>
+                      ) : (
+                        <p role="alert">
+                          {subsequent && 'error' in subsequent
+                            ? subsequent.error
+                            : 'Confira o calendário e a matrícula antes de emitir.'}{' '}
+                          <a href="/secretaria/calendarios">
+                            Conferir calendário
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="frequency-fields">
+                      <h3>Frequência do integrado</h3>
+                      <p>
+                        100%, conforme orientação da secretaria. O percentual já
+                        será incluído no documento.
+                      </p>
+                    </div>
+                  )}
                   <details className="signature-options">
                     <summary>
                       Preencher nomes dos responsáveis (opcional)
@@ -859,8 +912,9 @@ export default function SecretaryDeclarations() {
                       type="checkbox"
                       defaultChecked
                     />
-                    Usar também o curso, período, horários, datas da frequência
-                    e nomes de quem assina nas próximas declarações desta turma.
+                    Reutilizar curso, período, horários e nomes de quem assina
+                    nas próximas declarações desta turma. Os dados individuais e
+                    o calendário de cada aluno continuam sendo conferidos.
                   </label>
                   <label
                     className="declaration-reviewed"
@@ -874,8 +928,10 @@ export default function SecretaryDeclarations() {
                       defaultChecked={initial.reviewed ?? false}
                       {...validation.field('reviewed')}
                     />
-                    Conferi a matrícula, os dados pessoais e a frequência
-                    informada nos registros escolares.
+                    Conferi a matrícula, os dados pessoais e{' '}
+                    {selectedEnrollment?.mode === 'SUBSEQUENTE'
+                      ? 'o módulo e as datas do calendário desta turma.'
+                      : 'a frequência informada nos registros escolares.'}
                   </label>
                 </fieldset>
                 {validation.error && (
@@ -893,10 +949,7 @@ export default function SecretaryDeclarations() {
                     type="submit"
                     name="intent"
                     value="save"
-                    disabled={
-                      busy ||
-                      !selected.enrollments.some((e) => e.mode === 'INTEGRADO')
-                    }
+                    disabled={busy || !canPrepare}
                   >
                     Salvar conferência
                   </button>
@@ -906,10 +959,7 @@ export default function SecretaryDeclarations() {
                     name="intent"
                     value="download"
                     aria-busy={busy}
-                    disabled={
-                      busy ||
-                      !selected.enrollments.some((e) => e.mode === 'INTEGRADO')
-                    }
+                    disabled={busy || !canPrepare}
                   >
                     {busy ? 'Preparando PDF…' : 'Baixar só esta declaração'}
                   </button>

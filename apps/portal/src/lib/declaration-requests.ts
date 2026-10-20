@@ -1,6 +1,10 @@
 import { Prisma } from '@/generated/prisma/client';
 import { getDb } from './db';
-import { DeclarationValidationError } from './declarations';
+import {
+  DeclarationValidationError,
+  enrollmentDeclarationSelect,
+  subsequentContext,
+} from './declarations';
 import type { RequestSummary } from './declaration-request-types';
 import {
   BirthplaceError,
@@ -25,15 +29,7 @@ async function lockEnrollments(tx: Prisma.TransactionClient, ids: string[]) {
   `);
   return tx.enrollment.findMany({
     where: { id: { in: unique } },
-    select: {
-      id: true,
-      studentId: true,
-      status: true,
-      periodLabel: true,
-      validFrom: true,
-      validUntil: true,
-      reviewedAt: true,
-    },
+    select: { ...enrollmentDeclarationSelect, studentId: true },
   });
 }
 
@@ -110,9 +106,9 @@ export async function requestDeclaration(
           'Matrícula não encontrada na sua conta. Procure a secretaria.',
           422,
         );
-      if (enrollment.mode !== 'INTEGRADO')
+      if (!['INTEGRADO', 'SUBSEQUENTE'].includes(enrollment.mode))
         throw new RequestError(
-          'O atendimento do subsequente aguarda a confirmação do modelo pela escola.',
+          'Esta modalidade precisa de conferência da secretaria.',
           422,
         );
       const existing = await tx.declarationRequest.findFirst({
@@ -176,12 +172,15 @@ export async function recordGeneratedDeclarations(
     enrollmentId: string;
     periodLabel: string;
     reviewedAt: Date | null;
+    calendarRevision?: number | null;
   }[],
   accountId: string,
 ) {
   if (!items.length) return;
   await getDb().$transaction(async (tx) => {
     await lockSecretary(tx, accountId);
+    // Mesma ordem das alterações de calendário e importação.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(774056)::text`;
     const rows = await lockEnrollments(
       tx,
       items.map((item) => item.enrollmentId),
@@ -195,6 +194,14 @@ export async function recordGeneratedDeclarations(
         throw new DeclarationValidationError('Matrícula não disponível.');
       try {
         requireCurrentEnrollment(enrollment, item.periodLabel);
+        if (enrollment.mode === 'SUBSEQUENTE') {
+          subsequentContext(enrollment);
+          if (item.calendarRevision !== enrollment.calendarRevision)
+            throw new DeclarationValidationError(
+              'O calendário mudou durante a geração. Confira e gere novamente.',
+              'enrollmentId',
+            );
+        }
       } catch (error) {
         if (error instanceof EnrollmentValidityError)
           throw new DeclarationValidationError(error.message, error.field);

@@ -95,6 +95,9 @@ async function handlePOST(request: Request) {
         studentId: item.student.id,
         enrollmentId: item.fields.enrollmentId,
         periodLabel: item.fields.schoolPeriod,
+        calendarRevision: item.student.enrollments.find(
+          (row) => row.id === item.fields.enrollmentId,
+        )!.calendarRevision,
         reviewedAt: item.student.enrollments.find(
           (row) => row.id === item.fields.enrollmentId,
         )!.reviewedAt,
