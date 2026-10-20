@@ -1,5 +1,7 @@
 # Laboratório com Compose
 
+Recriar containers preservando o volume não substitui backup. Veja o [ensaio de restauração isolada](operacao/backup-restauracao.md) e as decisões pendentes para a operação real.
+
 O `compose.lab.yaml` prepara um ensaio com site, portal e PostgreSQL 16 separados. É uma referência testável para a próxima etapa de infraestrutura. A hospedagem definitiva, o tamanho do servidor, os destinos de backup e a aplicação na VPS ainda dependem das decisões da equipe. Não use esta configuração como implantação aprovada de produção.
 
 O portal mantém os bloqueios de produção: as páginas de entrada podem ser conferidas, mas o laboratório não libera cadastros nem acesso de alunos reais. Não importa planilhas, não envia e-mail e não executa migrações ou seed ao iniciar.

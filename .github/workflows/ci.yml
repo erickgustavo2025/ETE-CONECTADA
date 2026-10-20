@@ -77,7 +77,8 @@ jobs:
   migrations:
     name: Migrações e integração em PostgreSQL descartável
     needs: workflows
-    runs-on: ubuntu-latest
+    # O ensaio de backup usa os clientes PostgreSQL 16 desta imagem.
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     timeout-minutes: 15
@@ -120,6 +121,11 @@ jobs:
       - name: Gerar cliente Prisma para os testes
         id: generate
         run: npm run db:generate --workspace @ete-conectada/portal
+
+      - name: Demonstrar backup e restauração em outro banco sintético
+        run: bash .github/scripts/test-backup.sh
+        env:
+          TEST_PG_BIN: /usr/lib/postgresql/16/bin
 
       - name: Testar importação, cadastro, declaração, sessão, produção e banco em sequência
         run: npm run test:integration
