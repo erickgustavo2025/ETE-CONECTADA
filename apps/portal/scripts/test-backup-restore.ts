@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { Client } from 'pg';
+import { canonicalCheckDefinition } from './backup-catalog';
 import {
   assertDatabaseIdentity,
   parseTestEnvironment,
@@ -67,11 +68,19 @@ async function snapshot(client: Client) {
     const catalog = [];
     for (const sql of [
       "SELECT table_name,column_name,udt_name,is_nullable,column_default FROM information_schema.columns WHERE table_schema='public' ORDER BY table_name,ordinal_position",
-      "SELECT c.conname, c.conrelid::regclass::text AS relation, pg_get_constraintdef(c.oid) AS definition FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE n.nspname='public' ORDER BY relation,c.conname",
+      "SELECT c.conname, c.contype, c.convalidated, c.condeferrable, c.condeferred, c.conrelid::regclass::text AS relation, pg_get_constraintdef(c.oid) AS definition FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE n.nspname='public' ORDER BY relation,c.conname",
       "SELECT tablename,indexname,indexdef FROM pg_indexes WHERE schemaname='public' ORDER BY tablename,indexname",
       "SELECT t.typname,e.enumlabel,e.enumsortorder FROM pg_type t JOIN pg_enum e ON e.enumtypid=t.oid JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' ORDER BY t.typname,e.enumsortorder",
-    ])
-      catalog.push((await client.query(sql)).rows);
+    ]) {
+      const rows = (await client.query(sql)).rows;
+      catalog.push(
+        rows.map((row) =>
+          row.contype === 'c'
+            ? { ...row, definition: canonicalCheckDefinition(row.definition) }
+            : row,
+        ),
+      );
+    }
     return { tables, catalog };
   } finally {
     await client.query('ROLLBACK');
@@ -97,6 +106,79 @@ function command(name: string, args: string[], url: URL) {
     maxBuffer: 1024 * 1024,
   });
   assert.equal(result.status, 0, 'Ferramenta de backup/restauração falhou.');
+}
+
+async function checkRules(client: Client) {
+  async function update(sql: string, values: string[], accepted: boolean) {
+    await client.query('BEGIN');
+    try {
+      if (accepted) assert.equal((await client.query(sql, values)).rowCount, 1);
+      else
+        await assert.rejects(
+          () => client.query(sql, values),
+          (error: unknown) => (error as { code?: string }).code === '23514',
+        );
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  }
+  for (const course of ['ADM', 'DS', 'ENF', 'ZZZ'])
+    await update(
+      'UPDATE course_offerings SET course_label=$1 WHERE id=$2',
+      [course, offering],
+      course !== 'ZZZ',
+    );
+  for (const reason of [
+    'METADATA_CHANGE',
+    'IDENTITY_REVIEW',
+    'CALENDAR_PROGRESSION',
+    'CALENDAR_BINDING',
+    'CALENDAR_HOLD',
+    'UNAPPROVED',
+  ])
+    await update(
+      'UPDATE enrollment_import_history SET reason=$1 WHERE id=$2',
+      [reason, history],
+      reason !== 'UNAPPROVED',
+    );
+  for (const state of [
+    'AC',
+    'AL',
+    'AP',
+    'AM',
+    'BA',
+    'CE',
+    'DF',
+    'ES',
+    'GO',
+    'MA',
+    'MT',
+    'MS',
+    'MG',
+    'PA',
+    'PB',
+    'PR',
+    'PE',
+    'PI',
+    'RJ',
+    'RN',
+    'RS',
+    'RO',
+    'RR',
+    'SC',
+    'SP',
+    'SE',
+    'TO',
+    'ZZ',
+  ])
+    await update(
+      'UPDATE student_details SET birth_state=$1 WHERE student_id=$2',
+      [state, student],
+      state !== 'ZZ',
+    );
+  console.log(
+    'OK: cursos, motivos de histórico e 27 UFs aceitos; valores externos recusados pelas três constraints.',
+  );
 }
 let work = '';
 let created = false;
@@ -227,15 +309,15 @@ async function main() {
         [history, otherEnrollment, account],
       );
       await source.query(
-        "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,'2030-01-01')",
+        "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",
         [digest('sessao-ficticia-' + randomUUID()), account],
       );
       await source.query(
-        "INSERT INTO email_verification_tokens(token_hash,account_id,expires_at) VALUES($1,$2,'2030-01-01')",
+        "INSERT INTO email_verification_tokens(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",
         [digest('verificacao-ficticia-' + randomUUID()), otherAccount],
       );
       await source.query(
-        "INSERT INTO password_reset_tokens(token_hash,account_id,credential_hash,expires_at) VALUES($1,$2,$3,'2030-01-01')",
+        "INSERT INTO password_reset_tokens(token_hash,account_id,credential_hash,expires_at) VALUES($1,$2,$3,now() + interval '1 day')",
         [digest(randomUUID()), account, digest('credencial-ficticia')],
       );
       await source.query('COMMIT');
@@ -243,6 +325,7 @@ async function main() {
       await source.query('ROLLBACK');
       throw error;
     }
+    await checkRules(source);
     const original = await snapshot(source);
     const archive = path.join(work, 'database.dump');
     const started = Date.now();
@@ -342,12 +425,13 @@ async function main() {
       'Dados e catálogo restaurados devem coincidir integralmente.',
     );
     await assert.rejects(() => restore(archive), /Destino precisa estar vazio/);
+    await checkRules(target);
     await target.query('BEGIN');
     try {
       await assert.rejects(
         () =>
           target.query(
-            "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,'2030-01-01')",
+            "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",
             [digest(randomUUID()), randomUUID()],
           ),
         (error: unknown) => (error as { code?: string }).code === '23503',
