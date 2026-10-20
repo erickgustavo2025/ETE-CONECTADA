@@ -6,7 +6,7 @@ O CI verifica código de branches e pull requests em runners hospedados pelo Git
 
 Os workflows começam com `permissions: {}`. Cada job concede somente `contents: read` para obter o repositório; novas tarefas precisam declarar suas próprias permissões. O GitHub também fornece `metadata: read`. O checkout usa `persist-credentials: false`, sem deixar o token na configuração Git para os comandos seguintes.
 
-O CI usa `pull_request` para propostas à `main` e `push` em `main`/`feature/**`. Não usa `pull_request_target`, `workflow_run`, runners próprios ou ambientes de implantação. Nenhum passo recebe `secrets.*`. As credenciais do PostgreSQL são aleatórias, geradas durante o job, e servem apenas ao banco descartável em loopback; os testes confirmam sua identidade antes de escrever.
+CI, imagens e análise de segurança usam `pull_request` para propostas à `main` e `push` somente em `main`. Assim, atualizar um PR não dispara também outra suíte pelo push da branch. A execução manual permite conferir uma branch quando necessário; a análise de segurança mantém seu agendamento. Não foram removidos jobs nem checks obrigatórios. Não usa `pull_request_target`, `workflow_run`, runners próprios ou ambientes de implantação. Nenhum passo recebe `secrets.*`. As credenciais do PostgreSQL são aleatórias, geradas durante o job, e servem apenas ao banco descartável em loopback; os testes confirmam sua identidade antes de escrever.
 
 Os jobs têm timeout e o workflow cancela execuções anteriores da mesma referência. A instalação usa `npm ci --ignore-scripts`. Os comandos de testes e build ainda executam código do repositório: uma aprovação de execução de PR não substitui a revisão do código.
 

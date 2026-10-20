@@ -49,3 +49,9 @@ git pull --ff-only origin main
 ```
 
 Comece o próximo card em uma nova branch dessa base. Cada dev usa seu próprio clone; as alterações chegam à outra máquina pelo push e pela atualização do remoto.
+
+## Quando os testes automáticos executam
+
+CI, imagens Docker e segurança executam ao abrir ou atualizar um PR para main e depois do merge na main. O push de uma branch comum, sem PR, não inicia essas suítes. Abra um PR para obter a conferência automática antes do merge; mantenha os testes locais pertinentes enquanto trabalha. Execução manual é uma opção para conferir uma branch específica após a configuração estar na main. Não execute manualmente uma suíte que já esteja rodando no PR sem necessidade.
+
+A conferência da main verifica a versão integrada. A redução elimina a duplicação push de branch/PR; não promete uma porcentagem fixa de economia nem libera uma franquia de Actions já esgotada. O limite da conta continua independente desta configuração.

@@ -4,10 +4,7 @@ import { pathToFileURL } from 'node:url';
 
 export function releaseRequested(event, ref) {
   return (
-    typeof ref === 'string' &&
-    ref.length > 0 &&
-    (event === 'workflow_dispatch' ||
-      (event === 'push' && ref.startsWith('feature/ec-086-')))
+    typeof ref === 'string' && ref.length > 0 && event === 'workflow_dispatch'
   );
 }
 
@@ -54,7 +51,7 @@ export function selectRun(runs, expected) {
         r.head_branch === expected.branch &&
         r.head_repository?.full_name?.toLowerCase() ===
           expected.repository.toLowerCase() &&
-        r.event === 'push',
+        (r.event === 'push' || r.event === 'workflow_dispatch'),
     )
     .sort((a, b) => b.id - a.id)[0];
   if (!run || run.status !== 'completed') return null;
@@ -123,7 +120,7 @@ async function main() {
     const verified = [];
     for (const [workflow, jobs] of Object.entries(required)) {
       const result = await request(
-        `workflows/${workflow}/runs?head_sha=${expected.sha}&event=push&per_page=20`,
+        `workflows/${workflow}/runs?head_sha=${expected.sha}&per_page=20`,
       );
       if (!Array.isArray(result.workflow_runs))
         throw new Error('Resposta de verificações inválida.');

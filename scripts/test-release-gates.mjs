@@ -8,7 +8,7 @@ import { selectRun, verifyJobs, releaseRequested } from './release-gates.mjs';
 
 for (const [event, ref, requested] of [
   ['workflow_dispatch', 'main', true],
-  ['push', 'feature/ec-086-artefato-verificado', true],
+  ['push', 'feature/ec-086-artefato-verificado', false],
   ['push', 'main', false],
   ['push', 'feature/ec-082-proxy', false],
   ['pull_request', 'feature/ec-086-artefato-verificado', false],
@@ -21,17 +21,17 @@ try {
   const output = path.join(temporary, 'output');
   const environment = path.join(temporary, 'environment');
   const script = fileURLToPath(new URL('./release-gates.mjs', import.meta.url));
-  for (const [ref, id, status, requested] of [
-    ['feature/ec-086-fixture', '123', 0, true],
-    ['main', '123', 0, false],
-    ['feature/ec-086-fixture', '123\nUNEXPECTED=true', 1, false],
+  for (const [event, ref, id, status, requested] of [
+    ['workflow_dispatch', 'feature/fixture', '123', 0, true],
+    ['push', 'main', '123', 0, false],
+    ['workflow_dispatch', 'feature/fixture', '123\nUNEXPECTED=true', 1, false],
   ]) {
     await writeFile(output, '');
     await writeFile(environment, '');
     const result = spawnSync(process.execPath, [script, 'request'], {
       env: {
         PATH: process.env.PATH,
-        GITHUB_EVENT_NAME: 'push',
+        GITHUB_EVENT_NAME: event,
         GITHUB_REF_NAME: ref,
         GITHUB_RUN_ID: id,
         GITHUB_RUN_ATTEMPT: '1',
@@ -74,6 +74,11 @@ const run = {
   conclusion: 'success',
 };
 assert.equal(selectRun([run], expected).id, 2);
+assert.equal(
+  selectRun([{ ...run, event: 'workflow_dispatch' }], expected).id,
+  2,
+);
+assert.equal(selectRun([{ ...run, event: 'schedule' }], expected), null);
 assert.equal(selectRun([], expected), null);
 for (const changed of [
   { head_sha: 'b'.repeat(40) },
@@ -106,6 +111,28 @@ for (const conclusion of [
     'Não aceitar sucesso antigo quando a execução nova falha.',
   );
 }
+assert.throws(() =>
+  selectRun(
+    [run, { ...run, id: 3, event: 'workflow_dispatch', conclusion: 'failure' }],
+    expected,
+  ),
+);
+assert.equal(
+  selectRun(
+    [
+      run,
+      {
+        ...run,
+        id: 3,
+        event: 'workflow_dispatch',
+        status: 'in_progress',
+        conclusion: null,
+      },
+    ],
+    expected,
+  ),
+  null,
+);
 const job = { name: 'Obrigatório', status: 'completed', conclusion: 'success' };
 assert.equal(verifyJobs([job], ['Obrigatório']), true);
 assert.equal(verifyJobs([], ['Obrigatório']), false);
