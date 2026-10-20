@@ -63,13 +63,9 @@ async function main() {
     );
     const options = { accountId: accounts[0].id, birthplace: place };
     // Falha real no INSERT deve desfazer também o local atualizado na transação.
-    await db.$executeRawUnsafe(
-      `CREATE FUNCTION test_birthplace_reject() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Falha sintética de gravação'; END $$`,
-    );
+    await db.$executeRaw`CREATE FUNCTION test_birthplace_reject() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Falha sintética de gravação'; END $$`;
     try {
-      await db.$executeRawUnsafe(
-        `CREATE TRIGGER test_birthplace_reject BEFORE INSERT ON declaration_requests FOR EACH ROW EXECUTE FUNCTION test_birthplace_reject()`,
-      );
+      await db.$executeRaw`CREATE TRIGGER test_birthplace_reject BEFORE INSERT ON declaration_requests FOR EACH ROW EXECUTE FUNCTION test_birthplace_reject()`;
       await assert.rejects(
         requestDeclaration(ids[0], enrollments[0].id, options),
       );
@@ -83,10 +79,8 @@ async function main() {
       );
       assert.equal(await db.declarationRequest.count(), 0);
     } finally {
-      await db.$executeRawUnsafe(
-        'DROP TRIGGER IF EXISTS test_birthplace_reject ON declaration_requests',
-      );
-      await db.$executeRawUnsafe('DROP FUNCTION test_birthplace_reject()');
+      await db.$executeRaw`DROP TRIGGER IF EXISTS test_birthplace_reject ON declaration_requests`;
+      await db.$executeRaw`DROP FUNCTION test_birthplace_reject()`;
     }
     const result = await requestDeclaration(ids[0], enrollments[0].id, options);
     assert.equal(result.created, true);
