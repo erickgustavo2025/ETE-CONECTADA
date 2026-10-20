@@ -41,6 +41,8 @@ jobs:
         run: |
           node scripts/test-release-gates.mjs
           python3 scripts/test-release-artifact.py
+          node scripts/test-network-stability.mjs
+          node scripts/test-browser-resource.mjs
       - name: Instalar Chromium no runner de teste
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
       - name: Preparar destino temporário exclusivo do pacote
@@ -48,7 +50,7 @@ jobs:
         run: node scripts/release-gates.mjs request
       - name: Construir e testar imagens sem registry ou deploy
         run: bash .github/scripts/test-containers.sh
-      - name: Ensaiar Compose e persistência em laboratório próprio
+      - name: Ensaiar Compose, persistência e proxy HTTPS em laboratório próprio
         run: bash .github/scripts/test-compose-lab.sh
       - name: Exigir CI e segurança do mesmo commit antes de liberar pacote
         if: steps.package_request.outputs.package == 'true'

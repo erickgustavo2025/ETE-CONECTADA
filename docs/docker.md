@@ -57,6 +57,8 @@ O workflow [Imagens Docker](../.github/workflows/images.yml) executa o mesmo pro
 
 Após os checks, o workflow também pode guardar um [pacote verificado das imagens](artefato-release.md) no próprio CI, sem publicação em registry ou deploy. Essa etapa consulta os checks com token de leitura temporário do GitHub; não utiliza credenciais da escola.
 
+O ensaio Compose inclui uma [preparação de proxy e HTTPS](proxy-https-laboratorio.md), com certificados sintéticos e portas dos apps removidas. Domínio público, ACME e configuração da VPS continuam pendentes.
+
 ## Avaliação da base
 
 Na seleção de 18/10/2026, a base oficial Alpine apresentou menos pacotes e nenhum alerta alto/crítico do sistema operacional no scanner usado. As variantes Debian Bookworm e Trixie apresentaram alertas adicionais. A escolha exige conferir compatibilidade real com musl: o teste executa o Sharp dentro de cada imagem, além de conferir os arquivos usados pelo PDF e pelo XLS. A plataforma validada neste procedimento é Linux x64.

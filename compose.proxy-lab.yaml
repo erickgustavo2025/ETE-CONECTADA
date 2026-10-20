@@ -1,0 +1,56 @@
+# Sobreposição sintética de compose.lab.yaml, sem domínio público ou ACME.
+services:
+  site:
+    ports: !reset []
+    build:
+      args:
+        NEXT_PUBLIC_PORTAL_LOGIN_URL: https://portal.example.invalid:${ETE_LAB_HTTPS_PORT:?}/login
+    environment:
+      SITE_PUBLIC_URL: https://site.example.invalid:${ETE_LAB_HTTPS_PORT:?Informe porta HTTPS de laboratório}
+  portal:
+    ports: !reset []
+    environment:
+      PORTAL_PUBLIC_URL: https://portal.example.invalid:${ETE_LAB_HTTPS_PORT:?}
+  proxy:
+    image: ${ETE_LAB_PROXY_IMAGE:-ete-proxy:lab}
+    build:
+      context: ./infra/caddy
+      labels:
+        ete.test.id: ${ETE_LAB_RUN_ID:?}
+    labels:
+      ete.test.id: ${ETE_LAB_RUN_ID:?}
+    user: '1000:1000'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 128
+    restart: unless-stopped
+    stop_grace_period: 30s
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=8m,uid=1000,gid=1000,mode=0700
+      - /data:rw,noexec,nosuid,nodev,size=8m,uid=1000,gid=1000,mode=0700
+      - /config:rw,noexec,nosuid,nodev,size=8m,uid=1000,gid=1000,mode=0700
+    environment:
+      ETE_LAB_HTTPS_PORT: ${ETE_LAB_HTTPS_PORT:?}
+    ports:
+      - '127.0.0.1:${ETE_LAB_HTTPS_PORT:?}:8443'
+      - '127.0.0.1:${ETE_LAB_HTTP_PORT:-0}:8080'
+    volumes:
+      - type: bind
+        source: ${ETE_LAB_PROXY_CONFIG_FILE:?Informe configuração conferida fora do build}
+        target: /etc/caddy/Caddyfile
+        read_only: true
+    secrets: [proxy_certificate, proxy_key]
+    depends_on:
+      site:
+        condition: service_healthy
+      portal:
+        condition: service_healthy
+    networks: [web]
+secrets:
+  proxy_certificate:
+    file: ${ETE_LAB_TLS_CERT_FILE:?Informe certificado sintético externo}
+  proxy_key:
+    file: ${ETE_LAB_TLS_KEY_FILE:?Informe chave sintética externa}

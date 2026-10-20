@@ -10,9 +10,19 @@ export ETE_LAB_RUN_ID
 ETE_LAB_RUN_ID=$(python3 -c 'import uuid; print(uuid.uuid4().hex)')
 project="ete-lab-$ETE_LAB_RUN_ID"
 export ETE_LAB_SITE_IMAGE="ete-lab-site:$ETE_LAB_RUN_ID" ETE_LAB_PORTAL_IMAGE="ete-lab-portal:$ETE_LAB_RUN_ID"
+export ETE_LAB_PROXY_IMAGE="ete-lab-proxy:$ETE_LAB_RUN_ID"
+export ETE_LAB_HTTPS_PORT ETE_LAB_PORTAL_LOGIN_URL
+ETE_LAB_HTTPS_PORT=$(python3 - <<'PY'
+import socket
+with socket.socket() as s:
+ s.bind(('127.0.0.1',0)); print(s.getsockname()[1])
+PY
+)
+ETE_LAB_PORTAL_LOGIN_URL="https://portal.example.invalid:$ETE_LAB_HTTPS_PORT/login"
 export ETE_LAB_DB_PASSWORD_FILE="$work/password" ETE_LAB_DATABASE_URL_FILE="$work/database-url"
 export ETE_LAB_SITE_PORT=0 ETE_LAB_PORTAL_PORT=0
 compose=(docker compose --env-file /dev/null --project-name "$project" --file "$root/compose.lab.yaml")
+cleanup_compose=("${compose[@]}")
 cleanup() {
   local status=$? id owner kind failed=0
   set +e
@@ -25,9 +35,9 @@ cleanup() {
       [[ "$owner" == "$ETE_LAB_RUN_ID" ]] || failed=1
     done
   done
-  if [[ "$failed" == 0 ]]; then "${compose[@]}" down --volumes --timeout 30 >/dev/null || failed=1;
+  if [[ "$failed" == 0 ]]; then "${cleanup_compose[@]}" down --volumes --timeout 30 >/dev/null || failed=1;
   else echo 'Recurso não reconhecido como próprio; remoção do projeto recusada.' >&2; fi
-  for image in "$ETE_LAB_SITE_IMAGE" "$ETE_LAB_PORTAL_IMAGE"; do
+  for image in "$ETE_LAB_SITE_IMAGE" "$ETE_LAB_PORTAL_IMAGE" "$ETE_LAB_PROXY_IMAGE"; do
     id=$(docker image inspect --format '{{.Id}}' "$image" 2>/dev/null)
     if [[ -n "$id" ]]; then
       owner=$(docker image inspect --format '{{index .Config.Labels "ete.test.id"}}' "$id" 2>/dev/null)
@@ -125,3 +135,8 @@ PY
 CONTAINER_SITE_URL="http://$("${compose[@]}" port site 3000)" \
 CONTAINER_PORTAL_URL="http://$("${compose[@]}" port portal 3000)" node scripts/test-container-browser.mjs
 echo 'OK: Compose real preservou o marcador sintético após recriação e manteve isolamento e navegador.'
+# Reutiliza somente os containers/imagens sintéticos deste projeto. A sobreposição
+# será incluída no cleanup mesmo se o ensaio falhar antes de concluir.
+cleanup_compose+=(--file "$root/compose.proxy-lab.yaml")
+export ETE_LAB_PROXY_CONFIG_FILE="$work/Caddyfile" ETE_LAB_TLS_CERT_FILE="$work/certificate.pem" ETE_LAB_TLS_KEY_FILE="$work/key.pem"
+bash .github/scripts/test-proxy-lab.sh "$work" "$project"
