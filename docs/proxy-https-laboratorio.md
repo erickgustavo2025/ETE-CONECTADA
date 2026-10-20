@@ -40,12 +40,14 @@ O comando constrói os apps, testa persistência e depois aplica o proxy ao mesm
 - Hosts e cabeçalhos forjados; redirects canônicos e rejeição de origem externa.
 - API privada sem sessão ou com cookie inventado continua negada; login de produção permanece bloqueado.
 - Upload no limite e acima dele, com tamanho declarado e transferência chunked; cabeçalho grande recusado e cabeçalho lento encerrado. Um controle negativo real amplia o limite e precisa reprovar o mesmo teste antes de restaurar a configuração.
-- Navegador nos dois apps, contexto HTTPS, fontes, scripts, CSP e interação do formulário.
+- Três passagens obrigatórias do navegador nos dois apps, contexto HTTPS, fontes, scripts, CSP e interação do formulário. Antes das jornadas, exige dois segundos contínuos de interfaces, rotas e DNS estáveis no runner Linux, depois da recriação dos containers e da abertura do navegador. Mudanças reiniciam essa janela; instabilidade por 12 segundos impede o início. Não altera a rede, ignora erros ou repete jornadas reprovadas. Console e recursos recusados continuam reprovando o teste, com diagnóstico sem consultas de URL ou dados pessoais.
 - Novo certificado assinado pela CA do teste, novo container de proxy e fingerprint diferente conferido pelos dois endereços.
 
 O backend que mede cabeçalhos e bytes é iniciado por stdin dentro do container sintético do site, numa porta não publicada. Durante essa medição, a configuração de teste muda somente o upstream do site; depois restaura o arquivo versionado e confere os apps reais. Nenhuma rota de diagnóstico é adicionada às aplicações. O cleanup confere identificação dos recursos antes de remover apenas o projeto e volume próprios, inclusive após falha.
 
 O teste do navegador permite exclusivamente a chave pública do certificado temporário pelo SPKI; as requisições técnicas validam CA, nome e fingerprint sem desativar verificação TLS. Não instalar essa CA no computador.
+
+O Next pode cancelar o pré-carregamento opcional de cadastro e recuperação quando a navegação muda. Somente `ERR_ABORTED` de GET/fetch dessas duas rotas na origem do portal, identificado pelos cabeçalhos de prefetch RSC, é classificado como cancelamento esperado. Isso não aceita falha de imagem, script, navegação, resposta HTTP de erro ou `ERR_NETWORK_CHANGED`. Os casos contrários têm testes próprios e os erros de console continuam reprovando a jornada.
 
 ## O que falta para a infraestrutura real
 

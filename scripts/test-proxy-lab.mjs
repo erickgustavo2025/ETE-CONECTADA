@@ -5,6 +5,8 @@ import { request as plainRequest } from 'node:http';
 import { connect as tlsConnect } from 'node:tls';
 import { X509Certificate } from 'node:crypto';
 import { chromium, expect } from '@playwright/test';
+import { waitForNetworkStability } from './network-stability.mjs';
+import { cancelledEntryPrefetch } from './browser-resource.mjs';
 
 const mode = process.argv[2];
 assert.ok(['probe', 'apps', 'rotated'].includes(mode));
@@ -244,13 +246,60 @@ if (mode === 'probe') {
       ],
     });
     try {
-      for (const app of ['site', 'portal']) {
+      // Docker recriou interfaces; aguarda sua estabilização após iniciar o navegador.
+      // Console e requisições continuam estritos, sem retry após erro.
+      await waitForNetworkStability();
+      // As três passagens precisam passar; não há repetição automática após falha.
+      const journeys = Array.from({ length: 3 }, () => [
+        'site',
+        'portal',
+      ]).flat();
+      for (const app of journeys) {
         const context = await browser.newContext();
         const page = await context.newPage();
         const errors = [];
-        page.on('pageerror', () => errors.push('Erro JavaScript.'));
+        const failedResources = [];
+        // Estas jornadas abrem só páginas públicas sintéticas e não digitam dados.
+        const publicError = (message) =>
+          message
+            .replace(/https?:\/\/[^\s'"<>]+/g, '[endereço]')
+            .replace(/nonce-[^\s'";]+/g, 'nonce-[omitido]')
+            .slice(0, 400);
+        page.on('pageerror', (error) =>
+          errors.push(`JavaScript ${app}: ${publicError(error.message)}`),
+        );
         page.on('console', (message) => {
-          if (message.type() === 'error') errors.push('Erro de console.');
+          if (message.type() === 'error')
+            errors.push(`Console ${app}: ${publicError(message.text())}`);
+        });
+        page.on('response', (response) => {
+          if (response.status() >= 400 && failedResources.length < 12)
+            failedResources.push({
+              status: response.status(),
+              path: new URL(response.url()).pathname.slice(0, 180),
+            });
+        });
+        page.on('requestfailed', (request) => {
+          if (
+            cancelledEntryPrefetch(
+              {
+                error: request.failure()?.errorText,
+                type: request.resourceType(),
+                method: request.method(),
+                headers: request.headers(),
+                url: request.url(),
+              },
+              origin('portal'),
+            )
+          )
+            return;
+          if (failedResources.length < 12)
+            failedResources.push({
+              error:
+                request.failure()?.errorText.match(/net::ERR_[A-Z_]+/)?.[0] ??
+                'falha de rede',
+              path: new URL(request.url()).pathname.slice(0, 180),
+            });
         });
         await page.goto(`${origin(app)}${app === 'site' ? '/' : '/login'}`, {
           waitUntil: 'networkidle',
@@ -288,7 +337,16 @@ if (mode === 'probe') {
             .getByRole('heading', { name: 'Acesso ao portal' })
             .waitFor();
         }
-        assert.deepEqual(errors, []);
+        assert.deepEqual(
+          errors,
+          [],
+          `Console sem erros; recursos recusados: ${JSON.stringify(failedResources)}`,
+        );
+        assert.deepEqual(
+          failedResources,
+          [],
+          'Recursos da jornada precisam carregar sem erro.',
+        );
         await context.close();
       }
     } finally {
