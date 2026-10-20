@@ -244,7 +244,12 @@ if (mode === 'probe') {
       ],
     });
     try {
-      for (const app of ['site', 'portal']) {
+      // As três passagens precisam passar; não há repetição automática após falha.
+      const journeys = Array.from({ length: 3 }, () => [
+        'site',
+        'portal',
+      ]).flat();
+      for (const app of journeys) {
         const context = await browser.newContext();
         const page = await context.newPage();
         const errors = [];
