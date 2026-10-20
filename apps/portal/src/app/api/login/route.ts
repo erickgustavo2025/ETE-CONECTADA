@@ -14,11 +14,9 @@ import { randomBytes } from 'node:crypto';
 import { getDb } from '@/lib/db';
 import { verifyPassword } from '@/lib/password';
 import { createVerifiedSession } from '@/lib/session-record';
-import {
-  hashSessionToken,
-  sessionCookieName,
-  sessionDurationSeconds,
-} from '@/lib/session';
+import { hashSessionToken, sessionDurationSeconds } from '@/lib/session';
+
+import { sessionCookiePolicy } from '@/lib/session-cookie';
 
 export const runtime = 'nodejs';
 
@@ -124,13 +122,8 @@ export async function POST(request: Request) {
     );
     const sessionFinished = performance.now();
     const response = NextResponse.json({ ok: true });
-    response.cookies.set(sessionCookieName, token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: sessionDurationSeconds,
-    });
+    const cookie = sessionCookiePolicy();
+    response.cookies.set(cookie.name, token, cookie.options);
     response.headers.set('Cache-Control', 'no-store');
     // Tempos de desenvolvimento, sem credenciais ou dados do aluno.
     response.headers.set(

@@ -217,7 +217,7 @@ async function main() {
         method: body === undefined ? 'GET' : 'POST',
         redirect: 'manual',
         headers: {
-          Cookie: `ete_portal_session=${token}`,
+          Cookie: `__Host-ete_portal_session=${token}`,
           'Content-Type': 'application/json',
           Origin: 'https://portal.example.invalid',
         },
@@ -322,7 +322,14 @@ async function main() {
     }
     const logout = await request('/api/logout', {});
     assert.equal(logout.status, 200);
-    assert.match(logout.headers.get('set-cookie')!, /ete_portal_session=;/);
+    assert.match(
+      logout.headers.get('set-cookie')!,
+      /^__Host-ete_portal_session=;/,
+    );
+    assert.match(logout.headers.get('set-cookie')!, /; Secure/i);
+    assert.match(logout.headers.get('set-cookie')!, /; HttpOnly/i);
+    assert.match(logout.headers.get('set-cookie')!, /; SameSite=lax/i);
+    assert.doesNotMatch(logout.headers.get('set-cookie')!, /; Domain=/i);
     assert.match(logout.headers.get('cache-control')!, /no-store/);
     assert.deepEqual(await logout.json(), { ok: true });
     assert.equal(
