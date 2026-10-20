@@ -47,6 +47,8 @@ O backend que mede cabeçalhos e bytes é iniciado por stdin dentro do container
 
 O teste do navegador permite exclusivamente a chave pública do certificado temporário pelo SPKI; as requisições técnicas validam CA, nome e fingerprint sem desativar verificação TLS. Não instalar essa CA no computador.
 
+O Next pode cancelar o pré-carregamento opcional de cadastro e recuperação quando a navegação muda. Somente `ERR_ABORTED` de GET/fetch dessas duas rotas na origem do portal, identificado pelos cabeçalhos de prefetch RSC, é classificado como cancelamento esperado. Isso não aceita falha de imagem, script, navegação, resposta HTTP de erro ou `ERR_NETWORK_CHANGED`. Os casos contrários têm testes próprios e os erros de console continuam reprovando a jornada.
+
 ## O que falta para a infraestrutura real
 
 Confirmar titularidade do domínio, provedor e acessos; publicar e conferir os registros A/AAAA; restringir firewall às entradas necessárias e impedir acesso direto aos apps/banco. Configurar certificados públicos e persistência protegida do estado ACME, testar emissão, renovação e alertas na hospedagem aprovada. O ensaio de troca de certificado temporário **não comprova renovação ACME pública**.

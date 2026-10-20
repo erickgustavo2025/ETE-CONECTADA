@@ -6,6 +6,7 @@ import { connect as tlsConnect } from 'node:tls';
 import { X509Certificate } from 'node:crypto';
 import { chromium, expect } from '@playwright/test';
 import { waitForNetworkStability } from './network-stability.mjs';
+import { cancelledEntryPrefetch } from './browser-resource.mjs';
 
 const mode = process.argv[2];
 assert.ok(['probe', 'apps', 'rotated'].includes(mode));
@@ -279,6 +280,19 @@ if (mode === 'probe') {
             });
         });
         page.on('requestfailed', (request) => {
+          if (
+            cancelledEntryPrefetch(
+              {
+                error: request.failure()?.errorText,
+                type: request.resourceType(),
+                method: request.method(),
+                headers: request.headers(),
+                url: request.url(),
+              },
+              origin('portal'),
+            )
+          )
+            return;
           if (failedResources.length < 12)
             failedResources.push({
               error:
