@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      actions: read
     timeout-minutes: 25
     env:
       NEXT_TELEMETRY_DISABLED: '1'
@@ -36,9 +37,59 @@ jobs:
         run: bash .github/scripts/check-workflows.sh .github/workflows/images.yml
       - name: Instalar ferramentas de teste pelo lockfile
         run: npm ci --ignore-scripts
+      - name: Conferir condições e integridade do artefato com fixtures
+        run: |
+          node scripts/test-release-gates.mjs
+          python3 scripts/test-release-artifact.py
       - name: Instalar Chromium no runner de teste
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Preparar destino temporário exclusivo do pacote
+        id: package_request
+        run: node scripts/release-gates.mjs request
       - name: Construir e testar imagens sem registry ou deploy
         run: bash .github/scripts/test-containers.sh
       - name: Ensaiar Compose e persistência em laboratório próprio
         run: bash .github/scripts/test-compose-lab.sh
+      - name: Exigir CI e segurança do mesmo commit antes de liberar pacote
+        if: steps.package_request.outputs.package == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/release-gates.mjs
+          python3 scripts/release-artifact.py seal "$TEST_IMAGE_OUTPUT_DIR" "$GITHUB_SHA" "$GITHUB_REPOSITORY"
+          python3 scripts/release-artifact.py verify "$TEST_IMAGE_OUTPUT_DIR" "$GITHUB_SHA"
+      - name: Guardar pacote de ensaio identificado sem publicar em registry
+        id: release_package
+        if: steps.package_request.outputs.package == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: imagens-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/site.tar.gz
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/portal.tar.gz
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/site-audit.json
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/portal-audit.json
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/release.json
+            ${{ env.TEST_IMAGE_OUTPUT_DIR }}/SHA256SUMS
+          if-no-files-found: error
+          include-hidden-files: false
+          overwrite: false
+          compression-level: 0
+          retention-days: 3
+      - name: Baixar somente o pacote criado nesta execução
+        if: steps.package_request.outputs.package == 'true'
+        id: release_download
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.release_package.outputs.artifact-id }}
+          path: ${{ runner.temp }}/ete-release-download-${{ github.run_id }}-${{ github.run_attempt }}
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Conferir integridade do pacote após download
+        if: steps.package_request.outputs.package == 'true'
+        env:
+          DOWNLOADED_RELEASE_DIR: ${{ steps.release_download.outputs.download-path }}
+        run: |
+          python3 scripts/release-artifact.py verify "$DOWNLOADED_RELEASE_DIR" "$GITHUB_SHA"
+          cmp -- "$TEST_IMAGE_OUTPUT_DIR/release.json" "$DOWNLOADED_RELEASE_DIR/release.json"
+          cmp -- "$TEST_IMAGE_OUTPUT_DIR/SHA256SUMS" "$DOWNLOADED_RELEASE_DIR/SHA256SUMS"
