@@ -1,22 +1,12 @@
-import { resetOrigin } from './password-reset-input';
+import { emailTransport, type MailFetch } from './email-transport';
 
-export function recoveryMailer() {
-  const apiKey = process.env.RESEND_API_KEY,
-    from = process.env.EMAIL_FROM;
-  const origin = resetOrigin(process.env.PORTAL_PUBLIC_URL);
-  if (!apiKey || !from || !origin) return null;
-  async function send(to: string, subject: string, html: string) {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ from, to: [to], subject, html }),
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) throw new Error('Serviço de recuperação indisponível.');
-  }
+export function recoveryMailer(
+  env: Record<string, string | undefined> = process.env,
+  fetcher?: MailFetch,
+) {
+  const transport = emailTransport(env, fetcher);
+  if (!transport) return null;
+  const { origin, send } = transport;
   return {
     origin,
     send: (to: string, url: string) =>
