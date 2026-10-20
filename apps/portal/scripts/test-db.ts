@@ -29,6 +29,7 @@ async function main() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Origin: base,
         ...(cookie ? { Cookie: cookie } : {}),
       },
       body: JSON.stringify(data),

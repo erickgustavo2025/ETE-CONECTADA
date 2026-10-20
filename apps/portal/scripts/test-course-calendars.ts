@@ -64,7 +64,7 @@ async function main() {
     const login = async (email: string) => {
       const r = await fetch(base + '/api/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Origin: base },
         body: JSON.stringify({ identifier: email, password }),
       });
       assert.equal(r.status, 200);

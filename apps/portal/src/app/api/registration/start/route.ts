@@ -1,3 +1,5 @@
+import { configuredOrigin, verificationUrl } from '@/lib/portal-origin';
+import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
 import { getDb } from '@/lib/db';
 import {
   consumeAccessAttempt,
@@ -27,6 +29,11 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   if (!registrationEnabled) return disabledResponse();
+  if (!sameOriginRequest(request))
+    return Response.json(
+      { error: 'Solicitação não autorizada.' },
+      { status: 403, headers: privateHeaders },
+    );
   const input = await readAccessBody(request);
   if ('response' in input) return input.response;
   const body = input.body;
@@ -66,6 +73,19 @@ export async function POST(request: Request) {
 
   const token = randomBytes(32).toString('base64url');
   const tokenHash = createHash('sha256').update(token).digest('hex');
+  const url = verificationUrl(token);
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (
+    !url ||
+    (apiKey && from && !configuredOrigin(process.env.PORTAL_PUBLIC_URL))
+  )
+    return Response.json(
+      {
+        error: 'Não foi possível iniciar a confirmação agora. Tente novamente.',
+      },
+      { status: 503, headers: privateHeaders },
+    );
   try {
     const limit = accessLimitResponse(
       await consumeAccessAttempt(getDb(), 'registration', schoolRegistration),
@@ -83,10 +103,6 @@ export async function POST(request: Request) {
       parentName: body.parentName,
     });
 
-    const url = new URL('/confirmar-email', request.url);
-    url.searchParams.set('token', token);
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
     if (apiKey && from) {
       const sent = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -98,14 +114,14 @@ export async function POST(request: Request) {
           from,
           to: [email],
           subject: 'Confirme seu e-mail | ETE CONECTADA',
-          html: `<p>Para confirmar o e-mail do portal, acesse o link abaixo. Ele expira em 30 minutos.</p><p><a href="${url.toString()}">Confirmar meu e-mail</a></p>`,
+          html: `<p>Para confirmar o e-mail do portal, acesse o link abaixo. Ele expira em 30 minutos.</p><p><a href="${url}">Confirmar meu e-mail</a></p>`,
         }),
       });
       if (!sent.ok)
         return Response.json(
           {
             result: 'dev_link',
-            verificationUrl: url.toString(),
+            verificationUrl: url,
             warning: 'O serviço de e-mail não aceitou a mensagem.',
           },
           { headers: { 'Cache-Control': 'no-store' } },
@@ -119,7 +135,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         result: 'dev_link',
-        verificationUrl: url.toString(),
+        verificationUrl: url,
       },
       { headers: { 'Cache-Control': 'no-store' } },
     );

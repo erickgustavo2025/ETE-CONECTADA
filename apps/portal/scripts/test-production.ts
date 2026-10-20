@@ -119,6 +119,7 @@ async function main() {
       RESEND_API_KEY: '',
       EMAIL_FROM: '',
       NEXT_PUBLIC_LAN_HOST: '',
+      PORTAL_PUBLIC_URL: 'https://portal.example.invalid',
     };
     const launch = (args: string[], cwd: string) => {
       child = spawn(process.execPath, args, {
@@ -218,7 +219,7 @@ async function main() {
         headers: {
           Cookie: `ete_portal_session=${token}`,
           'Content-Type': 'application/json',
-          Origin: base,
+          Origin: 'https://portal.example.invalid',
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         signal: AbortSignal.any([

@@ -123,6 +123,7 @@ async function startPortal(signal: AbortSignal) {
         NODE_ENV: 'development',
         RESEND_API_KEY: '',
         EMAIL_FROM: '',
+        PORTAL_PUBLIC_URL: `http://127.0.0.1:${port}`,
         NEXT_PUBLIC_LAN_HOST: '',
       },
       stdio: ['ignore', 'pipe', 'pipe'],

@@ -14,7 +14,7 @@
     "test:declarations": "npm run test:declarations --workspace @ete-conectada/portal",
     "test:guards": "npm run test:guards --workspace @ete-conectada/portal",
     "test:schema": "npm run test:schema --workspace @ete-conectada/portal",
-    "test:integration": "npm run test:database-time && npm run test:import && npm run test:access-throttle && npm run test:registration && npm run test:password-reset && npm run test:private-input && npm run test:declarations && npm run test:session && npm run test:production && npm run test:student-details && npm run test:enrollments && npm run test:course-calendars && npm run test:sheet-import && npm run test:sheet-history && npm run test:subsequent-import && npm run test:db --workspace @ete-conectada/portal",
+    "test:integration": "npm run test:database-time && npm run test:origin && npm run test:import && npm run test:access-throttle && npm run test:registration && npm run test:password-reset && npm run test:private-input && npm run test:declarations && npm run test:session && npm run test:production && npm run test:student-details && npm run test:enrollments && npm run test:course-calendars && npm run test:sheet-import && npm run test:sheet-history && npm run test:subsequent-import && npm run test:db --workspace @ete-conectada/portal",
     "test:enrollments": "npm run test:enrollments --workspace @ete-conectada/portal",
     "test:student-details": "npm run test:student-details --workspace @ete-conectada/portal",
     "test:cleanup": "npm run test:cleanup --workspace @ete-conectada/portal",
@@ -38,7 +38,8 @@
     "test:subsequent-import": "npm run test:subsequent-import --workspace @ete-conectada/portal",
     "test:access-throttle": "npm run test:access-throttle --workspace @ete-conectada/portal",
     "test:database-time": "npm run test:database-time --workspace @ete-conectada/portal",
-    "test:private-input": "npm run test:private-input --workspace @ete-conectada/portal"
+    "test:private-input": "npm run test:private-input --workspace @ete-conectada/portal",
+    "test:origin": "npm run test:origin --workspace @ete-conectada/portal"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

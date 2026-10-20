@@ -28,7 +28,13 @@ async function main() {
   async function post(path: string, data: unknown) {
     const response = await fetch(`${base}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Origin: base },
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: base,
+        ...(path === '/api/registration/start'
+          ? { Host: 'evil.invalid', 'X-Forwarded-Host': 'evil.invalid' }
+          : {}),
+      },
       body: JSON.stringify(data),
     });
     return { status: response.status, body: await response.json() };
@@ -49,7 +55,13 @@ async function main() {
       'dev_link',
       'Execute sem o provedor de e-mail, usando o link de desenvolvimento.',
     );
-    return new URL(result.body.verificationUrl).searchParams.get('token')!;
+    const url = new URL(result.body.verificationUrl, base);
+    assert.equal(
+      url.origin,
+      new URL(base).origin,
+      'Host não escolhe o destino do token.',
+    );
+    return url.searchParams.get('token')!;
   };
   const verify = (token: string) => post('/api/registration/verify', { token });
   try {

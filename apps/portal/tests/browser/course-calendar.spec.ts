@@ -35,6 +35,7 @@ test('calendário de turma exige datas conferidas e permite política explícita
     expect(
       (
         await context.request.post(base + '/api/login', {
+          headers: { Origin: base },
           data: { identifier: email, password },
         })
       ).status(),
