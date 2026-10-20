@@ -53,7 +53,6 @@ async function handlePOST(request: Request) {
       );
     const db = getDb();
     const classRows = await db.enrollment.findMany({
-      where: { mode: 'INTEGRADO' },
       select: { className: true },
       distinct: ['className'],
       orderBy: { className: 'asc' },

@@ -1,8 +1,47 @@
 import type { PrismaClient } from '../generated/prisma/client';
 import {
+  readCalendarDraft,
+  moduleOnDate,
+  calendarEnded,
+} from './course-calendar-input';
+import {
   EnrollmentValidityError,
   requireCurrentEnrollment,
 } from './enrollment-validity';
+
+export const enrollmentDeclarationSelect = {
+  id: true,
+  mode: true,
+  className: true,
+  grade: true,
+  courseLabel: true,
+  schoolYear: true,
+  status: true,
+  periodLabel: true,
+  validFrom: true,
+  validUntil: true,
+  reviewedAt: true,
+  moduleNumber: true,
+  offeringId: true,
+  calendarModule: true,
+  calendarRevision: true,
+  offering: {
+    select: {
+      courseLabel: true,
+      calendars: {
+        orderBy: { revision: 'desc' as const },
+        take: 1,
+        select: { revision: true, schedule: true },
+      },
+    },
+  },
+} as const;
+const courseNames: Record<string, string> = {
+  ADM: 'Administração',
+  DS: 'Desenvolvimento de Sistemas',
+  ENF: 'Enfermagem',
+};
+const subsequentSchedule = 'de segunda-feira a sexta-feira, das 18h20 às 21h00';
 
 export const studentDeclarationSelect = {
   id: true,
@@ -22,19 +61,7 @@ export const studentDeclarationSelect = {
     },
   },
   enrollments: {
-    select: {
-      id: true,
-      mode: true,
-      className: true,
-      grade: true,
-      courseLabel: true,
-      schoolYear: true,
-      status: true,
-      periodLabel: true,
-      validFrom: true,
-      validUntil: true,
-      reviewedAt: true,
-    },
+    select: enrollmentDeclarationSelect,
     orderBy: { createdAt: 'desc' as const },
   },
 } as const;
@@ -58,7 +85,13 @@ type EnrollmentView = Pick<
   | 'courseLabel'
   | 'schoolYear'
   | 'periodLabel'
->;
+  | 'moduleNumber'
+> & {
+  subsequent:
+    | { startsOn: string; endsOn: string; moduleNumber: number }
+    | { error: string }
+    | null;
+};
 export type StudentView = Omit<
   DeclarationStudent,
   'birthDate' | 'enrollments'
@@ -79,6 +112,8 @@ export function studentView(student: DeclarationStudent): StudentView {
         courseLabel,
         schoolYear,
         periodLabel,
+        moduleNumber,
+        ...serverFields
       }) => ({
         id,
         mode,
@@ -87,6 +122,37 @@ export function studentView(student: DeclarationStudent): StudentView {
         courseLabel,
         schoolYear,
         periodLabel,
+        moduleNumber,
+        subsequent:
+          mode === 'SUBSEQUENTE'
+            ? (() => {
+                try {
+                  const context = subsequentContext({
+                    id,
+                    mode,
+                    className,
+                    grade,
+                    courseLabel,
+                    schoolYear,
+                    periodLabel,
+                    moduleNumber,
+                    ...serverFields,
+                  });
+                  return {
+                    startsOn: context.startsOn,
+                    endsOn: context.endsOn,
+                    moduleNumber: context.moduleNumber,
+                  };
+                } catch (error) {
+                  return {
+                    error:
+                      error instanceof DeclarationValidationError
+                        ? error.message
+                        : 'Confira o calendário e a matrícula antes de emitir.',
+                  };
+                }
+              })()
+            : null,
       }),
     ),
   };
@@ -117,13 +183,11 @@ export function declarationDefaults(
 ): Partial<DeclarationFields> {
   const enrollment = student.enrollments[0];
   const details = student.details;
-  const courseNames: Record<string, string> = {
-    ADM: 'Administração',
-    DS: 'Desenvolvimento de Sistemas',
-    ENF: 'Enfermagem',
-  };
   return {
     enrollmentId: enrollment?.id ?? '',
+    ...(enrollment?.mode === 'SUBSEQUENTE'
+      ? { schedule: subsequentSchedule }
+      : {}),
     parentOne: details?.parentOne ?? '',
     parentTwo: details?.parentTwo ?? '',
     socialName: details?.socialName ?? '',
@@ -146,6 +210,50 @@ export class DeclarationValidationError extends Error {
   ) {
     super(message);
   }
+}
+
+export function subsequentContext(
+  enrollment: DeclarationStudent['enrollments'][number],
+  now = new Date(),
+) {
+  const version = enrollment.offering?.calendars[0];
+  const fail = () =>
+    new DeclarationValidationError(
+      'Confira o calendário, o módulo e a vigência desta matrícula antes de emitir.',
+      'enrollmentId',
+    );
+  if (
+    !enrollment.offeringId ||
+    !enrollment.offering ||
+    !version ||
+    enrollment.offering.courseLabel !== enrollment.courseLabel ||
+    version.revision !== enrollment.calendarRevision ||
+    enrollment.moduleNumber !== enrollment.calendarModule
+  )
+    throw fail();
+  let draft;
+  try {
+    draft = readCalendarDraft(version.schedule);
+  } catch {
+    throw fail();
+  }
+  const current = moduleOnDate(draft, now);
+  if (
+    draft.courseLabel !== enrollment.courseLabel ||
+    !current ||
+    calendarEnded(draft, now) ||
+    current.number !== enrollment.moduleNumber ||
+    current.periodLabel !== enrollment.periodLabel ||
+    enrollment.validFrom?.toISOString().slice(0, 10) !== current.startsOn ||
+    enrollment.validUntil?.toISOString().slice(0, 10) !== current.endsOn
+  )
+    throw fail();
+  return {
+    moduleNumber: current.number,
+    startsOn: draft.startsOn,
+    endsOn: draft.endsOn,
+    courseName: courseNames[draft.courseLabel],
+  };
 }
 
 export function validateDeclarationFields(value: unknown): DeclarationFields {
@@ -280,9 +388,9 @@ export function declarationBody(
     throw new DeclarationValidationError(
       'Esta matrícula não pertence ao aluno selecionado.',
     );
-  if (enrollment.mode !== 'INTEGRADO')
+  if (!['INTEGRADO', 'SUBSEQUENTE'].includes(enrollment.mode))
     throw new DeclarationValidationError(
-      'O modelo do subsequente ainda precisa ser confirmado pela escola.',
+      'Modalidade não disponível para declaração.',
     );
   try {
     requireCurrentEnrollment(enrollment, fields.schoolPeriod);
@@ -291,7 +399,10 @@ export function declarationBody(
       throw new DeclarationValidationError(error.message, error.field);
     throw error;
   }
-  if (!student.fullName || !enrollment.grade)
+  if (
+    !student.fullName ||
+    (enrollment.mode === 'INTEGRADO' && !enrollment.grade)
+  )
     throw new DeclarationValidationError(
       'O cadastro não contém nome e série completos. Procure a secretaria.',
     );
@@ -302,6 +413,16 @@ export function declarationBody(
     /^(\d{3})(\d{3})(\d{3})(\d{2})$/,
     '$1.$2.$3-$4',
   );
+  if (enrollment.mode === 'SUBSEQUENTE') {
+    const context = subsequentContext(enrollment);
+    const month = (value: string) =>
+      new Intl.DateTimeFormat('pt-BR', {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(value + 'T00:00:00Z'));
+    return `Declaramos, para os devidos fins de comprovação, que ${student.fullName}, nascido(a) em ${birth}, natural de ${fields.naturality}, filho(a) de ${fields.parentOne}${fields.parentTwo ? ` e ${fields.parentTwo}` : ''}${cpf ? `, portador(a) do CPF ${cpf}` : ''}, está regularmente matriculado(a) e cursando o ${context.moduleNumber}º módulo do Curso Técnico em ${context.courseName}, na modalidade subsequente, no período letivo ${fields.schoolPeriod}, nesta unidade escolar. As atividades escolares ocorrem ${subsequentSchedule}, com início do curso em ${month(context.startsOn)} e previsão de conclusão em ${month(context.endsOn)}.`;
+  }
   // Regra fixa confirmada pela secretaria; não é cálculo de presença individual.
   const frequency = ' A frequência registrada no período letivo é de 100%.';
   return `Declaramos, para os devidos fins de comprovação, que ${student.fullName}, nascido(a) em ${birth}, natural de ${fields.naturality}, filho(a) de ${fields.parentOne}${fields.parentTwo ? ` e ${fields.parentTwo}` : ''}${cpf ? `, portador(a) do CPF ${cpf}` : ''}, está regularmente matriculado(a) no ${enrollment.grade}º ano do Ensino Médio Integrado ao Curso Técnico em ${fields.courseName}, no período letivo ${fields.schoolPeriod}, nesta unidade escolar.${fields.schedule ? ` As atividades escolares ocorrem ${fields.schedule}.` : ''}${frequency}`;

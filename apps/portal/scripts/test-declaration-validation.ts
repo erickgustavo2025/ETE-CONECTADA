@@ -39,6 +39,11 @@ const student: DeclarationStudent = {
       ...syntheticEnrollmentValidity(),
       id: enrollmentId,
       mode: 'INTEGRADO',
+      moduleNumber: null,
+      offeringId: null,
+      calendarModule: null,
+      calendarRevision: null,
+      offering: null,
       className: 'Turma fictícia',
       grade: 2,
       courseLabel: 'Curso fictício',
@@ -220,7 +225,7 @@ test('aceita intervalo de um dia e recusa intervalo invertido ou futuro no fuso 
   rejects(frequency, 'frequencyEnd');
 });
 
-test('recusa matrícula de outro aluno e modelo subsequente ainda indisponível', () => {
+test('recusa matrícula de outro aluno e subsequente sem calendário', () => {
   assert.throws(
     () =>
       declarationBody(
@@ -241,7 +246,7 @@ test('recusa matrícula de outro aluno e modelo subsequente ainda indisponível'
         },
         validateDeclarationFields(valid),
       ),
-    /subsequente/,
+    /calendário, o módulo e a vigência/,
   );
 });
 

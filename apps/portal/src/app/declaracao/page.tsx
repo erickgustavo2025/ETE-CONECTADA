@@ -51,15 +51,14 @@ export default async function DeclarationPage() {
             </dd>
           </div>
         </dl>
-        {enrollment?.mode !== 'INTEGRADO' && (
+        {!enrollment && (
           <p className="document-empty">
-            {enrollment?.mode === 'SUBSEQUENTE'
-              ? 'O modelo do subsequente aguarda a confirmação da escola.'
-              : 'Procure a secretaria para completar sua matrícula antes de solicitar.'}
+            Procure a secretaria para completar sua matrícula antes de
+            solicitar.
           </p>
         )}
         <StudentDeclarationRequests
-          enrollmentId={enrollment?.mode === 'INTEGRADO' ? enrollment.id : null}
+          enrollmentId={enrollment?.id ?? null}
           initialRequests={requests}
           birthplace={
             student?.details?.birthCity &&

@@ -18,7 +18,7 @@
     "test:schema": "node --import tsx scripts/test-schema.ts",
     "test:cleanup": "node --import tsx scripts/test-cleanup.ts",
     "test:guards": "node --import tsx scripts/test-test-environment.ts",
-    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts && node --import tsx scripts/test-student-details-validation.ts && node --import tsx scripts/test-enrollment-validation.ts && node --import tsx scripts/test-password-reset-validation.ts && npm run test:sheet-input && npm run test:course-calendar-input && node --import tsx scripts/test-database-config.ts && node --import tsx scripts/test-request-origin.ts && node --import tsx scripts/test-session-cookie.ts && node --import tsx scripts/test-security-policy.ts && node --import tsx scripts/test-email-delivery.ts && node --import tsx scripts/test-backup-catalog.ts && node --import tsx scripts/test-birthplace-catalog.ts && node --import tsx scripts/test-declaration-pdf.ts",
+    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts && node --import tsx scripts/test-student-details-validation.ts && node --import tsx scripts/test-enrollment-validation.ts && node --import tsx scripts/test-password-reset-validation.ts && npm run test:sheet-input && npm run test:course-calendar-input && node --import tsx scripts/test-database-config.ts && node --import tsx scripts/test-request-origin.ts && node --import tsx scripts/test-session-cookie.ts && node --import tsx scripts/test-security-policy.ts && node --import tsx scripts/test-email-delivery.ts && node --import tsx scripts/test-backup-catalog.ts && node --import tsx scripts/test-birthplace-catalog.ts && node --import tsx scripts/test-declaration-pdf.ts && node --import tsx scripts/test-subsequent-declaration.ts",
     "test:student-details": "node --import tsx scripts/test-student-details.ts",
     "test:registration": "tsx scripts/test-registration.ts",
     "diagnose:login": "node --import tsx scripts/diagnose-login.ts",
@@ -51,7 +51,8 @@
     "test:security-headers": "node --import tsx scripts/test-security-headers.ts",
     "test:mail-failures": "node --import tsx scripts/test-registration-mail.ts",
     "test:backup": "node --import tsx scripts/test-backup-restore.ts",
-    "test:birthplace": "node --import tsx scripts/test-declaration-birthplace.ts"
+    "test:birthplace": "node --import tsx scripts/test-declaration-birthplace.ts",
+    "test:subsequent-declaration": "node --import tsx scripts/test-subsequent-declaration-http.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

@@ -21,6 +21,11 @@ const student: DeclarationStudent = {
     {
       id: '00000000-0000-4000-8000-000000000002',
       mode: 'INTEGRADO',
+      moduleNumber: null,
+      offeringId: null,
+      calendarModule: null,
+      calendarRevision: null,
+      offering: null,
       className: 'Turma fictícia',
       grade: 2,
       courseLabel: 'DS',
