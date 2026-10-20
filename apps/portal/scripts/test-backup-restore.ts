@@ -288,7 +288,7 @@ async function main() {
     assert.deepEqual((await snapshot(target)).tables, {});
     await restore(archive);
     const restored = await snapshot(target);
-    // Diagnóstico só de estrutura e contagens; nunca imprime linhas, hashes de contas ou SQL.
+    // Diagnóstico do catálogo versionado e contagens, sem linhas ou hashes de contas.
     for (const table of Object.keys(original.tables)) {
       if (!isDeepStrictEqual(restored.tables[table], original.tables[table]))
         console.error(
@@ -310,7 +310,7 @@ async function main() {
           actual.length,
         );
         for (let row = 0; row < Math.max(rows.length, actual.length); row++) {
-          if (!isDeepStrictEqual(rows[row], actual[row]))
+          if (!isDeepStrictEqual(rows[row], actual[row])) {
             console.error(
               'Item:',
               row,
@@ -322,6 +322,17 @@ async function main() {
                 )
                 .join(','),
             );
+            if (index === 1)
+              console.error(
+                'Constraint do schema sintético:',
+                JSON.stringify({
+                  name: rows[row]?.conname,
+                  relation: rows[row]?.relation,
+                  original: rows[row]?.definition,
+                  restored: actual[row]?.definition,
+                }),
+              );
+          }
         }
       }
     }
