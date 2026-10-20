@@ -40,3 +40,5 @@ jobs:
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
       - name: Construir e testar imagens sem registry ou deploy
         run: bash .github/scripts/test-containers.sh
+      - name: Ensaiar Compose e persistência em laboratório próprio
+        run: bash .github/scripts/test-compose-lab.sh

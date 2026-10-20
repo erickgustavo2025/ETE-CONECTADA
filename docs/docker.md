@@ -25,6 +25,8 @@ Troque o endereço de exemplo pelo aprovado para a instalação. Alterar esse va
 
 As configurações privadas e as origens `SITE_PUBLIC_URL` e `PORTAL_PUBLIC_URL` são fornecidas ao iniciar, por mecanismo externo. Fora de desenvolvimento, as origens configuradas precisam usar HTTPS. `HTTPS_VERIFIED=true` só deve ser usado depois de conferir o HTTPS real do proxy. Não inclua arquivos `.env` na imagem.
 
+Para conexão fornecida por arquivo externo, o início standalone aceita `DATABASE_URL_FILE`; não configure `DATABASE_URL` ao mesmo tempo. O [laboratório com Compose](compose-laboratorio.md) explica montagem, permissões, limitações e teste de persistência com dados fictícios.
+
 ## O que entra na imagem
 
 A `.dockerignore` permite apenas código, manifests, arquivos de configuração necessários e recursos visuais. Exclui configurações locais, planilhas, backups, dumps, logs, chaves e saídas de desenvolvimento. O cliente Prisma é gerado durante o build. O tracing parte da raiz do monorepo para incluir dependências e compartilhados; fontes do PDF, imagem institucional e o leitor XLS têm conferência específica.

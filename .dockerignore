@@ -30,6 +30,7 @@
 !apps/portal/public/images/governo.png
 !shared/**
 !scripts/check-standalone.mjs
+!scripts/start-standalone.mjs
 
 # Negativas finais também protegem pastas que precisam ser incluídas acima.
 **/.[eE][nN][vV]*
