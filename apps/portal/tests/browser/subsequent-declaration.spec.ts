@@ -107,12 +107,15 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
     await page.context().clearCookies();
     await login(staffAccount.email!);
     await page.goto(base + '/secretaria/declaracoes');
+    await page
+      .getByRole('button', { name: 'Subsequente', exact: true })
+      .click();
     await page.getByRole('button', { name: 'Preparar declaração' }).click();
     await expect(page.getByLabel('Cidade e estado de nascimento')).toHaveValue(
       'Recife/PE',
     );
     await expect(page.getByLabel('Nome do pai ou da mãe')).toHaveValue(
-      'Filiação fictícia do subsequente',
+      'FILIAÇÃO FICTÍCIA DO SUBSEQUENTE',
     );
     const course = page.getByLabel('Nome oficial do curso técnico');
     await expect(course).toHaveValue('Desenvolvimento de Sistemas');

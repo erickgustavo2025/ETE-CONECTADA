@@ -188,8 +188,8 @@ export function declarationDefaults(
     ...(enrollment?.mode === 'SUBSEQUENTE'
       ? { schedule: subsequentSchedule }
       : {}),
-    parentOne: details?.parentOne ?? '',
-    parentTwo: details?.parentTwo ?? '',
+    parentOne: (details?.parentOne ?? '').toLocaleUpperCase('pt-BR'),
+    parentTwo: (details?.parentTwo ?? '').toLocaleUpperCase('pt-BR'),
     socialName: details?.socialName ?? '',
     naturality: details?.birthCity
       ? `${details.birthCity}${details.birthState ? `/${details.birthState}` : details.birthCountry ? ` (${details.birthCountry})` : ''}`
@@ -291,8 +291,14 @@ export function validateDeclarationFields(value: unknown): DeclarationFields {
   const fields: DeclarationFields = {
     enrollmentId,
     naturality: text('naturality', 'a naturalidade (município/UF)', true, 120),
-    parentOne: text('parentOne', 'a filiação registrada', true),
-    parentTwo: text('parentTwo', 'a segunda filiação'),
+    parentOne: text(
+      'parentOne',
+      'a filiação registrada',
+      true,
+    ).toLocaleUpperCase('pt-BR'),
+    parentTwo: text('parentTwo', 'a segunda filiação').toLocaleUpperCase(
+      'pt-BR',
+    ),
     socialName: text('socialName', 'o nome social'),
     courseName: text('courseName', 'o nome oficial do curso', true, 120),
     schoolPeriod: text('schoolPeriod', 'o período letivo', true, 60),

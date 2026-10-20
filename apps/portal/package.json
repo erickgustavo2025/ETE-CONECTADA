@@ -25,6 +25,7 @@
     "students:import": "node --import tsx scripts/import-students.ts",
     "access:secretary": "node --import tsx scripts/set-secretary.ts",
     "test:declarations": "node --import tsx scripts/test-declarations.ts",
+    "test:declaration-modes": "node --import tsx scripts/test-declaration-request-modes.ts",
     "db:demo": "node --import tsx scripts/prepare-demo.ts",
     "test:enrollments": "node --import tsx scripts/test-enrollments.ts",
     "typecheck": "prisma generate && next typegen && tsc --noEmit --incremental false",
