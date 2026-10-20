@@ -57,6 +57,7 @@ async function handlePOST(request: Request) {
     const result = await requestDeclaration(
       session.studentId,
       body.enrollmentId,
+      { accountId: session.accountId, birthplace: body.birthplace },
     );
     return Response.json(result, {
       status: result.created ? 201 : 200,

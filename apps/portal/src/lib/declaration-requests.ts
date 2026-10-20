@@ -3,6 +3,10 @@ import { getDb } from './db';
 import { DeclarationValidationError } from './declarations';
 import type { RequestSummary } from './declaration-request-types';
 import {
+  BirthplaceError,
+  validateDeclaredBirthplace,
+} from './birthplace-catalog';
+import {
   requireCurrentEnrollment,
   EnrollmentValidityError,
 } from './enrollment-validity';
@@ -78,9 +82,23 @@ export class RequestError extends Error {
 export async function requestDeclaration(
   studentId: string,
   enrollmentId: string,
+  options: { accountId: string; birthplace?: unknown },
 ) {
+  if (![studentId, enrollmentId, options.accountId].every(validRequestId))
+    throw new RequestError('Acesso não autorizado.', 403);
+  const birthplace =
+    options.birthplace === undefined
+      ? null
+      : validateDeclaredBirthplace(options.birthplace);
   return getDb().$transaction(
     async (tx) => {
+      const allowed = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM accounts WHERE id=${options.accountId}::uuid
+        AND student_id=${studentId}::uuid AND status='active'
+        AND role IN ('student','secretary') FOR UPDATE
+      `;
+      if (!allowed.length)
+        throw new RequestError('Entre novamente para continuar.', 403);
       // Serializa cliques repetidos; o índice parcial também protege chamadas concorrentes.
       await tx.$queryRaw`SELECT id FROM students WHERE id = ${studentId}::uuid FOR UPDATE`;
       const enrollment = await tx.enrollment.findFirst({
@@ -103,6 +121,43 @@ export async function requestDeclaration(
       });
       if (existing)
         return { request: requestSummary(existing), created: false };
+      const details = await tx.studentDetails.findUnique({
+        where: { studentId },
+      });
+      if (birthplace) {
+        const protectedSource =
+          details?.birthplaceSource === 'SCHOOL_RECORD' ||
+          details?.birthplaceSource === 'SECRETARY_CORRECTION';
+        if (
+          protectedSource &&
+          (details.birthCity !== birthplace.birthCity ||
+            details.birthState !== birthplace.birthState ||
+            details.birthCountry !== birthplace.birthCountry)
+        )
+          throw new RequestError(
+            'Seu local de nascimento já foi conferido pela escola. Procure a secretaria para corrigir.',
+            422,
+          );
+        if (!protectedSource)
+          await tx.studentDetails.upsert({
+            where: { studentId },
+            create: {
+              studentId,
+              ...birthplace,
+              updatedById: options.accountId,
+            },
+            update: { ...birthplace, updatedById: options.accountId },
+          });
+      } else if (
+        !details?.birthCity ||
+        !details.birthCountry ||
+        (details.birthCountry === 'BR' && !details.birthState)
+      ) {
+        throw new RequestError(
+          'Informe o estado e o município onde você nasceu antes de enviar o pedido.',
+          422,
+        );
+      }
       const row = await tx.declarationRequest.create({
         data: { studentId, enrollmentId },
         select: requestSummarySelect,
@@ -232,6 +287,8 @@ export function validRequestId(value: unknown): value is string {
   );
 }
 export function requestFailure(error: unknown) {
+  if (error instanceof BirthplaceError)
+    return { error: error.message, status: 422 };
   if (error instanceof EnrollmentValidityError)
     return { error: error.message, status: 422 };
   if (error instanceof RequestError)

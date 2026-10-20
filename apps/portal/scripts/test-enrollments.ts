@@ -67,8 +67,12 @@ async function main() {
     assert.equal(enrollment.status, 'UNCONFIRMED');
     assert.equal(enrollment.validFrom, null);
     assert.throws(() => requireCurrentEnrollment(enrollment), /conferência/);
-    const request = (await requestDeclaration(studentId, enrollment.id))
-      .request;
+    const request = (
+      await requestDeclaration(studentId, enrollment.id, {
+        accountId: studentAccount.id,
+        birthplace: { state: 'PE', municipalityId: '2611606' },
+      })
+    ).request;
     assert.equal(
       request.status,
       'REQUESTED',

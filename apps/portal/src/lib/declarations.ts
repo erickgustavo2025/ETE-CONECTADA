@@ -10,6 +10,17 @@ export const studentDeclarationSelect = {
   schoolRegistration: true,
   cpf: true,
   birthDate: true,
+  details: {
+    select: {
+      parentOne: true,
+      parentTwo: true,
+      socialName: true,
+      birthCity: true,
+      birthState: true,
+      birthCountry: true,
+      birthplaceSource: true,
+    },
+  },
   enrollments: {
     select: {
       id: true,
@@ -40,7 +51,13 @@ export type DeclarationStudent = NonNullable<
 >;
 type EnrollmentView = Pick<
   DeclarationStudent['enrollments'][number],
-  'id' | 'mode' | 'className' | 'grade' | 'courseLabel' | 'schoolYear'
+  | 'id'
+  | 'mode'
+  | 'className'
+  | 'grade'
+  | 'courseLabel'
+  | 'schoolYear'
+  | 'periodLabel'
 >;
 export type StudentView = Omit<
   DeclarationStudent,
@@ -54,13 +71,22 @@ export function studentView(student: DeclarationStudent): StudentView {
     ...student,
     birthDate: student.birthDate.toISOString().slice(0, 10),
     enrollments: student.enrollments.map(
-      ({ id, mode, className, grade, courseLabel, schoolYear }) => ({
+      ({
         id,
         mode,
         className,
         grade,
         courseLabel,
         schoolYear,
+        periodLabel,
+      }) => ({
+        id,
+        mode,
+        className,
+        grade,
+        courseLabel,
+        schoolYear,
+        periodLabel,
       }),
     ),
   };
@@ -85,6 +111,32 @@ export type DeclarationFields = {
   frequencyStart?: string;
   frequencyEnd?: string;
 };
+
+export function declarationDefaults(
+  student: StudentView,
+): Partial<DeclarationFields> {
+  const enrollment = student.enrollments[0];
+  const details = student.details;
+  const courseNames: Record<string, string> = {
+    ADM: 'Administração',
+    DS: 'Desenvolvimento de Sistemas',
+    ENF: 'Enfermagem',
+  };
+  return {
+    enrollmentId: enrollment?.id ?? '',
+    parentOne: details?.parentOne ?? '',
+    parentTwo: details?.parentTwo ?? '',
+    socialName: details?.socialName ?? '',
+    naturality: details?.birthCity
+      ? `${details.birthCity}${details.birthState ? `/${details.birthState}` : details.birthCountry ? ` (${details.birthCountry})` : ''}`
+      : '',
+    courseName: Object.hasOwn(courseNames, enrollment?.courseLabel ?? '')
+      ? courseNames[enrollment!.courseLabel]
+      : (enrollment?.courseLabel ?? ''),
+    schoolPeriod:
+      enrollment?.periodLabel ?? enrollment?.schoolYear?.toString() ?? '',
+  };
+}
 
 export class DeclarationValidationError extends Error {
   itemIndex?: number;
@@ -250,8 +302,7 @@ export function declarationBody(
     /^(\d{3})(\d{3})(\d{3})(\d{2})$/,
     '$1.$2.$3-$4',
   );
-  const frequency = fields.includeFrequency
-    ? ` A frequência registrada é de ${fields.frequencyPercent!.replace('.', ',')}%, no período de ${fields.frequencyStart!.split('-').reverse().join('/')} a ${fields.frequencyEnd!.split('-').reverse().join('/')}.`
-    : '';
+  // Regra fixa confirmada pela secretaria; não é cálculo de presença individual.
+  const frequency = ' A frequência registrada no período letivo é de 100%.';
   return `Declaramos, para os devidos fins de comprovação, que ${student.fullName}, nascido(a) em ${birth}, natural de ${fields.naturality}, filho(a) de ${fields.parentOne}${fields.parentTwo ? ` e ${fields.parentTwo}` : ''}${cpf ? `, portador(a) do CPF ${cpf}` : ''}, está regularmente matriculado(a) no ${enrollment.grade}º ano do Ensino Médio Integrado ao Curso Técnico em ${fields.courseName}, no período letivo ${fields.schoolPeriod}, nesta unidade escolar.${fields.schedule ? ` As atividades escolares ocorrem ${fields.schedule}.` : ''}${frequency}`;
 }

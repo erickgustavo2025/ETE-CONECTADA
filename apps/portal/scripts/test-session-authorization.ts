@@ -27,6 +27,17 @@ async function main() {
       data: {
         fullName: `${name} fictício ${suffix}`,
         birthDate: new Date('2008-01-15T00:00:00Z'),
+        details: {
+          create: {
+            birthCity: 'Recife',
+            birthState: 'PE',
+            birthCountry: 'BR',
+            birthplaceSource: 'SCHOOL_RECORD',
+            parentOne: 'Responsável sintético Um',
+            parentTwo: 'Responsável sintético Dois',
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
         schoolRegistration: String(randomInt(10000000, 99999999)),
         enrollments: {
           create: {
