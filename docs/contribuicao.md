@@ -2,6 +2,8 @@
 
 Cada mudança usa uma branch curta criada da `main` atualizada, com o ID do card e uma descrição em ASCII: `feature/ec-027-padrao-pr`, por exemplo. A branch contém o projeto inteiro; o nome não limita os arquivos que podem mudar. As branches antigas de área são referências iniciais: prefira uma branch nova por card para evitar acumular mudanças sem integração.
 
+Para retomar trabalho do colega, use o [modelo de passagem de tarefa](passagem-de-tarefa.md), com branch, commit, decisões, verificações e pendências.
+
 ## Começar uma tarefa
 
 Escolha um card pronto em A Fazer, combine quem implementa e quem revisa e mova o mesmo card para Em Andamento. Cada pessoa mantém um card ativo. Antes de mexer em `package.json`, lockfile, Prisma/migrações ou `shared/`, combine os arquivos e a ordem de integração com o colega.
