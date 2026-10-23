@@ -12,6 +12,15 @@ assert.notEqual(
   0,
   'Runtime deve usar usuário sem privilégios.',
 );
+const apkPackages = (await readFile('/lib/apk/db/installed', 'utf8')).split(
+  '\n\n',
+);
+for (const name of ['musl', 'musl-utils']) {
+  const entry = apkPackages.find((item) =>
+    item.split('\n').includes(`P:${name}`),
+  );
+  assert.match(entry ?? '', /^V:1\.2\.6-r3$/m, 'Correção do musl ausente.');
+}
 for (const name of ['Manrope-OFL.txt', 'SourceSans3-OFL.txt'])
   await access(`/app/licenses/fonts/${name}`);
 for (const file of [

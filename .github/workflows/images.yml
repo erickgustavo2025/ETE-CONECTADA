@@ -43,6 +43,7 @@ jobs:
           python3 scripts/test-release-artifact.py
           node scripts/test-network-stability.mjs
           node scripts/test-browser-resource.mjs
+          node scripts/test-image-audit.mjs
       - name: Instalar Chromium no runner de teste
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
       - name: Preparar destino temporário exclusivo do pacote
