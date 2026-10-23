@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# Go1.26.9 + x/net0.60.0 corrigem GO-2026-6607/6609/6611.
-FROM golang:1.26.9-alpine3.24@sha256:3082400e369fa24d5fc60bca20edab3f6d604e0c5a690ec66b295eff4dd87ade AS builder
+# Go1.26.10 também corrige GO-2026-6809; x/net0.60.0 mantém as correções anteriores.
+FROM golang:1.26.10-alpine3.24@sha256:27f2d3b83cfc5803c8078f8e730af0f7c431bf067afaec8f60a36fb763187cba AS builder
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local GOCACHE=/go/cache
 RUN mkdir -p /build /out /go/cache && chown -R 1000:1000 /build /out /go
 USER 1000:1000

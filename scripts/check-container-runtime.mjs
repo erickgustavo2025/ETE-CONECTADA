@@ -7,6 +7,11 @@ import path from 'node:path';
 const app = process.env.TEST_APP;
 assert.ok(['site', 'portal'].includes(app));
 assert.equal(process.env.NODE_ENV, 'production');
+assert.equal(
+  process.versions.node,
+  '24.22.1',
+  'Runtime Node fora da revisão conferida.',
+);
 assert.notEqual(
   process.getuid(),
   0,

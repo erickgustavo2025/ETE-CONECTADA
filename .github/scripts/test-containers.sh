@@ -67,7 +67,7 @@ PY
 mkdir "$work/negative"
 printf '%s\n' "$marker" > "$work/negative/.env"
 cat > "$work/negative/Dockerfile" <<'DOCKER'
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 COPY .env /tmp/removed-fixture
 RUN rm /tmp/removed-fixture
 USER node
