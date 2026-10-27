@@ -17,6 +17,7 @@ model Student {
   registrationAllowed Boolean @default(true) @map("registration_allowed")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   account   Account?
+  declarationDocuments DeclarationDocument[]
   declarationRequests DeclarationRequest[]
   enrollments Enrollment[]
   details StudentDetails?
@@ -84,8 +85,10 @@ model Enrollment {
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  declarationDocuments DeclarationDocument[]
   declarationRequests DeclarationRequest[]
   importHistory EnrollmentImportHistory[]
+  @@unique([id, studentId])
   @@index([studentId])
   @@index([className])
   @@index([offeringId])
@@ -113,6 +116,7 @@ model Account {
   sheetImportPreview SheetImportPreview?
   recordedEnrollmentImports EnrollmentImportHistory[]
   calendarVersions CourseCalendarVersion[]
+  preparedDocuments DeclarationDocument[]
   @@map("accounts")
 }
 
@@ -268,4 +272,27 @@ model AccessAttemptBucket {
 
   @@index([expiresAt])
   @@map("access_attempt_buckets")
+}
+
+
+// Registro privado de minuta. Não representa assinatura ou emissão oficial.
+model DeclarationDocument {
+  id String @id @db.Uuid
+  publicCode String @unique @map("public_code") @db.VarChar(43)
+  studentId String @map("student_id") @db.Uuid
+  enrollmentId String @map("enrollment_id") @db.Uuid
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  status String @default("DRAFT") @db.VarChar(16)
+  snapshotVersion Int @default(1) @map("snapshot_version")
+  snapshot Json @db.JsonB
+  sourcePdfSha256 String @map("source_pdf_sha256") @db.Char(64)
+  sourcePdfPage Int @map("source_pdf_page")
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  enrollment Enrollment @relation(fields: [enrollmentId, studentId], references: [id, studentId], onDelete: Restrict, onUpdate: NoAction, map: "declaration_documents_enrollment_student_fkey")
+  createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([studentId, createdAt])
+  @@index([enrollmentId])
+  @@index([createdById])
+  @@map("declaration_documents")
 }
