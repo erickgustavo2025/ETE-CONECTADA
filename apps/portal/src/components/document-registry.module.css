@@ -1,0 +1,88 @@
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-block: 24px;
+}
+.wide {
+  grid-column: 1 / -1;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-block: 20px;
+}
+.rows {
+  list-style: none;
+  padding: 0;
+  margin-block: 20px;
+}
+.row {
+  border-block-end: 1px solid var(--border);
+  padding-block: 20px;
+  overflow-wrap: anywhere;
+}
+.row p {
+  margin-block: 6px 14px;
+  color: var(--muted);
+}
+.body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  padding-block: 20px;
+  border-block: 1px solid var(--border);
+}
+.history {
+  padding-inline-start: 24px;
+}
+.history li {
+  margin-block: 20px;
+  overflow-wrap: anywhere;
+}
+.identity {
+  overflow-wrap: anywhere;
+}
+.dialog {
+  width: min(620px, calc(100% - 32px));
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--white);
+  color: var(--ink);
+  padding: 28px;
+  box-shadow: var(--shadow-panel);
+}
+.dialog::backdrop {
+  background: var(--navy-deep);
+  opacity: 0.65;
+}
+.dialog h2 {
+  margin-block-start: 0;
+}
+.dialog textarea {
+  min-height: 110px;
+}
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-block: 24px;
+  line-height: 1.5;
+}
+.checkbox input {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+@media (max-width: 650px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dialog {
+    padding: 20px;
+  }
+}
