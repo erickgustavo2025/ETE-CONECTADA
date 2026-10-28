@@ -7,6 +7,7 @@ node_modules/
 *.tsbuildinfo
 reunioes/
 apps/portal/src/generated/prisma/
+sorteio-snct.html
 
 # Local generated verification reports
 premium-audit.json
