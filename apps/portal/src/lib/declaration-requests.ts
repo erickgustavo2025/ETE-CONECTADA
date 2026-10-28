@@ -1,3 +1,8 @@
+import {
+  declarationRegistryPreviewEnabled,
+  documentInsertData,
+  type PreparedDeclarationDocument,
+} from './declaration-documents';
 import { Prisma } from '@/generated/prisma/client';
 import { getDb } from './db';
 import {
@@ -165,7 +170,8 @@ export async function requestDeclaration(
 }
 
 // Só uma geração bem-sucedida, com os dados conferidos, inicia a preparação.
-// Não grava os dados pessoais digitados no editor e não anuncia retirada.
+// Não altera o cadastro do aluno nem anuncia retirada. O registro experimental
+// preserva o conteúdo da minuta somente quando habilitado explicitamente.
 export async function recordGeneratedDeclarations(
   items: {
     studentId: string;
@@ -175,7 +181,20 @@ export async function recordGeneratedDeclarations(
     calendarRevision?: number | null;
   }[],
   accountId: string,
+  documentBatch?: { records: PreparedDeclarationDocument[]; pdf: Uint8Array },
 ) {
+  if (
+    documentBatch &&
+    (!declarationRegistryPreviewEnabled() ||
+      documentBatch.records.length !== items.length ||
+      documentBatch.records.some(
+        (record, index) =>
+          record.studentId !== items[index].studentId ||
+          record.enrollmentId !== items[index].enrollmentId ||
+          record.sourcePdfPage !== index + 1,
+      ))
+  )
+    throw new DeclarationValidationError('Registro de minuta indisponível.');
   if (!items.length) return;
   await getDb().$transaction(async (tx) => {
     await lockSecretary(tx, accountId);
@@ -212,6 +231,14 @@ export async function recordGeneratedDeclarations(
           'A matrícula mudou durante a geração. Confira e gere novamente.',
         );
     }
+    if (documentBatch)
+      await tx.declarationDocument.createMany({
+        data: documentInsertData(
+          documentBatch.records,
+          documentBatch.pdf,
+          accountId,
+        ),
+      });
     await tx.declarationRequest.updateMany({
       where: {
         status: { in: ['REQUESTED', 'IN_PREPARATION'] },

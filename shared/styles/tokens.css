@@ -68,7 +68,8 @@ select {
 button:disabled {
   cursor: not-allowed;
 }
-textarea {
+textarea,
+.resize-none {
   resize: none;
 }
 @media (forced-colors: active) {

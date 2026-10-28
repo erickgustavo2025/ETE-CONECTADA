@@ -53,7 +53,7 @@ O teste usa o commit `HEAD`, copiado para uma pasta temporária, sem ler os arqu
 
 Os containers de teste têm sistema de arquivos somente leitura, cache temporário limitado, capabilities removidas, restrição de processos/memória/CPU e portas publicadas somente em loopback. Conferem scripts, imagens, fontes, conversão nativa pelo Sharp, XLS com zero inicial e bloqueios de produção, inclusive com cookie e papel forjados. O navegador confere fontes, hidratação e tela pequena. Um destino TCP fictício detecta tentativas indevidas de consultar banco durante os pedidos bloqueados.
 
-O scanner de vulnerabilidades é fixado e verificado por checksum; achados altos ou críticos nas imagens finais reprovam o teste. Somente os containers e imagens identificados como pertencentes à execução são removidos. O teste não inicia PostgreSQL, não cria volumes e não envia e-mail. A publicação em registry, Compose, backup e deploy são entregas separadas.
+O scanner de vulnerabilidades é fixado e verificado por checksum; achados altos ou críticos nas imagens finais reprovam o teste. A conferência também recusa relatório incompleto, de outra imagem ou acompanhado de aviso de CVE sem metadados, mesmo se o processo do scanner terminar com sucesso. Somente os containers e imagens identificados como pertencentes à execução são removidos. O teste não inicia PostgreSQL, não cria volumes e não envia e-mail. A publicação em registry, Compose, backup e deploy são entregas separadas.
 
 O workflow [Imagens Docker](../.github/workflows/images.yml) executa o mesmo procedimento em runner isolado. Não precisa de segredos nem de permissão de publicação. Os testes funcionais e a análise de código existentes continuam no CI.
 
@@ -62,6 +62,8 @@ Após os checks, o workflow também pode guardar um [pacote verificado das image
 O ensaio Compose inclui uma [preparação de proxy e HTTPS](proxy-https-laboratorio.md), com certificados sintéticos e portas dos apps removidas. Domínio público, ACME e configuração da VPS continuam pendentes.
 
 ## Avaliação da base
+
+Em 23/10/2026, a conferência local encontrou um aviso de metadados ausentes para CVE-2026-107891. O resultado filtrado do scanner não bastava para declarar a imagem aprovada. A [base oficial do Alpine](https://secdb.alpinelinux.org/v3.24/main.json) associa a correção à revisão musl 1.2.6-r3. O Dockerfile usa Node 24.22.1 oficial fixado por digest, incluindo essa revisão no build e no runtime; os testes conferem ambas as versões dentro dos containers. A mesma versão do Node fica registrada em `.nvmrc` para desenvolvimento e CI, conforme a [atualização de segurança de 21/10](https://nodejs.org/en/blog/release/v24.22.1). O PostgreSQL do laboratório permanece 16.15, com o digest atualizado da imagem oficial. A [publicação do Alpine de 21/10](https://alpinelinux.org/posts/Alpine-3.21.9-3.22.7-3.23.7-3.24.3-released.html) descreve a atualização do sistema. A presença de uma biblioteca afetada não comprova um caminho de exploração pela aplicação.
 
 Na seleção de 18/10/2026, a base oficial Alpine apresentou menos pacotes e nenhum alerta alto/crítico do sistema operacional no scanner usado. As variantes Debian Bookworm e Trixie apresentaram alertas adicionais. A escolha exige conferir compatibilidade real com musl: o teste executa o Sharp dentro de cada imagem, além de conferir os arquivos usados pelo PDF e pelo XLS. A plataforma validada neste procedimento é Linux x64.
 

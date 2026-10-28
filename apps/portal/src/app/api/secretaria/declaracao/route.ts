@@ -1,3 +1,7 @@
+import {
+  declarationRegistryPreviewEnabled,
+  prepareDeclarationDocuments,
+} from '@/lib/declaration-documents';
 import { withApiCanonicalPath } from '@/lib/api-route';
 import { recordGeneratedDeclarations } from '@/lib/declaration-requests';
 import { canManageDeclarations } from '@/lib/declaration-access';
@@ -52,6 +56,9 @@ async function handlePOST(request: Request) {
         { error: 'Aluno não encontrado.' },
         { status: 404, headers: privateHeaders },
       );
+    const records = declarationRegistryPreviewEnabled()
+      ? prepareDeclarationDocuments([{ student, fields }])
+      : undefined;
     const pdf = await createDeclarationPdf(student, fields);
     await recordGeneratedDeclarations(
       [
@@ -68,6 +75,7 @@ async function handlePOST(request: Request) {
         },
       ],
       session.accountId,
+      records ? { records, pdf } : undefined,
     );
     return new Response(Buffer.from(pdf), {
       headers: {

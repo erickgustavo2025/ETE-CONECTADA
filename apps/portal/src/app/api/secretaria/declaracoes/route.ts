@@ -1,3 +1,7 @@
+import {
+  declarationRegistryPreviewEnabled,
+  prepareDeclarationDocuments,
+} from '@/lib/declaration-documents';
 import { withApiCanonicalPath } from '@/lib/api-route';
 import { recordGeneratedDeclarations } from '@/lib/declaration-requests';
 import { canManageDeclarations } from '@/lib/declaration-access';
@@ -89,6 +93,9 @@ async function handlePOST(request: Request) {
       }
       return { student, fields: item.fields };
     });
+    const records = declarationRegistryPreviewEnabled()
+      ? prepareDeclarationDocuments(selected)
+      : undefined;
     const pdf = await createDeclarationsPdf(selected);
     await recordGeneratedDeclarations(
       selected.map((item) => ({
@@ -103,6 +110,7 @@ async function handlePOST(request: Request) {
         )!.reviewedAt,
       })),
       session.accountId,
+      records ? { records, pdf } : undefined,
     );
     return new Response(Buffer.from(pdf), {
       headers: {

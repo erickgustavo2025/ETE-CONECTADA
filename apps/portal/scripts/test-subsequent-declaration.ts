@@ -27,6 +27,7 @@ test('subsequente usa curso e módulo do calendário, datas do curso e nenhuma f
       const body = declarationBody(student, fields(enrollment));
       assert.match(body, new RegExp(`${number}º módulo`));
       assert.match(body, /modalidade subsequente/);
+      assert.match(body, /FILIAÇÃO FICTÍCIA/);
       assert.match(body, /18h20 às 21h00/);
       assert.doesNotMatch(body, /frequência|100%|Ensino Médio|Curso enviado/);
       for (const date of [schedule.startsOn, schedule.endsOn]) {

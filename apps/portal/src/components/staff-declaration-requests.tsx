@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import type { StudentView } from '@/lib/declarations';
+import { useClientReady } from './use-client-ready';
 import {
   requestDate,
   requestStatusLabels,
@@ -23,7 +24,10 @@ export default function StaffDeclarationRequests({
   disabled,
   onPrepare,
 }: Props) {
+  const ready = useClientReady();
   const [filter, setFilter] = useState('OPEN');
+  const [mode, setMode] = useState<'INTEGRADO' | 'SUBSEQUENTE'>('INTEGRADO');
+  const modeLabel = mode === 'INTEGRADO' ? 'Integrado' : 'Subsequente';
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<Results | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,10 +45,13 @@ export default function StaffDeclarationRequests({
     const controller = new AbortController();
     setLoading(true);
     setError('');
-    fetch(`/api/secretaria/solicitacoes?status=${filter}&page=${page}`, {
-      cache: 'no-store',
-      signal: controller.signal,
-    })
+    fetch(
+      `/api/secretaria/solicitacoes?status=${filter}&mode=${mode}&page=${page}`,
+      {
+        cache: 'no-store',
+        signal: controller.signal,
+      },
+    )
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok)
@@ -68,7 +75,7 @@ export default function StaffDeclarationRequests({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [filter, page, revision, retry]);
+  }, [filter, mode, page, revision, retry]);
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -130,14 +137,43 @@ export default function StaffDeclarationRequests({
           Atualizar lista
         </button>
       </div>
+      <div
+        className="request-mode-filter"
+        role="group"
+        aria-label="Modalidade do aluno"
+      >
+        {(['INTEGRADO', 'SUBSEQUENTE'] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            className={`ete-button ete-button--compact${mode === value ? '' : ' ete-button--secondary'}`}
+            aria-pressed={mode === value}
+            aria-controls="staff-request-list"
+            disabled={!ready || saving || disabled}
+            onClick={() => {
+              if (mode === value) return;
+              setResult(null);
+              setLoading(true);
+              setError('');
+              setMessage('');
+              setPage(1);
+              setMode(value);
+            }}
+          >
+            {value === 'INTEGRADO' ? 'Integrado' : 'Subsequente'}
+          </button>
+        ))}
+      </div>
       <div className="request-toolbar">
         <div className="declaration-field">
           <label htmlFor="request-status-filter">Situação do pedido</label>
           <select
             id="request-status-filter"
             value={filter}
-            disabled={saving || disabled}
+            disabled={!ready || saving || disabled}
             onChange={(event) => {
+              setResult(null);
+              setLoading(true);
               setFilter(event.target.value);
               setPage(1);
             }}
@@ -153,7 +189,7 @@ export default function StaffDeclarationRequests({
             ? 'Consultando solicitações…'
             : error && !pending
               ? error
-              : `${result?.total ?? 0} ${result?.total === 1 ? 'pedido' : 'pedidos'}`}
+              : `${result?.total ?? 0} ${result?.total === 1 ? 'pedido' : 'pedidos'} do ${modeLabel}`}
         </p>
       </div>
       {error && !pending && (
@@ -167,13 +203,14 @@ export default function StaffDeclarationRequests({
       )}
       {!loading && !error && !result?.requests.length && (
         <div className="request-empty">
-          <strong>Nenhum pedido nesta situação</strong>
-          <p>Os novos pedidos dos alunos aparecerão aqui.</p>
+          <strong>Nenhum pedido do {modeLabel} nesta situação</strong>
+          <p>Os novos pedidos desta modalidade aparecerão aqui.</p>
         </div>
       )}
-      {!error && (
-        <ul className="request-list" aria-busy={loading}>
-          {result?.requests.map((row) => (
+      <ul id="staff-request-list" className="request-list" aria-busy={loading}>
+        {!loading &&
+          !error &&
+          result?.requests.map((row) => (
             <li className="request-row" key={row.id}>
               <div className="request-row-copy">
                 <span
@@ -230,9 +267,8 @@ export default function StaffDeclarationRequests({
               )}
             </li>
           ))}
-        </ul>
-      )}
-      {result && result.total > result.pageSize && (
+      </ul>
+      {!loading && !error && result && result.total > result.pageSize && (
         <nav
           className="results-pagination"
           aria-label="Páginas das solicitações"

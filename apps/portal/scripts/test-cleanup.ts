@@ -20,6 +20,8 @@ async function main() {
         (SELECT count(*) FROM email_verification_tokens) +
         (SELECT count(*) FROM password_reset_tokens) +
         (SELECT count(*) FROM declaration_requests) +
+        (SELECT count(*) FROM declaration_documents) +
+        (SELECT count(*) FROM declaration_document_actions) +
         (SELECT count(*) FROM retired_profile_photos)
       ) AS records
     `;
