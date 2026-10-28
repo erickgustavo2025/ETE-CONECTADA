@@ -1,4 +1,5 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
+import type { Prisma } from '@/generated/prisma/client';
 import { currentSession } from '@/lib/session';
 import { getDb } from '@/lib/db';
 import { canManageDeclarations } from '@/lib/declaration-access';
@@ -30,6 +31,12 @@ async function handleGET(request: Request) {
         { status: 403, headers: privateHeaders },
       );
     const params = new URL(request.url).searchParams;
+    const mode = params.get('mode') ?? 'ALL';
+    if (!['ALL', 'INTEGRADO', 'SUBSEQUENTE'].includes(mode))
+      return Response.json(
+        { error: 'Escolha Integrado ou Subsequente.' },
+        { status: 400, headers: privateHeaders },
+      );
     const filter = params.get('status') ?? 'OPEN';
     if (
       !['OPEN', 'REQUESTED', 'IN_PREPARATION', 'READY_FOR_PICKUP'].includes(
@@ -46,7 +53,7 @@ async function handleGET(request: Request) {
         { error: 'Página inválida.' },
         { status: 400, headers: privateHeaders },
       );
-    const where =
+    const statusWhere =
       filter === 'OPEN'
         ? { status: { not: 'READY_FOR_PICKUP' as const } }
         : {
@@ -55,6 +62,12 @@ async function handleGET(request: Request) {
               | 'IN_PREPARATION'
               | 'READY_FOR_PICKUP',
           };
+    const where: Prisma.DeclarationRequestWhereInput = {
+      ...statusWhere,
+      ...(mode === 'INTEGRADO' || mode === 'SUBSEQUENTE'
+        ? { enrollment: { mode } }
+        : {}),
+    };
     const db = getDb();
     const total = await db.declarationRequest.count({ where });
     const page = Math.min(pageInput, Math.max(1, Math.ceil(total / 20)));

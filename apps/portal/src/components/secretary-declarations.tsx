@@ -816,6 +816,16 @@ export default function SecretaryDeclarations() {
                         name={field.name}
                         type="text"
                         defaultValue={initial[field.name] ?? ''}
+                        onBlur={(event) => {
+                          if (
+                            field.name === 'parentOne' ||
+                            field.name === 'parentTwo'
+                          )
+                            event.currentTarget.value =
+                              event.currentTarget.value.toLocaleUpperCase(
+                                'pt-BR',
+                              );
+                        }}
                         readOnly={
                           selectedEnrollment?.mode === 'SUBSEQUENTE' &&
                           ['courseName', 'schoolPeriod', 'schedule'].includes(

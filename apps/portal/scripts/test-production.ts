@@ -113,6 +113,7 @@ async function main() {
       LANG: 'C.UTF-8',
       TZ: 'UTC',
       NODE_ENV: 'production',
+      DECLARATION_REGISTRY_PREVIEW: 'true',
       NEXT_TELEMETRY_DISABLED: '1',
       DATABASE_URL: probeUrl,
       DIRECT_URL: probeUrl,
@@ -228,6 +229,8 @@ async function main() {
         ]),
       });
     const cases: [string, number, unknown?][] = [
+      ['/api/secretaria/documentos/busca', 404, {}],
+      ['/api/secretaria/documentos/alteracoes', 404, {}],
       [
         '/api/login',
         404,
@@ -291,6 +294,23 @@ async function main() {
       );
       assert.equal(typeof data.error, 'string');
     }
+    const registry = await request('/secretaria/documentos');
+    assert.equal(
+      registry.status,
+      404,
+      'Painel experimental indisponível em produção.',
+    );
+    const registryHtml = await registry.text();
+    for (const privateValue of [
+      token,
+      tokenHash,
+      account.email,
+      student.fullName!,
+    ])
+      assert.ok(
+        !registryHtml.includes(privateValue),
+        'Página indisponível não retorna dados privados.',
+      );
     for (const path of [
       '/',
       '/declaracao',

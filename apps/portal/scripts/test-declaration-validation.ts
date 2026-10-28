@@ -70,13 +70,28 @@ test('preenche dados escolares e local de nascimento sem copiar dados de outro a
     })),
   };
   const fields = declarationDefaults(studentView(person));
-  assert.equal(fields.parentOne, 'Filiação do cadastro');
+  assert.equal(fields.parentOne, 'FILIAÇÃO DO CADASTRO');
+  assert.equal(person.details.parentOne, 'Filiação do cadastro');
   assert.equal(fields.parentTwo, '');
   assert.equal(fields.socialName, 'Nome social fictício');
   assert.equal(fields.naturality, 'Recife/PE');
   assert.equal(fields.courseName, 'Desenvolvimento de Sistemas');
   assert.equal(fields.schoolPeriod, '2026');
   assert.equal(declarationDefaults(studentView(student)).parentOne, '');
+});
+
+test('padroniza filiação em maiúsculas com acentos sem alterar o cadastro', () => {
+  const fields = validateDeclarationFields({
+    ...valid,
+    parentOne: '  Maria   da Conceição ',
+    parentTwo: 'José d’Ávila',
+  });
+  assert.equal(fields.parentOne, 'MARIA DA CONCEIÇÃO');
+  assert.equal(fields.parentTwo, 'JOSÉ D’ÁVILA');
+  assert.match(
+    declarationBody(student, fields),
+    /MARIA DA CONCEIÇÃO e JOSÉ D’ÁVILA/,
+  );
 });
 
 test('integrado sempre usa 100% inclusive diante de alteração do percentual enviado', () => {

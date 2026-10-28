@@ -594,6 +594,38 @@ async function main() {
       ).status,
       'REQUESTED',
     );
+    // A entrada passa na validação dos campos; o conteúdo escolar excede o A4.
+    // A falha ocorre no gerador, antes de registrar qualquer preparação.
+    const requestsBeforeOverflow = await db.declarationRequest.findMany({
+      where: { id: { in: [requestId, secondRequestId] } },
+      orderBy: { id: 'asc' },
+    });
+    await db.student.update({
+      where: { id: second.id },
+      data: { fullName: 'Nome fictício '.repeat(500) },
+    });
+    try {
+      const overflow = await post(
+        '/api/secretaria/declaracoes',
+        bulkBody,
+        staffCookie,
+      );
+      assert.equal(overflow.status, 422);
+      assert.match(overflow.headers.get('cache-control')!, /no-store/);
+      assert.equal((await overflow.json()).itemIndex, 1);
+      assert.deepEqual(
+        await db.declarationRequest.findMany({
+          where: { id: { in: [requestId, secondRequestId] } },
+          orderBy: { id: 'asc' },
+        }),
+        requestsBeforeOverflow,
+      );
+    } finally {
+      await db.student.update({
+        where: { id: second.id },
+        data: { fullName: second.fullName },
+      });
+    }
     const bulk = await post(
       '/api/secretaria/declaracoes',
       bulkBody,

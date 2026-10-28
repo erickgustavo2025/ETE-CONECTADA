@@ -622,6 +622,12 @@
   gap: 20px;
   margin-bottom: 20px;
 }
+.request-mode-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
 .request-toolbar .declaration-field {
   flex: 0 1 280px;
 }

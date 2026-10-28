@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PDFDocument } from 'pdf-lib';
-import { createDeclarationPdf } from '../src/lib/declaration-pdf';
+import {
+  createDeclarationPdf,
+  createDeclarationsPdf,
+} from '../src/lib/declaration-pdf';
 import {
   validateDeclarationFields,
   DeclarationValidationError,
   type DeclarationStudent,
 } from '../src/lib/declarations';
+import { subsequentFixture } from './subsequent-declaration-fixture';
 import { syntheticEnrollmentValidity } from './enrollment-fixture';
 const name = (label: string, length: number) =>
   (label + ' Fictício de Teste ').repeat(20).slice(0, length);
@@ -61,5 +65,51 @@ test('PDF recusa excesso de conteúdo em vez de truncar ou reduzir a fonte sem l
       fields,
     ),
     DeclarationValidationError,
+  );
+});
+
+for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
+  test(`PDF ${mode} aceita filiação única e nome social longo em A4`, async () => {
+    const person = mode === 'INTEGRADO' ? student : subsequentFixture().student;
+    const singleParent = validateDeclarationFields({
+      ...fields,
+      enrollmentId: person.enrollments[0].id,
+      schoolPeriod: person.enrollments[0].periodLabel,
+      parentTwo: '',
+    });
+    const pdf = await PDFDocument.load(
+      await createDeclarationPdf(person, singleParent),
+    );
+    assert.equal(pdf.getPageCount(), 1);
+    assert.equal(Math.round(pdf.getPage(0).getWidth()), 595);
+    assert.equal(Math.round(pdf.getPage(0).getHeight()), 842);
+  });
+}
+test('lote máximo gera100 páginas A4 e recusa101 antes de gerar', async () => {
+  const item = { student, fields };
+  const pdf = await PDFDocument.load(
+    await createDeclarationsPdf(Array.from({ length: 100 }, () => item)),
+  );
+  assert.equal(pdf.getPageCount(), 100);
+  for (const page of pdf.getPages()) {
+    assert.equal(Math.round(page.getWidth()), 595);
+    assert.equal(Math.round(page.getHeight()), 842);
+  }
+  await assert.rejects(
+    createDeclarationsPdf(Array.from({ length: 101 }, () => item)),
+    DeclarationValidationError,
+  );
+});
+test('falha de conteúdo no segundo PDF identifica o item e não entrega lote parcial', async () => {
+  await assert.rejects(
+    createDeclarationsPdf([
+      { student, fields },
+      {
+        student: { ...student, fullName: 'Nome fictício '.repeat(500) },
+        fields,
+      },
+    ]),
+    (error: unknown) =>
+      error instanceof DeclarationValidationError && error.itemIndex === 1,
   );
 });

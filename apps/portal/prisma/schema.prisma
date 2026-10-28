@@ -17,6 +17,7 @@ model Student {
   registrationAllowed Boolean @default(true) @map("registration_allowed")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   account   Account?
+  declarationDocuments DeclarationDocument[]
   declarationRequests DeclarationRequest[]
   enrollments Enrollment[]
   details StudentDetails?
@@ -84,8 +85,10 @@ model Enrollment {
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  declarationDocuments DeclarationDocument[]
   declarationRequests DeclarationRequest[]
   importHistory EnrollmentImportHistory[]
+  @@unique([id, studentId])
   @@index([studentId])
   @@index([className])
   @@index([offeringId])
@@ -113,6 +116,8 @@ model Account {
   sheetImportPreview SheetImportPreview?
   recordedEnrollmentImports EnrollmentImportHistory[]
   calendarVersions CourseCalendarVersion[]
+  preparedDocuments DeclarationDocument[]
+  declarationDocumentActions DeclarationDocumentAction[]
   @@map("accounts")
 }
 
@@ -268,4 +273,47 @@ model AccessAttemptBucket {
 
   @@index([expiresAt])
   @@map("access_attempt_buckets")
+}
+
+
+// Registro privado de minuta. Não representa assinatura ou emissão oficial.
+model DeclarationDocument {
+  id String @id @db.Uuid
+  publicCode String @unique @map("public_code") @db.VarChar(43)
+  studentId String @map("student_id") @db.Uuid
+  enrollmentId String @map("enrollment_id") @db.Uuid
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  status String @default("DRAFT") @db.VarChar(16)
+  snapshotVersion Int @default(1) @map("snapshot_version")
+  snapshot Json @db.JsonB
+  sourcePdfSha256 String @map("source_pdf_sha256") @db.Char(64)
+  sourcePdfPage Int @map("source_pdf_page")
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  enrollment Enrollment @relation(fields: [enrollmentId, studentId], references: [id, studentId], onDelete: Restrict, onUpdate: NoAction, map: "declaration_documents_enrollment_student_fkey")
+  createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  terminalActions DeclarationDocumentAction[] @relation("DocumentTerminalAction")
+  predecessorActions DeclarationDocumentAction[] @relation("DocumentSuccessor")
+  @@unique([id, studentId, enrollmentId])
+  @@index([studentId, createdAt])
+  @@index([enrollmentId])
+  @@index([createdById])
+  @@map("declaration_documents")
+}
+
+// Evento terminal único; a minuta original e o evento não são reescritos.
+model DeclarationDocumentAction {
+  documentId String @id @map("document_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  enrollmentId String @map("enrollment_id") @db.Uuid
+  action String @db.VarChar(16)
+  reason String @db.VarChar(500)
+  successorId String? @unique @map("successor_id") @db.Uuid
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  document DeclarationDocument @relation("DocumentTerminalAction", fields: [documentId, studentId, enrollmentId], references: [id, studentId, enrollmentId], onDelete: Restrict, onUpdate: NoAction, map: "document_actions_original_fkey")
+  successor DeclarationDocument? @relation("DocumentSuccessor", fields: [successorId, studentId, enrollmentId], references: [id, studentId, enrollmentId], onDelete: Restrict, onUpdate: NoAction, map: "document_actions_successor_fkey")
+  createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([createdById])
+  @@map("declaration_document_actions")
 }

@@ -2,6 +2,8 @@
 
 Cada mudança usa uma branch curta criada da `main` atualizada, com o ID do card e uma descrição em ASCII: `feature/ec-027-padrao-pr`, por exemplo. A branch contém o projeto inteiro; o nome não limita os arquivos que podem mudar. As branches antigas de área são referências iniciais: prefira uma branch nova por card para evitar acumular mudanças sem integração.
 
+Para retomar trabalho do colega, use o [modelo de passagem de tarefa](passagem-de-tarefa.md), com branch, commit, decisões, verificações e pendências.
+
 ## Começar uma tarefa
 
 Escolha um card pronto em A Fazer, combine quem implementa e quem revisa e mova o mesmo card para Em Andamento. Cada pessoa mantém um card ativo. Antes de mexer em `package.json`, lockfile, Prisma/migrações ou `shared/`, combine os arquivos e a ordem de integração com o colega.
@@ -49,3 +51,9 @@ git pull --ff-only origin main
 ```
 
 Comece o próximo card em uma nova branch dessa base. Cada dev usa seu próprio clone; as alterações chegam à outra máquina pelo push e pela atualização do remoto.
+
+## Quando os testes automáticos executam
+
+CI, imagens Docker e segurança executam ao abrir ou atualizar um PR para main e depois do merge na main. O push de uma branch comum, sem PR, não inicia essas suítes. Abra um PR para obter a conferência automática antes do merge; mantenha os testes locais pertinentes enquanto trabalha. Execução manual é uma opção para conferir uma branch específica após a configuração estar na main. Não execute manualmente uma suíte que já esteja rodando no PR sem necessidade.
+
+A conferência da main verifica a versão integrada. A redução elimina a duplicação push de branch/PR; não promete uma porcentagem fixa de economia nem libera uma franquia de Actions já esgotada. O limite da conta continua independente desta configuração.

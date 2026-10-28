@@ -334,11 +334,11 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
       'Recife/PE',
     );
     await expect(page.getByLabel('Nome do pai ou da mãe')).toHaveValue(
-      'Responsável sintético Um',
+      'RESPONSÁVEL SINTÉTICO UM',
     );
     await expect(
       page.getByLabel('Nome do outro pai ou da outra mãe (se houver)'),
-    ).toHaveValue('Responsável sintético Dois');
+    ).toHaveValue('RESPONSÁVEL SINTÉTICO DOIS');
     await expect(page.getByLabel('Nome oficial do curso técnico')).toHaveValue(
       'Desenvolvimento de Sistemas',
     );

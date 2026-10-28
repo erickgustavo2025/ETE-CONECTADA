@@ -67,7 +67,7 @@ PY
 mkdir "$work/negative"
 printf '%s\n' "$marker" > "$work/negative/.env"
 cat > "$work/negative/Dockerfile" <<'DOCKER'
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
 COPY .env /tmp/removed-fixture
 RUN rm /tmp/removed-fixture
 USER node
@@ -116,9 +116,14 @@ printf '%s  %s\n' 2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be437
 tar -xzf "$work/trivy.tar.gz" -C "$work" trivy
 "$work/trivy" --version
 for app in site portal; do
+  scan_status=0
   "$work/trivy" image --image-src docker --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
     --timeout 5m --cache-dir "$work/trivy-cache" --no-progress \
-    --format json --output "$work/$app-audit.json" "ete-$app:$run_id"
+    --format json --output "$work/$app-audit.json" "ete-$app:$run_id" \
+    2>"$work/$app-audit.log" || scan_status=$?
+  cat "$work/$app-audit.log"
+  [[ "$scan_status" == 0 ]] || exit "$scan_status"
+  node scripts/check-image-audit.mjs "$work/$app-audit.json" "$work/$app-audit.log" "${image_ids[$app]}"
 done
 echo 'OK: duas imagens reais, contexto/camadas privados, runtime/navegador e auditoria de vulnerabilidades aprovados.'
 if [[ -n "${TEST_IMAGE_OUTPUT_DIR:-}" ]]; then
