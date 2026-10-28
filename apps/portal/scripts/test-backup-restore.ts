@@ -116,6 +116,19 @@ async function checkRules(client: Client) {
     await assert.rejects(
       () =>
         client.query(
+          'UPDATE declaration_document_actions SET reason=$1 WHERE document_id=$2',
+          ['Alteração retroativa', document],
+        ),
+      (error: unknown) => (error as { code?: string }).code === '23000',
+    );
+  } finally {
+    await client.query('ROLLBACK');
+  }
+  await client.query('BEGIN');
+  try {
+    await assert.rejects(
+      () =>
+        client.query(
           'UPDATE declaration_documents SET source_pdf_page=2 WHERE id=$1',
           [document],
         ),
@@ -229,6 +242,7 @@ async function main() {
       'course_offerings',
       'declaration_requests',
       'declaration_documents',
+      'declaration_document_actions',
     ])
       assert.equal(
         initial.tables[name]?.count,
@@ -339,6 +353,10 @@ async function main() {
           }),
           digest('%PDF-ficticio-restauracao'),
         ],
+      );
+      await source.query(
+        "INSERT INTO declaration_document_actions(document_id,student_id,enrollment_id,action,reason,created_by_id) VALUES($1,$2,$3,'CANCELLED','Minuta fictícia cancelada',$4)",
+        [document, student, enrollment, account],
       );
       await source.query(
         "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",
@@ -510,6 +528,10 @@ async function main() {
       async () => {
         if (!sourceVerified) return;
         await identity(source, expected.database, expected.identity);
+        await source.query(
+          'DELETE FROM declaration_document_actions WHERE document_id=$1',
+          [document],
+        );
         await source.query('DELETE FROM declaration_documents WHERE id=$1', [
           document,
         ]);

@@ -117,6 +117,7 @@ model Account {
   recordedEnrollmentImports EnrollmentImportHistory[]
   calendarVersions CourseCalendarVersion[]
   preparedDocuments DeclarationDocument[]
+  declarationDocumentActions DeclarationDocumentAction[]
   @@map("accounts")
 }
 
@@ -291,8 +292,28 @@ model DeclarationDocument {
   student Student @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   enrollment Enrollment @relation(fields: [enrollmentId, studentId], references: [id, studentId], onDelete: Restrict, onUpdate: NoAction, map: "declaration_documents_enrollment_student_fkey")
   createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  terminalActions DeclarationDocumentAction[] @relation("DocumentTerminalAction")
+  predecessorActions DeclarationDocumentAction[] @relation("DocumentSuccessor")
+  @@unique([id, studentId, enrollmentId])
   @@index([studentId, createdAt])
   @@index([enrollmentId])
   @@index([createdById])
   @@map("declaration_documents")
+}
+
+// Evento terminal único; a minuta original e o evento não são reescritos.
+model DeclarationDocumentAction {
+  documentId String @id @map("document_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  enrollmentId String @map("enrollment_id") @db.Uuid
+  action String @db.VarChar(16)
+  reason String @db.VarChar(500)
+  successorId String? @unique @map("successor_id") @db.Uuid
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  document DeclarationDocument @relation("DocumentTerminalAction", fields: [documentId, studentId, enrollmentId], references: [id, studentId, enrollmentId], onDelete: Restrict, onUpdate: NoAction, map: "document_actions_original_fkey")
+  successor DeclarationDocument? @relation("DocumentSuccessor", fields: [successorId, studentId, enrollmentId], references: [id, studentId, enrollmentId], onDelete: Restrict, onUpdate: NoAction, map: "document_actions_successor_fkey")
+  createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([createdById])
+  @@map("declaration_document_actions")
 }
