@@ -6,8 +6,10 @@ RUN mkdir -p /build /out /go/cache && chown -R 1000:1000 /build /out /go
 USER 1000:1000
 WORKDIR /build
 COPY --chown=1000:1000 go.mod go.sum main.go ./
+COPY --chown=1000:1000 third_party ./third_party
 # Grafo/checksums versionados; o build não atualiza dependências.
 RUN go mod download && go mod verify \
+    && go test -mod=readonly github.com/go-jose/go-jose/v3/... \
     && go build -mod=readonly -trimpath -buildvcs=false -o /out/caddy . \
     && go version -m /out/caddy > /out/build-info.txt
 
@@ -15,6 +17,8 @@ FROM scratch
 COPY --from=builder /out/caddy /usr/bin/caddy
 COPY --from=builder /out/build-info.txt /usr/share/caddy/build-info.txt
 COPY --from=builder /build/go.mod /build/go.sum /usr/share/caddy/
+COPY --from=builder /build/third_party/go-jose-v3/LICENSE /usr/share/licenses/go-jose-v3/LICENSE
+COPY --from=builder /build/third_party/go-jose-v3/BACKPORT.md /usr/share/caddy/go-jose-v3-backport.md
 COPY --from=builder /go/pkg/mod/github.com/caddyserver/caddy/v2@v2.11.7/LICENSE /usr/share/licenses/caddy/LICENSE
 COPY --from=builder /usr/local/go/LICENSE /usr/share/licenses/go/LICENSE
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
