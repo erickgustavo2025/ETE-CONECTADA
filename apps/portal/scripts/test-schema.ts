@@ -10,6 +10,8 @@ import {
 
 // Contrato do banco migrado, incluindo arquivo histórico e regras fora do Prisma.
 const columns: Record<string, string> = {
+  declaration_document_actions:
+    'document_id student_id enrollment_id action reason successor_id created_by_id created_at',
   access_throttle_state: 'id key_material last_sweep_at',
   access_attempt_buckets: 'key used window_started_at expires_at',
   students:
@@ -33,6 +35,8 @@ const columns: Record<string, string> = {
     'id offering_id revision schedule created_at created_by_id',
   sheet_import_previews:
     'actor_id token_hash input_hash snapshot_hash expires_at consumed_at result',
+  declaration_documents:
+    'id public_code student_id enrollment_id created_by_id created_at status snapshot_version snapshot source_pdf_sha256 source_pdf_page',
   declaration_requests:
     'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id',
   portal_schema_migrations: 'version applied_at',
@@ -223,8 +227,44 @@ async function main() {
     const foreignKeys = constraints.rows.filter((row) =>
       row.definition.startsWith('FOREIGN KEY'),
     );
+    assert.match(
+      constraint('declaration_documents_enrollment_student_fkey'),
+      /FOREIGN KEY \(enrollment_id, student_id\) REFERENCES enrollments\(id, student_id\).*ON DELETE RESTRICT/,
+    );
+    assert.match(constraint('declaration_documents_status_check'), /DRAFT/);
+    assert.match(constraint('declaration_documents_code_check'), /43/);
+    assert.match(constraint('declaration_documents_hash_check'), /64/);
+    assert.match(
+      constraint('declaration_documents_snapshot_check'),
+      /snapshot_version.*DECLARACAO_VINCULO/,
+    );
+    assert.match(
+      constraint('declaration_documents_page_check'),
+      /source_pdf_page/,
+    );
+    for (const name of [
+      'document_actions_kind_check',
+      'document_actions_reason_check',
+      'document_actions_original_fkey',
+      'document_actions_successor_fkey',
+    ])
+      constraint(name);
+    const actionsTrigger = await client.query(
+      "SELECT count(*)::int AS count FROM pg_trigger WHERE tgname='document_actions_immutable' AND tgenabled='O' AND NOT tgisinternal",
+    );
+    assert.equal(actionsTrigger.rows[0].count, 1);
+    const documentTrigger = await client.query(
+      "SELECT pg_get_triggerdef(oid) AS definition FROM pg_trigger WHERE tgname='declaration_documents_immutable' AND tgenabled='O' AND NOT tgisinternal",
+    );
+    assert.equal(documentTrigger.rows.length, 1);
+    assert.match(
+      documentTrigger.rows[0].definition,
+      /BEFORE UPDATE ON public.declaration_documents/,
+    );
     for (const [table, field, target, deletion] of [
       ['accounts', 'student_id', 'students', 'CASCADE'],
+      ['declaration_documents', 'student_id', 'students', 'RESTRICT'],
+      ['declaration_documents', 'created_by_id', 'accounts', 'RESTRICT'],
       ['enrollments', 'offering_id', 'course_offerings', 'RESTRICT'],
       [
         'course_calendar_versions',
@@ -274,6 +314,10 @@ async function main() {
       'enrollments_import_source_id_key',
       'enrollments_school_import_key_key',
       'sheet_import_previews_token_hash_key',
+      'declaration_documents_public_code_key',
+      'enrollments_id_student_id_key',
+      'declaration_documents_id_student_id_enrollment_id_key',
+      'declaration_document_actions_successor_id_key',
     ]) {
       assert.ok(
         indexes.rows.some(

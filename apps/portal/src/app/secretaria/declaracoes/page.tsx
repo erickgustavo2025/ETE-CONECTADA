@@ -1,17 +1,31 @@
-import { redirect } from "next/navigation";
-import PortalHome from "@/components/portal-home";
-import SecretaryDeclarations from "@/components/secretary-declarations";
-import { canManageDeclarations } from "@/lib/declaration-access";
-import { currentSession } from "@/lib/session";
+import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import PortalHome from '@/components/portal-home';
+import SecretaryDeclarations from '@/components/secretary-declarations';
+import { canManageDeclarations } from '@/lib/declaration-access';
+import { currentSession } from '@/lib/session';
 
-export const metadata = { title: "Secretaria — Declarações | ETE CONECTADA" };
+export const metadata = { title: 'Secretaria — Declarações | ETE CONECTADA' };
 export default async function SecretaryDeclarationsPage() {
   const session = await currentSession();
-  if (!session) redirect("/login");
+  if (!session) redirect('/login');
   return (
     <PortalHome studentName={session.fullName} role={session.role} internalPage>
       {canManageDeclarations(session.role) ? (
-        <SecretaryDeclarations />
+        <>
+          {declarationRegistryPreviewEnabled() && (
+            <p>
+              <Link
+                href="/secretaria/documentos"
+                className="ete-button ete-button--secondary"
+              >
+                Consultar histórico de documentos
+              </Link>
+            </p>
+          )}
+          <SecretaryDeclarations />
+        </>
       ) : (
         <section className="document-page">
           <h1>Acesso restrito ao atendimento escolar</h1>

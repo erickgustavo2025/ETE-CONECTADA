@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -71,6 +71,8 @@ async function snapshot(client: Client) {
       "SELECT c.conname, c.contype, c.convalidated, c.condeferrable, c.condeferred, c.conrelid::regclass::text AS relation, pg_get_constraintdef(c.oid) AS definition FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE n.nspname='public' ORDER BY relation,c.conname",
       "SELECT tablename,indexname,indexdef FROM pg_indexes WHERE schemaname='public' ORDER BY tablename,indexname",
       "SELECT t.typname,e.enumlabel,e.enumsortorder FROM pg_type t JOIN pg_enum e ON e.enumtypid=t.oid JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' ORDER BY t.typname,e.enumsortorder",
+      "SELECT p.proname, pg_get_functiondef(p.oid) AS definition FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f' ORDER BY p.proname,p.oid::regprocedure::text",
+      'SELECT tgname, tgenabled, pg_get_triggerdef(oid) AS definition FROM pg_trigger WHERE NOT tgisinternal ORDER BY tgname',
     ]) {
       const rows = (await client.query(sql)).rows;
       catalog.push(
@@ -109,6 +111,32 @@ function command(name: string, args: string[], url: URL) {
 }
 
 async function checkRules(client: Client) {
+  await client.query('BEGIN');
+  try {
+    await assert.rejects(
+      () =>
+        client.query(
+          'UPDATE declaration_document_actions SET reason=$1 WHERE document_id=$2',
+          ['Alteração retroativa', document],
+        ),
+      (error: unknown) => (error as { code?: string }).code === '23000',
+    );
+  } finally {
+    await client.query('ROLLBACK');
+  }
+  await client.query('BEGIN');
+  try {
+    await assert.rejects(
+      () =>
+        client.query(
+          'UPDATE declaration_documents SET source_pdf_page=2 WHERE id=$1',
+          [document],
+        ),
+      (error: unknown) => (error as { code?: string }).code === '23000',
+    );
+  } finally {
+    await client.query('ROLLBACK');
+  }
   async function update(sql: string, values: string[], accepted: boolean) {
     await client.query('BEGIN');
     try {
@@ -185,6 +213,7 @@ let created = false;
 let targetConnected = false;
 let sourceVerified = false;
 let initial: Awaited<ReturnType<typeof snapshot>> | undefined;
+const document = randomUUID();
 const [
   student,
   otherStudent,
@@ -212,6 +241,8 @@ async function main() {
       'enrollments',
       'course_offerings',
       'declaration_requests',
+      'declaration_documents',
+      'declaration_document_actions',
     ])
       assert.equal(
         initial.tables[name]?.count,
@@ -307,6 +338,25 @@ async function main() {
       await source.query(
         "INSERT INTO enrollment_import_history(id,enrollment_id,recorded_by_id,reason,mode,class_name,course_label,status) VALUES($1,$2,$3,'METADATA_CHANGE','SUBSEQUENTE','Fictícia anterior','DS','UNCONFIRMED')",
         [history, otherEnrollment, account],
+      );
+      await source.query(
+        'INSERT INTO declaration_documents(id,public_code,student_id,enrollment_id,created_by_id,snapshot,source_pdf_sha256,source_pdf_page) VALUES($1,$2,$3,$4,$5,$6,$7,1)',
+        [
+          document,
+          randomBytes(32).toString('base64url'),
+          student,
+          enrollment,
+          account,
+          JSON.stringify({
+            type: 'DECLARACAO_VINCULO',
+            body: 'Minuta fictícia privada de restauração',
+          }),
+          digest('%PDF-ficticio-restauracao'),
+        ],
+      );
+      await source.query(
+        "INSERT INTO declaration_document_actions(document_id,student_id,enrollment_id,action,reason,created_by_id) VALUES($1,$2,$3,'CANCELLED','Minuta fictícia cancelada',$4)",
+        [document, student, enrollment, account],
       );
       await source.query(
         "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",
@@ -478,6 +528,13 @@ async function main() {
       async () => {
         if (!sourceVerified) return;
         await identity(source, expected.database, expected.identity);
+        await source.query(
+          'DELETE FROM declaration_document_actions WHERE document_id=$1',
+          [document],
+        );
+        await source.query('DELETE FROM declaration_documents WHERE id=$1', [
+          document,
+        ]);
         await source.query('DELETE FROM students WHERE id=ANY($1::uuid[])', [
           [student, otherStudent],
         ]);
