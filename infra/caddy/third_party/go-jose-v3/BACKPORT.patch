@@ -1,0 +1,55 @@
+--- a/jwk.go
++++ b/jwk.go
+@@ -481,15 +481,20 @@
+ 	return true
+ }
+ 
++// MaxRSAModulusBits bounds RSA computation during JWK parsing. Set before parsing.
++// Backported from upstream a0111f82742fa92bceec9ede40845e73319e6230.
++var MaxRSAModulusBits = 4096
++
+ func (key rawJSONWebKey) rsaPublicKey() (*rsa.PublicKey, error) {
+ 	if key.N == nil || key.E == nil {
+ 		return nil, fmt.Errorf("go-jose/go-jose: invalid RSA key, missing n/e values")
+ 	}
+ 
+-	return &rsa.PublicKey{
+-		N: key.N.bigInt(),
+-		E: key.E.toInt(),
+-	}, nil
++	n := key.N.bigInt()
++	if n.BitLen() > MaxRSAModulusBits {
++		return nil, fmt.Errorf("go-jose/go-jose: invalid RSA key, modulus too large")
++	}
++	return &rsa.PublicKey{N: n, E: key.E.toInt()}, nil
+ }
+ 
+ func fromEdPublicKey(pub ed25519.PublicKey) *rawJSONWebKey {
+@@ -628,16 +633,18 @@
+ 		return nil, fmt.Errorf("go-jose/go-jose: invalid RSA private key, missing %s value(s)", strings.Join(missing, ", "))
+ 	}
+ 
++	n := key.N.bigInt()
++	if n.BitLen() > MaxRSAModulusBits {
++		return nil, fmt.Errorf("go-jose/go-jose: invalid RSA key, modulus too large")
++	}
++	p, q := key.P.bigInt(), key.Q.bigInt()
++	if p.BitLen()+q.BitLen() > n.BitLen()+1 || new(big.Int).Mul(p, q).Cmp(n) != 0 {
++		return nil, errors.New("go-jose/go-jose: invalid RSA private key, p * q != n")
++	}
+ 	rv := &rsa.PrivateKey{
+-		PublicKey: rsa.PublicKey{
+-			N: key.N.bigInt(),
+-			E: key.E.toInt(),
+-		},
+-		D: key.D.bigInt(),
+-		Primes: []*big.Int{
+-			key.P.bigInt(),
+-			key.Q.bigInt(),
+-		},
++		PublicKey: rsa.PublicKey{N: n, E: key.E.toInt()},
++		D:         key.D.bigInt(),
++		Primes:    []*big.Int{p, q},
+ 	}
+ 
+ 	if key.Dp != nil {
