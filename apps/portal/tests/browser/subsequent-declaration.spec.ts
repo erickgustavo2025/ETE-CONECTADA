@@ -76,7 +76,12 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
       await page.goto(base + '/login');
       await page.getByLabel('CPF ou e-mail').fill(email);
       await page.getByLabel('Senha', { exact: true }).fill(password);
+      const loginResponse = page.waitForResponse(
+        (response) => new URL(response.url()).pathname === '/api/login',
+      );
       await page.getByRole('button', { name: 'Entrar no portal' }).click();
+      expect((await loginResponse).status()).toBe(200);
+      await page.waitForURL(/\/$/, { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(/\/$/);
       await expect(
         page.getByRole('button', { name: 'Abrir menu de serviços' }),
@@ -107,12 +112,15 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
     await page.context().clearCookies();
     await login(staffAccount.email!);
     await page.goto(base + '/secretaria/declaracoes');
+    await page
+      .getByRole('button', { name: 'Subsequente', exact: true })
+      .click();
     await page.getByRole('button', { name: 'Preparar declaração' }).click();
     await expect(page.getByLabel('Cidade e estado de nascimento')).toHaveValue(
       'Recife/PE',
     );
     await expect(page.getByLabel('Nome do pai ou da mãe')).toHaveValue(
-      'Filiação fictícia do subsequente',
+      'FILIAÇÃO FICTÍCIA DO SUBSEQUENTE',
     );
     const course = page.getByLabel('Nome oficial do curso técnico');
     await expect(course).toHaveValue('Desenvolvimento de Sistemas');

@@ -1,5 +1,5 @@
 # Base oficial fixada; atualizar tag e digest juntos após conferir os scanners.
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS dependencies
+FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS dependencies
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN mkdir -p /app/apps/site /app/apps/portal && chown -R node:node /app
@@ -22,7 +22,7 @@ FROM source AS portal-build
 RUN npm run build --workspace @ete-conectada/portal
 RUN node scripts/check-standalone.mjs portal
 
-FROM node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS runtime
+FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS runtime
 WORKDIR /app
 # Standalone não instala pacotes ao iniciar. Não distribuir os CLIs do build.
 RUN rm -rf /usr/local/lib/node_modules /opt/yarn-v1.22.22 \
