@@ -1,3 +1,4 @@
+import { preparePdfArchive } from './declaration-pdf-archive-input';
 import {
   declarationRegistryPreviewEnabled,
   documentInsertData,
@@ -196,6 +197,9 @@ export async function recordGeneratedDeclarations(
   )
     throw new DeclarationValidationError('Registro de minuta indisponível.');
   if (!items.length) return;
+  const archive = documentBatch
+    ? await preparePdfArchive(documentBatch.pdf, documentBatch.records.length)
+    : undefined;
   await getDb().$transaction(async (tx) => {
     await lockSecretary(tx, accountId);
     // Mesma ordem das alterações de calendário e importação.
@@ -231,14 +235,19 @@ export async function recordGeneratedDeclarations(
           'A matrícula mudou durante a geração. Confira e gere novamente.',
         );
     }
-    if (documentBatch)
+    if (documentBatch && archive) {
+      await tx.declarationPdfArchive.createMany({
+        data: [archive],
+        skipDuplicates: true,
+      });
       await tx.declarationDocument.createMany({
         data: documentInsertData(
           documentBatch.records,
           documentBatch.pdf,
           accountId,
-        ),
+        ).map((record) => ({ ...record, archiveSha256: archive.sha256 })),
       });
+    }
     await tx.declarationRequest.updateMany({
       where: {
         status: { in: ['REQUESTED', 'IN_PREPARATION'] },

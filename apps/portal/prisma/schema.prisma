@@ -289,6 +289,8 @@ model DeclarationDocument {
   snapshot Json @db.JsonB
   sourcePdfSha256 String @map("source_pdf_sha256") @db.Char(64)
   sourcePdfPage Int @map("source_pdf_page")
+  archiveSha256 String? @map("archive_sha256") @db.Char(64)
+  archive DeclarationPdfArchive? @relation(fields: [archiveSha256], references: [sha256], onDelete: Restrict, onUpdate: NoAction, map: "declaration_documents_archive_fkey")
   student Student @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   enrollment Enrollment @relation(fields: [enrollmentId, studentId], references: [id, studentId], onDelete: Restrict, onUpdate: NoAction, map: "declaration_documents_enrollment_student_fkey")
   createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
@@ -298,7 +300,19 @@ model DeclarationDocument {
   @@index([studentId, createdAt])
   @@index([enrollmentId])
   @@index([createdById])
+  @@index([archiveSha256])
   @@map("declaration_documents")
+}
+
+// Bytes privados do PDF original; minutas antigas podem não ter arquivo guardado.
+model DeclarationPdfArchive {
+  sha256 String @id @db.Char(64)
+  bytes Bytes @db.ByteA
+  pageCount Int @map("page_count")
+  templateVersion String @map("template_version") @db.VarChar(60)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  documents DeclarationDocument[]
+  @@map("declaration_pdf_archives")
 }
 
 // Evento terminal único; a minuta original e o evento não são reescritos.

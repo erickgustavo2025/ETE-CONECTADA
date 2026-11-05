@@ -189,6 +189,114 @@ async function main() {
     assert.equal(saved.status, 'DRAFT');
     assert.equal(saved.createdById, actor.id);
     assert.match(saved.publicCode, /^[A-Za-z0-9_-]{43}$/);
+    const archiveUrl = '/api/secretaria/documentos/arquivo';
+    assert.equal(
+      (await post(archiveUrl, { documentId: saved.id })).status,
+      401,
+    );
+    assert.equal(
+      (await post(archiveUrl, { documentId: saved.id }, studentActor.cookie))
+        .status,
+      403,
+    );
+    assert.equal(
+      (
+        await post(
+          archiveUrl,
+          { documentId: saved.id },
+          actor.cookie,
+          'https://example.invalid',
+        )
+      ).status,
+      403,
+    );
+    assert.equal(
+      (await post(archiveUrl, { documentId: saved.publicCode }, actor.cookie))
+        .status,
+      404,
+    );
+    assert.equal(
+      (await post(archiveUrl, { documentId: randomUUID() }, actor.cookie))
+        .status,
+      404,
+    );
+    assert.equal(
+      (
+        await post(
+          archiveUrl,
+          { documentId: saved.id, role: 'secretary' },
+          actor.cookie,
+        )
+      ).status,
+      400,
+    );
+    const original = await post(
+      archiveUrl,
+      { documentId: saved.id },
+      actor.cookie,
+    );
+    assert.equal(original.status, 200);
+    assert.match(original.headers.get('cache-control') ?? '', /no-store/);
+    assert.match(original.headers.get('content-disposition') ?? '', /inline/);
+    assert.deepEqual(Buffer.from(await original.arrayBuffer()), bytes);
+    assert.equal(await db.declarationPdfArchive.count(), 1);
+    const file = await db.declarationPdfArchive.findUniqueOrThrow({
+      where: { sha256: saved.sourcePdfSha256 },
+    });
+    assert.equal(file.pageCount, 1);
+    assert.equal(file.templateVersion, 'minuta-a4-v1');
+    await assert.rejects(
+      db.declarationPdfArchive.update({
+        where: { sha256: file.sha256 },
+        data: { bytes: Buffer.from('%PDF-alterado') },
+      }),
+    );
+    await assert.rejects(
+      db.declarationPdfArchive.delete({ where: { sha256: file.sha256 } }),
+    );
+    await assert.rejects(
+      db.declarationPdfArchive.create({
+        data: { ...file, sha256: 'a'.repeat(64) },
+      }),
+    );
+    const legacy = await db.declarationDocument.create({
+      data: {
+        ...row,
+        id: randomUUID(),
+        publicCode: randomBytes(32).toString('base64url'),
+      },
+    });
+    const missingOriginal = await post(
+      archiveUrl,
+      { documentId: legacy.id },
+      actor.cookie,
+    );
+    assert.equal(
+      missingOriginal.status,
+      404,
+      'Minuta antiga sem bytes não pode ser reconstruída com dados atuais.',
+    );
+    assert.equal(
+      (
+        await db.declarationDocument.findUniqueOrThrow({
+          where: { id: legacy.id },
+        })
+      ).archiveSha256,
+      null,
+    );
+    await db.declarationDocument.delete({ where: { id: legacy.id } });
+    await assert.rejects(
+      db.declarationDocument.create({
+        data: {
+          ...row,
+          id: randomUUID(),
+          publicCode: randomBytes(32).toString('base64url'),
+          sourcePdfSha256: 'c'.repeat(64),
+          archiveSha256: file.sha256,
+        },
+      }),
+      'Vínculo ao arquivo precisa ter o mesmo hash do original.',
+    );
     const originalSnapshot = saved.snapshot;
     await assert.rejects(
       db.declarationDocument.update({
@@ -223,6 +331,17 @@ async function main() {
       ).snapshot,
       originalSnapshot,
     );
+    const unchanged = await post(
+      archiveUrl,
+      { documentId: saved.id, download: true },
+      actor.cookie,
+    );
+    assert.equal(unchanged.status, 200);
+    assert.match(
+      unchanged.headers.get('content-disposition') ?? '',
+      /attachment/,
+    );
+    assert.deepEqual(Buffer.from(await unchanged.arrayBuffer()), bytes);
     const batch = await post(
       '/api/secretaria/declaracoes',
       { items: bodies },
@@ -237,6 +356,32 @@ async function main() {
       orderBy: { sourcePdfPage: 'asc' },
     });
     assert.equal(records.length, 2);
+    assert.equal(
+      await db.declarationPdfArchive.count(),
+      2,
+      'Um arquivo por lote, sem duplicar bytes por aluno.',
+    );
+    const batchOriginal = await post(
+      archiveUrl,
+      { documentId: records[0].id },
+      actor.cookie,
+    );
+    assert.equal(batchOriginal.status, 200);
+    assert.deepEqual(
+      Buffer.from(await batchOriginal.arrayBuffer()),
+      batchBytes,
+    );
+    assert.equal(
+      (
+        await post(
+          archiveUrl,
+          { documentId: records[1].id },
+          studentActor.cookie,
+        )
+      ).status,
+      403,
+    );
+    const archivesBeforeFailure = await db.declarationPdfArchive.count();
     assert.deepEqual(
       records.map((x) => [x.studentId, x.enrollmentId, x.sourcePdfPage]),
       members.map((student, index) => [
@@ -271,6 +416,10 @@ async function main() {
         503,
       );
       assert.equal(await db.declarationDocument.count(), count);
+      assert.equal(
+        await db.declarationPdfArchive.count(),
+        archivesBeforeFailure,
+      );
       assert.deepEqual(
         await db.declarationRequest.findMany({ orderBy: { id: 'asc' } }),
         before,
@@ -302,6 +451,10 @@ async function main() {
         pdf: batchBytes,
       }),
       (error) => error instanceof RequestError && error.status === 403,
+    );
+    assert.equal(
+      (await post(archiveUrl, { documentId: saved.id }, actor.cookie)).status,
+      403,
     );
     await db.account.update({
       where: { id: actor.id },
@@ -337,6 +490,9 @@ async function main() {
     try {
       await db.declarationDocument.deleteMany({
         where: { studentId: { in: students } },
+      });
+      await db.declarationPdfArchive.deleteMany({
+        where: { documents: { none: {} } },
       });
       await db.student.deleteMany({ where: { id: { in: students } } });
       await db.courseCalendarVersion.deleteMany({

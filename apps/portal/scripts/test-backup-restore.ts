@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { PDFDocument } from 'pdf-lib';
 import { spawnSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -40,6 +41,7 @@ const connect = (url: string) =>
   });
 const source = connect(expected.url);
 const target = connect(destinationUrl.toString());
+let archiveHash = '';
 const digest = (data: Buffer | string) =>
   createHash('sha256').update(data).digest('hex');
 const quote = (value: string) => '"' + value.replaceAll('"', '""') + '"';
@@ -131,6 +133,30 @@ async function checkRules(client: Client) {
         client.query(
           'UPDATE declaration_documents SET source_pdf_page=2 WHERE id=$1',
           [document],
+        ),
+      (error: unknown) => (error as { code?: string }).code === '23000',
+    );
+  } finally {
+    await client.query('ROLLBACK');
+  }
+  const file = await client.query<{ bytes: Buffer }>(
+    'SELECT bytes FROM declaration_pdf_archives WHERE sha256=$1',
+    [archiveHash],
+  );
+  assert.equal(file.rowCount, 1);
+  assert.equal(
+    digest(file.rows[0].bytes),
+    archiveHash,
+    'Backup preserva os bytes finais do PDF.',
+  );
+  assert.equal((await PDFDocument.load(file.rows[0].bytes)).getPageCount(), 1);
+  await client.query('BEGIN');
+  try {
+    await assert.rejects(
+      () =>
+        client.query(
+          "UPDATE declaration_pdf_archives SET template_version='alterada' WHERE sha256=$1",
+          [archiveHash],
         ),
       (error: unknown) => (error as { code?: string }).code === '23000',
     );
@@ -242,6 +268,7 @@ async function main() {
       'course_offerings',
       'declaration_requests',
       'declaration_documents',
+      'declaration_pdf_archives',
       'declaration_document_actions',
     ])
       assert.equal(
@@ -339,8 +366,16 @@ async function main() {
         "INSERT INTO enrollment_import_history(id,enrollment_id,recorded_by_id,reason,mode,class_name,course_label,status) VALUES($1,$2,$3,'METADATA_CHANGE','SUBSEQUENTE','Fictícia anterior','DS','UNCONFIRMED')",
         [history, otherEnrollment, account],
       );
+      const archivePdf = await PDFDocument.create();
+      archivePdf.addPage();
+      const archiveBytes = Buffer.from(await archivePdf.save());
+      archiveHash = digest(archiveBytes);
       await source.query(
-        'INSERT INTO declaration_documents(id,public_code,student_id,enrollment_id,created_by_id,snapshot,source_pdf_sha256,source_pdf_page) VALUES($1,$2,$3,$4,$5,$6,$7,1)',
+        "INSERT INTO declaration_pdf_archives(sha256,bytes,page_count,template_version) VALUES($1,$2,1,'minuta-a4-v1')",
+        [archiveHash, archiveBytes],
+      );
+      await source.query(
+        'INSERT INTO declaration_documents(id,public_code,student_id,enrollment_id,created_by_id,snapshot,source_pdf_sha256,source_pdf_page,archive_sha256) VALUES($1,$2,$3,$4,$5,$6,$7,1,$7)',
         [
           document,
           randomBytes(32).toString('base64url'),
@@ -351,7 +386,7 @@ async function main() {
             type: 'DECLARACAO_VINCULO',
             body: 'Minuta fictícia privada de restauração',
           }),
-          digest('%PDF-ficticio-restauracao'),
+          archiveHash,
         ],
       );
       await source.query(
@@ -535,6 +570,10 @@ async function main() {
         await source.query('DELETE FROM declaration_documents WHERE id=$1', [
           document,
         ]);
+        await source.query(
+          'DELETE FROM declaration_pdf_archives WHERE sha256=$1',
+          [archiveHash],
+        );
         await source.query('DELETE FROM students WHERE id=ANY($1::uuid[])', [
           [student, otherStudent],
         ]);
