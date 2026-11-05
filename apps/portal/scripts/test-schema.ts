@@ -10,12 +10,14 @@ import {
 
 // Contrato do banco migrado, incluindo arquivo histórico e regras fora do Prisma.
 const columns: Record<string, string> = {
+  student_access_changes:
+    'id student_id created_by_id request_key kind blocked reason revision created_at',
   declaration_document_actions:
     'document_id student_id enrollment_id action reason successor_id created_by_id created_at',
   access_throttle_state: 'id key_material last_sweep_at',
   access_attempt_buckets: 'key used window_started_at expires_at',
   students:
-    'id cpf birth_date created_at full_name school_registration import_source_id registration_allowed',
+    'id cpf birth_date created_at full_name school_registration import_source_id registration_allowed login_blocked issuance_blocked access_revision',
   student_details:
     'student_id parent_one parent_two parentage_source social_name social_name_source birth_city birth_state birth_country birthplace_source updated_at updated_by_id',
   accounts:
@@ -162,6 +164,15 @@ async function main() {
       assert.ok(found, `Constraint obrigatória: ${name}`);
       return found.definition;
     };
+    assert.match(
+      constraint('student_access_changes_kind_check'),
+      /LOGIN.*ISSUANCE/,
+    );
+    assert.match(constraint('student_access_changes_reason_check'), /reason/);
+    assert.match(
+      constraint('students_access_revision_check'),
+      /access_revision >= 0/,
+    );
     assert.match(constraint('students_cpf_check'), /\^\[0-9\]\{11\}\$/);
     assert.match(constraint('accounts_role_check'), /student.*secretary/);
     assert.match(

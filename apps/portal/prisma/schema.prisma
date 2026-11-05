@@ -15,6 +15,10 @@ model Student {
   schoolRegistration String? @unique @map("school_registration")
   importSourceId String? @unique @map("import_source_id")
   registrationAllowed Boolean @default(true) @map("registration_allowed")
+  loginBlocked Boolean @default(false) @map("login_blocked")
+  issuanceBlocked Boolean @default(false) @map("issuance_blocked")
+  accessRevision Int @default(0) @map("access_revision")
+  accessChanges StudentAccessChange[]
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   account   Account?
   declarationDocuments DeclarationDocument[]
@@ -118,7 +122,27 @@ model Account {
   calendarVersions CourseCalendarVersion[]
   preparedDocuments DeclarationDocument[]
   declarationDocumentActions DeclarationDocumentAction[]
+  studentAccessChanges StudentAccessChange[]
   @@map("accounts")
+}
+
+// Histórico de bloqueios separado da conta, da matrícula e dos documentos emitidos.
+model StudentAccessChange {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  createdById String @map("created_by_id") @db.Uuid
+  requestKey String @map("request_key") @db.Uuid
+  kind String @db.VarChar(16)
+  blocked Boolean
+  reason String @db.VarChar(500)
+  revision Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@unique([createdById, requestKey])
+  @@unique([studentId, revision])
+  @@index([studentId, createdAt])
+  @@map("student_access_changes")
 }
 
 model PasswordResetToken {

@@ -1,3 +1,4 @@
+import { lockStudentAccess, requireIssuanceAccess } from './student-access';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { getDb } from './db';
 import { studentDeclarationSelect } from './declarations';
@@ -59,9 +60,13 @@ export async function issueTestDeclaration(
   const db = getDb();
   const actor = await db.account.findFirst({
     where: { id: accountId, status: 'active', role: 'student' },
-    select: { studentId: true },
+    select: {
+      studentId: true,
+      student: { select: { loginBlocked: true, issuanceBlocked: true } },
+    },
   });
-  if (!actor) throw new RequestError('Entre novamente para continuar.', 403);
+  if (!actor || actor.student.loginBlocked)
+    throw new RequestError('Entre novamente para continuar.', 403);
   const key = {
     createdById_requestKey: {
       createdById: accountId,
@@ -72,6 +77,7 @@ export async function issueTestDeclaration(
     where: key,
     select: issuedSelect,
   });
+  if (!replay) requireIssuanceAccess(actor.student);
   // Repetição de chave não gera um novo PDF, mesmo se o cadastro mudou depois.
   const original = replay
     ? null
@@ -110,6 +116,7 @@ export async function issueTestDeclaration(
       if (!allowed.length)
         throw new RequestError('Seu acesso mudou. Entre novamente.', 403);
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(774056)::text`;
+      const access = await lockStudentAccess(tx, actor.studentId);
       const previousRequest = await tx.declarationDocument.findUnique({
         where: key,
         select: issuedSelect,
@@ -126,9 +133,9 @@ export async function issueTestDeclaration(
           );
         return result(previousRequest, false);
       }
+      requireIssuanceAccess(access);
       if (!content || !file)
         throw new RequestError('Atualize a página e tente novamente.', 409);
-      await tx.$queryRaw`SELECT id FROM students WHERE id=${actor.studentId}::uuid FOR UPDATE`;
       await tx.$queryRaw`SELECT student_id FROM student_details WHERE student_id=${actor.studentId}::uuid FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM enrollments WHERE id=${input.enrollmentId}::uuid AND student_id=${actor.studentId}::uuid FOR UPDATE`;
       const fresh = await tx.student.findUniqueOrThrow({

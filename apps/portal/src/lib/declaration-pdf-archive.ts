@@ -73,6 +73,11 @@ export async function readStudentDeclarationPdf(
       AND status='active' AND role='student' FOR SHARE
     `;
     if (!actor) throw new PdfArchiveError('Acesso não autorizado.', 403);
+    const accessible = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM students WHERE id=${actor.studentId}::uuid AND NOT login_blocked FOR SHARE
+    `;
+    if (!accessible.length)
+      throw new PdfArchiveError('Acesso não autorizado.', 403);
     const document = await tx.declarationDocument.findFirst({
       where: {
         id: documentId,

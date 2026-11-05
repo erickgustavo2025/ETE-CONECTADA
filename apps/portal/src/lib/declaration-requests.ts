@@ -1,3 +1,6 @@
+import { RequestError } from './request-error';
+export { RequestError } from './request-error';
+import { lockStudentAccess, requireIssuanceAccess } from './student-access';
 import { preparePdfArchive } from './declaration-pdf-archive-input';
 import {
   declarationRegistryPreviewEnabled,
@@ -89,14 +92,7 @@ export async function studentRequests(studentId: string) {
     })
   ).map(requestSummary);
 }
-export class RequestError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
-    super(message);
-  }
-}
+
 export async function requestDeclaration(
   studentId: string,
   enrollmentId: string,
@@ -118,7 +114,7 @@ export async function requestDeclaration(
       if (!allowed.length)
         throw new RequestError('Entre novamente para continuar.', 403);
       // Serializa cliques repetidos; o índice parcial também protege chamadas concorrentes.
-      await tx.$queryRaw`SELECT id FROM students WHERE id = ${studentId}::uuid FOR UPDATE`;
+      requireIssuanceAccess(await lockStudentAccess(tx, studentId));
       const enrollment = await tx.enrollment.findFirst({
         where: { id: enrollmentId, studentId },
         select: { mode: true },
