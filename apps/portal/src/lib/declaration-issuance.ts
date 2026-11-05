@@ -5,6 +5,7 @@ import { declarationRegistryPreviewEnabled } from './declaration-documents';
 import {
   readIssuanceInput,
   testIssuanceContent,
+  issuanceBirthplace,
 } from './declaration-issuance-input';
 import { createDeclarationPdf } from './declaration-pdf';
 import { preparePdfArchive } from './declaration-pdf-archive-input';
@@ -44,9 +45,12 @@ const result = (
   },
 });
 
-// Núcleo interno para a futura rota073. Nenhum endpoint de emissão é aberto aqui.
-// O ator virá da sessão no servidor; PDFs e campos não são recebidos do aluno.
-export async function issueTestDeclaration(accountId: string, value: unknown) {
+// O ator vem da sessão; somente o local de nascimento pode ser declarado pelo aluno.
+export async function issueTestDeclaration(
+  accountId: string,
+  value: unknown,
+  birthplace?: unknown,
+) {
   if (!declarationRegistryPreviewEnabled())
     throw new RequestError('Recurso indisponível.', 404);
   if (!validRequestId(accountId))
@@ -76,7 +80,10 @@ export async function issueTestDeclaration(accountId: string, value: unknown) {
         select: studentDeclarationSelect,
       });
   const content = original
-    ? testIssuanceContent(original, input.enrollmentId)
+    ? testIssuanceContent(
+        issuanceBirthplace(original, birthplace),
+        input.enrollmentId,
+      )
     : null;
   const createdAt = new Date();
   const id = randomUUID(),
@@ -129,14 +136,32 @@ export async function issueTestDeclaration(accountId: string, value: unknown) {
         select: studentDeclarationSelect,
       });
       if (
-        testIssuanceContent(fresh, input.enrollmentId).fingerprint !==
-          content.fingerprint ||
+        testIssuanceContent(
+          issuanceBirthplace(fresh, birthplace),
+          input.enrollmentId,
+        ).fingerprint !== content.fingerprint ||
         calendarDay(createdAt) !== calendarDay(new Date())
       )
         throw new RequestError(
           'Os dados mudaram durante a geração. Tente novamente.',
           409,
         );
+      if (
+        birthplace !== undefined &&
+        content.student.details?.birthplaceSource === 'STUDENT_DECLARATION'
+      ) {
+        const details = content.student.details;
+        await tx.studentDetails.update({
+          where: { studentId: actor.studentId },
+          data: {
+            birthCity: details.birthCity,
+            birthState: details.birthState,
+            birthCountry: details.birthCountry,
+            birthplaceSource: 'STUDENT_DECLARATION',
+            updatedById: accountId,
+          },
+        });
+      }
       await tx.declarationPdfArchive.createMany({
         data: [file],
         skipDuplicates: true,
@@ -200,6 +225,15 @@ export async function issueTestDeclaration(accountId: string, value: unknown) {
           documentId: document.id,
         },
         update: { documentId: document.id },
+      });
+      await tx.declarationRequest.create({
+        data: {
+          studentId: actor.studentId,
+          enrollmentId: input.enrollmentId,
+          status: 'AVAILABLE',
+          generatedAt: createdAt,
+          documentId: document.id,
+        },
       });
       return result(document, true);
     },

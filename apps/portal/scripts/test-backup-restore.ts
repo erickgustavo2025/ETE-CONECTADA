@@ -154,6 +154,22 @@ async function checkRules(client: Client) {
     (await PDFDocument.load(qrFile.rows[0].bytes)).getPageCount(),
     1,
   );
+  const delivered = await client.query(
+    'SELECT status,document_id,prepared_by_id,ready_by_id FROM declaration_requests WHERE id=$1',
+    [automaticRequest],
+  );
+  assert.deepEqual(
+    delivered.rows,
+    [
+      {
+        status: 'AVAILABLE',
+        document_id: issuedDocument,
+        prepared_by_id: null,
+        ready_by_id: null,
+      },
+    ],
+    'Backup preserva a entrega automática sem autorização humana inventada.',
+  );
   const file = await client.query<{ bytes: Buffer }>(
     'SELECT bytes FROM declaration_pdf_archives WHERE sha256=$1',
     [archiveHash],
@@ -283,6 +299,7 @@ let sourceVerified = false;
 let initial: Awaited<ReturnType<typeof snapshot>> | undefined;
 const document = randomUUID();
 const issuedDocument = randomUUID();
+const automaticRequest = randomUUID();
 const [
   student,
   otherStudent,
@@ -477,6 +494,10 @@ async function main() {
       await source.query(
         "INSERT INTO declaration_current_issues(enrollment_id,document_type,student_id,document_id) VALUES($1,'DECLARACAO_VINCULO',$2,$3)",
         [otherEnrollment, otherStudent, issuedDocument],
+      );
+      await source.query(
+        "INSERT INTO declaration_requests(id,student_id,enrollment_id,status,generated_at,document_id) VALUES($1,$2,$3,'AVAILABLE',now(),$4)",
+        [automaticRequest, otherStudent, otherEnrollment, issuedDocument],
       );
       await source.query(
         "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",

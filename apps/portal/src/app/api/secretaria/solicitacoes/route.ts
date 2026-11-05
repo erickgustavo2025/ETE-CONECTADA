@@ -53,9 +53,9 @@ async function handleGET(request: Request) {
         { error: 'Página inválida.' },
         { status: 400, headers: privateHeaders },
       );
-    const statusWhere =
+    const statusWhere: Pick<Prisma.DeclarationRequestWhereInput, 'status'> =
       filter === 'OPEN'
-        ? { status: { not: 'READY_FOR_PICKUP' as const } }
+        ? { status: { in: ['REQUESTED', 'IN_PREPARATION'] } }
         : {
             status: filter as
               | 'REQUESTED'

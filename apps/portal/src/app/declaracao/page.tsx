@@ -5,6 +5,7 @@ import { currentSession } from '@/lib/session';
 import { getDb } from '@/lib/db';
 import { declarationStudent } from '@/lib/declarations';
 import { studentRequests } from '@/lib/declaration-requests';
+import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
 export const metadata = { title: 'Solicitar declaração | ETE CONECTADA' };
 export default async function DeclarationPage() {
   const session = await currentSession();
@@ -14,6 +15,8 @@ export default async function DeclarationPage() {
     studentRequests(session.studentId),
   ]);
   const enrollment = student?.enrollments[0];
+  const automatic =
+    declarationRegistryPreviewEnabled() && session.role === 'student';
   return (
     <PortalHome studentName={session.fullName} role={session.role} internalPage>
       <section
@@ -24,7 +27,9 @@ export default async function DeclarationPage() {
           <span className="eyebrow">SECRETARIA ESCOLAR</span>
           <h1 id="declaration-title">Declaração de vínculo</h1>
           <p className="document-intro">
-            Peça pelo portal. Retire na escola quando estiver pronta.
+            {automatic
+              ? 'Gere sua declaração e abra ou baixe o PDF pelo portal.'
+              : 'Peça pelo portal. Retire na escola quando estiver pronta.'}
           </p>
         </div>
         <dl className="student-summary">
@@ -58,6 +63,7 @@ export default async function DeclarationPage() {
           </p>
         )}
         <StudentDeclarationRequests
+          automatic={automatic}
           enrollmentId={enrollment?.id ?? null}
           initialRequests={requests}
           birthplace={
@@ -74,8 +80,9 @@ export default async function DeclarationPage() {
           }
         />
         <p className="document-footnote">
-          Fluxo em desenvolvimento. O modelo de impressão ainda precisa ser
-          validado pela escola.
+          {automatic
+            ? 'Ambiente de teste. Os documentos gerados ainda não têm validade oficial.'
+            : 'Fluxo em desenvolvimento. O modelo de impressão ainda precisa ser validado pela escola.'}
         </p>
       </section>
     </PortalHome>

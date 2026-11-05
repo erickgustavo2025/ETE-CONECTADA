@@ -10,9 +10,12 @@ export const accessPolicies = {
   'login-account': { limit: 10, windowMs: 5 * 60_000 },
   'document-lookup': { limit: 60, windowMs: 5 * 60_000 },
   'document-name': { limit: 10, windowMs: 5 * 60_000 },
+  issuance: { limit: 10, windowMs: 5 * 60_000 },
+  'issued-file': { limit: 60, windowMs: 5 * 60_000 },
 } as const;
 const globalPolicy = { limit: 600, windowMs: 60_000 };
 const documentGlobalPolicy = { limit: 300, windowMs: 60_000 };
+const privateDocumentPolicy = { limit: 120, windowMs: 60_000 };
 export const accessBucketCapacity = 20_000;
 export type AccessAction = keyof typeof accessPolicies;
 export type AccessDecision =
@@ -94,17 +97,25 @@ export async function consumeAccessAttempt(
       }
       // A entrada HTTP já consumiu o orçamento global antes da consulta da conta.
       if (action !== 'login-account') {
+        const privateDocument =
+          action === 'issuance' || action === 'issued-file';
         const global = await consumeBucket(
           tx,
           // Consultas públicas têm orçamento separado: não gastam admissões de login.
           fingerprint(
             state,
-            action.startsWith('document-')
-              ? 'global-public-document'
-              : 'global',
+            privateDocument
+              ? 'global-private-document'
+              : action.startsWith('document-')
+                ? 'global-public-document'
+                : 'global',
             '',
           ),
-          action.startsWith('document-') ? documentGlobalPolicy : globalPolicy,
+          privateDocument
+            ? privateDocumentPolicy
+            : action.startsWith('document-')
+              ? documentGlobalPolicy
+              : globalPolicy,
           nowMs,
         );
         if (!global.allowed) return global;

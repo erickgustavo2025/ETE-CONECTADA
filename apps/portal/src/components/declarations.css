@@ -844,3 +844,10 @@
   display: flex;
   gap: 8px;
 }
+
+.request-status--available {
+  color: var(--navy);
+}
+.request-status--cancelled {
+  color: var(--red);
+}

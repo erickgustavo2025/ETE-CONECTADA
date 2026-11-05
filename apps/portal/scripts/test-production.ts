@@ -236,6 +236,7 @@ async function main() {
       ],
       ['/api/secretaria/documentos/busca', 404, {}],
       ['/api/secretaria/documentos/arquivo', 404, {}],
+      ['/api/declaracao/arquivo', 404, {}],
       ['/api/secretaria/documentos/alteracoes', 404, {}],
       [
         '/api/login',
