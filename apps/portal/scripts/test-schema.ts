@@ -35,10 +35,12 @@ const columns: Record<string, string> = {
     'id offering_id revision schedule created_at created_by_id',
   sheet_import_previews:
     'actor_id token_hash input_hash snapshot_hash expires_at consumed_at result',
+  declaration_current_issues:
+    'enrollment_id document_type student_id document_id',
   declaration_pdf_archives:
     'sha256 bytes page_count template_version created_at',
   declaration_documents:
-    'id public_code student_id enrollment_id created_by_id created_at status snapshot_version snapshot source_pdf_sha256 source_pdf_page archive_sha256',
+    'id public_code student_id enrollment_id created_by_id created_at status snapshot_version snapshot source_pdf_sha256 source_pdf_page archive_sha256 origin request_key',
   declaration_requests:
     'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id',
   portal_schema_migrations: 'version applied_at',
@@ -251,9 +253,17 @@ async function main() {
     assert.equal(column('declaration_pdf_archives', 'bytes').udt_name, 'bytea');
     assert.match(constraint('declaration_documents_code_check'), /43/);
     assert.match(constraint('declaration_documents_hash_check'), /64/);
+    const snapshotRule = constraint('declaration_documents_snapshot_check');
+    for (const term of [
+      'snapshot_version',
+      'DECLARACAO_VINCULO',
+      'STUDENT_REQUEST',
+      'testOnly',
+    ])
+      assert.ok(snapshotRule.includes(term));
     assert.match(
-      constraint('declaration_documents_snapshot_check'),
-      /snapshot_version.*DECLARACAO_VINCULO/,
+      constraint('declaration_current_issues_document_fkey'),
+      /FOREIGN KEY \(document_id, student_id, enrollment_id\)/,
     );
     assert.match(
       constraint('declaration_documents_page_check'),

@@ -21,6 +21,7 @@ async function main() {
         (SELECT count(*) FROM password_reset_tokens) +
         (SELECT count(*) FROM declaration_requests) +
         (SELECT count(*) FROM declaration_documents) +
+        (SELECT count(*) FROM declaration_current_issues) +
         (SELECT count(*) FROM declaration_pdf_archives) +
         (SELECT count(*) FROM declaration_document_actions) +
         (SELECT count(*) FROM retired_profile_photos)

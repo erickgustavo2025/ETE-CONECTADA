@@ -102,7 +102,7 @@ async function main() {
       { from: '2026-02-30' },
       { from: '2026-10-20', to: '2026-10-19' },
       { studentId: 'invalid' },
-      { status: 'ISSUED' },
+      { status: 'UNKNOWN' },
       { mode: 'ADMIN' },
     ])
       assert.equal((await post(body)).status, 422, JSON.stringify(body));

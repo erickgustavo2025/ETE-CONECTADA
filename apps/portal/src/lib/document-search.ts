@@ -9,6 +9,7 @@ const documentSelect = {
   createdAt: true,
   sourcePdfPage: true,
   snapshot: true,
+  status: true,
   terminalActions: { select: { action: true } },
 } satisfies Prisma.DeclarationDocumentSelect;
 function snapshotText(snapshot: Prisma.JsonValue, key: string) {
@@ -24,7 +25,7 @@ function summary(
   return {
     id: row.id,
     createdAt: row.createdAt.toISOString(),
-    state: (row.terminalActions[0]?.action ?? 'DRAFT') as DocumentState,
+    state: (row.terminalActions[0]?.action ?? row.status) as DocumentState,
     className: snapshotText(row.snapshot, 'className'),
     mode: snapshotText(row.snapshot, 'mode'),
     period: snapshotText(row.snapshot, 'periodLabel'),
@@ -82,8 +83,11 @@ export async function searchDocuments(body: Record<string, unknown>) {
           where: {
             studentId: row.studentId,
             enrollmentId: row.enrollmentId,
+            status: row.status,
             id: { not: row.id },
-            snapshot: { path: ['periodLabel'], equals: period },
+            ...(row.status === 'DRAFT'
+              ? { snapshot: { path: ['periodLabel'], equals: period } }
+              : {}),
             terminalActions: { none: {} },
             predecessorActions: { none: {} },
           },
@@ -99,7 +103,7 @@ export async function searchDocuments(body: Record<string, unknown>) {
         sourcePdfSha256: row.sourcePdfSha256,
         history: [
           {
-            action: 'DRAFT',
+            action: row.status,
             date: row.createdAt.toISOString(),
             actor:
               row.createdBy.student.fullName ??
@@ -138,7 +142,10 @@ export async function searchDocuments(body: Record<string, unknown>) {
       'Escolha Integrado ou Subsequente.',
       'mode',
     );
-  if (status && !['DRAFT', 'CANCELLED', 'SUPERSEDED'].includes(status))
+  if (
+    status &&
+    !['DRAFT', 'ISSUED', 'CANCELLED', 'SUPERSEDED'].includes(status)
+  )
     throw new DeclarationValidationError(
       'Escolha uma situação válida.',
       'status',
@@ -159,8 +166,8 @@ export async function searchDocuments(body: Record<string, unknown>) {
   if (mode) filters.push({ snapshot: { path: ['mode'], equals: mode } });
   if (status)
     filters.push(
-      status === 'DRAFT'
-        ? { terminalActions: { none: {} } }
+      status === 'DRAFT' || status === 'ISSUED'
+        ? { status, terminalActions: { none: {} } }
         : { terminalActions: { some: { action: status } } },
     );
   if (from || to)

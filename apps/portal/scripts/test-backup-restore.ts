@@ -145,6 +145,33 @@ async function checkRules(client: Client) {
   );
   assert.equal(file.rowCount, 1);
   assert.equal(
+    (
+      await client.query(
+        'SELECT document_id FROM declaration_current_issues WHERE enrollment_id=$1',
+        [otherEnrollment],
+      )
+    ).rows[0].document_id,
+    issuedDocument,
+  );
+  assert.equal(
+    (
+      await client.query(
+        'SELECT snapshot_version,status FROM declaration_documents WHERE id=$1',
+        [document],
+      )
+    ).rows[0].status,
+    'DRAFT',
+  );
+  assert.equal(
+    (
+      await client.query(
+        'SELECT status FROM declaration_documents WHERE id=$1',
+        [issuedDocument],
+      )
+    ).rows[0].status,
+    'ISSUED',
+  );
+  assert.equal(
     digest(file.rows[0].bytes),
     archiveHash,
     'Backup preserva os bytes finais do PDF.',
@@ -240,6 +267,7 @@ let targetConnected = false;
 let sourceVerified = false;
 let initial: Awaited<ReturnType<typeof snapshot>> | undefined;
 const document = randomUUID();
+const issuedDocument = randomUUID();
 const [
   student,
   otherStudent,
@@ -270,6 +298,7 @@ async function main() {
       'declaration_documents',
       'declaration_pdf_archives',
       'declaration_document_actions',
+      'declaration_current_issues',
     ])
       assert.equal(
         initial.tables[name]?.count,
@@ -392,6 +421,28 @@ async function main() {
       await source.query(
         "INSERT INTO declaration_document_actions(document_id,student_id,enrollment_id,action,reason,created_by_id) VALUES($1,$2,$3,'CANCELLED','Minuta fictícia cancelada',$4)",
         [document, student, enrollment, account],
+      );
+      await source.query(
+        "INSERT INTO declaration_documents(id,public_code,student_id,enrollment_id,created_by_id,status,origin,request_key,snapshot_version,snapshot,source_pdf_sha256,source_pdf_page,archive_sha256) VALUES($1,$2,$3,$4,$5,'ISSUED','STUDENT_REQUEST',$6,2,$7,$8,1,$8)",
+        [
+          issuedDocument,
+          randomBytes(32).toString('base64url'),
+          otherStudent,
+          otherEnrollment,
+          otherAccount,
+          randomUUID(),
+          JSON.stringify({
+            type: 'DECLARACAO_VINCULO',
+            testOnly: true,
+            subjectName: 'Aluno fictício',
+            body: 'Emissão fictícia',
+          }),
+          archiveHash,
+        ],
+      );
+      await source.query(
+        "INSERT INTO declaration_current_issues(enrollment_id,document_type,student_id,document_id) VALUES($1,'DECLARACAO_VINCULO',$2,$3)",
+        [otherEnrollment, otherStudent, issuedDocument],
       );
       await source.query(
         "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",
@@ -567,9 +618,14 @@ async function main() {
           'DELETE FROM declaration_document_actions WHERE document_id=$1',
           [document],
         );
-        await source.query('DELETE FROM declaration_documents WHERE id=$1', [
-          document,
-        ]);
+        await source.query(
+          'DELETE FROM declaration_current_issues WHERE document_id=$1',
+          [issuedDocument],
+        );
+        await source.query(
+          'DELETE FROM declaration_documents WHERE id=ANY($1::uuid[])',
+          [[document, issuedDocument]],
+        );
         await source.query(
           'DELETE FROM declaration_pdf_archives WHERE sha256=$1',
           [archiveHash],
