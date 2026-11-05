@@ -63,6 +63,33 @@ export function sheetFixture(mode: 'INTEGRADO' | 'SUBSEQUENTE' = 'INTEGRADO') {
     file: () => XLSX.write(wb, { type: 'buffer', bookType: 'biff8' }) as Buffer,
   };
 }
+export function schoolHeaderFixture(
+  mode: 'INTEGRADO' | 'SUBSEQUENTE',
+  course: 'ADM' | 'DS' | 'ENF',
+  stage = 1,
+  period = mode === 'SUBSEQUENTE' ? '2026.2' : '2026',
+  code = mode === 'SUBSEQUENTE'
+    ? `ST${course}N${stage}U`
+    : `${course}${stage}IN-A`,
+) {
+  const fixture = sheetFixture(mode);
+  fixture.wb.Sheets['Fictícia'].A2 = {
+    t: 's',
+    v: `Escola fictícia - ${period.replace('.', ' /')}`,
+  };
+  fixture.wb.Sheets['Fictícia'].A3 = {
+    t: 's',
+    v:
+      mode === 'SUBSEQUENTE'
+        ? `Técnico em ${course} - Subsequente`
+        : `Ensino Médio - Técnico em ${course}`,
+  };
+  fixture.wb.Sheets['Fictícia'].A4 = {
+    t: 's',
+    v: `${stage}${mode === 'SUBSEQUENTE' ? 'MODULO - N' : 'ANO - I'} - ${code}`,
+  };
+  return fixture;
+}
 async function main() {
   const f = sheetFixture();
   const inspection = await inspectIntegratedSheet(f.file());

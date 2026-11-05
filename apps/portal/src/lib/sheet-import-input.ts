@@ -2,6 +2,10 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { Worker } from 'node:worker_threads';
 import { normalizeSchoolRegistration } from './registration';
+import {
+  readSchoolClassMetadata,
+  type SubsequentReference,
+} from './school-class-input';
 
 export class SheetImportError extends Error {
   constructor(
@@ -25,6 +29,12 @@ export type SheetContext = {
   courseLabel: 'ADM' | 'DS' | 'ENF';
   stage: number;
   bindings: Record<string, string>;
+  header?: {
+    classCode: string;
+    schoolYear: number;
+    reference: SubsequentReference | null;
+    useExisting: boolean;
+  };
 };
 export type ImportRow = {
   sheet: number;
@@ -151,6 +161,30 @@ export async function decodeXls(
   });
 }
 type DecodedSheet = { name: string; rows: string[][] };
+function headerMetadata(
+  s: DecodedSheet,
+  mode: SheetInput['mode'],
+  course: SheetContext['courseLabel'],
+  stage: number,
+) {
+  try {
+    const metadata = readSchoolClassMetadata(s.rows, mode, course, stage);
+    // Identidade da lista: modalidade, curso, código e período; nunca nome/posição da aba.
+    const hash = digest([
+      'school-header-v1',
+      mode,
+      course,
+      metadata.classCode,
+      metadata.periodLabel,
+    ]);
+    const scopeId = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-8${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+    return { ...metadata, scopeId };
+  } catch {
+    throw new SheetImportError(
+      'Confira turma, módulo ou série e período no cabeçalho da planilha.',
+    );
+  }
+}
 function sheetHeader(
   s: DecodedSheet,
   mode: 'INTEGRADO' | 'SUBSEQUENTE',
@@ -201,10 +235,17 @@ function sheetHeader(
 export async function inspectSchoolSheet(
   file: Buffer,
   mode: 'INTEGRADO' | 'SUBSEQUENTE',
+  automatic = false,
 ) {
   return (await decodeXls(file)).map((s, index) => ({
     sheetName: s.name,
     ...sheetHeader(s, mode, index),
+    ...(automatic
+      ? (() => {
+          const h = sheetHeader(s, mode, index);
+          return headerMetadata(s, mode, h.courseLabel, h.stage);
+        })()
+      : {}),
     rows: s.rows.slice(6).filter((row) => row.some((cell) => cell.trim()))
       .length,
   }));
@@ -217,6 +258,7 @@ export async function parseSheetInput(
   file: Buffer,
   mode: unknown,
   rawContexts: unknown,
+  automatic = false,
 ): Promise<SheetInput> {
   if (mode !== 'INTEGRADO' && mode !== 'SUBSEQUENTE')
     throw new SheetImportError('Escolha a modalidade.');
@@ -226,61 +268,66 @@ export async function parseSheetInput(
     rawContexts.length > 25
   )
     throw new SheetImportError('Confira os dados de cada aba da planilha.');
-  const contexts = rawContexts.map((value) => {
-    const c = object(value, [
-      'sheetName',
-      'scopeId',
-      'periodLabel',
-      'className',
-      'courseLabel',
-      'stage',
-      'bindings',
-      'confirmed',
-    ]);
-    if (
-      c.confirmed !== true ||
-      typeof c.scopeId !== 'string' ||
-      !uuid.test(c.scopeId) ||
-      typeof c.courseLabel !== 'string' ||
-      !['ADM', 'DS', 'ENF'].includes(c.courseLabel) ||
-      !Number.isInteger(c.stage) ||
-      Number(c.stage) < 1 ||
-      Number(c.stage) >
-        (mode === 'SUBSEQUENTE' && c.courseLabel === 'ENF' ? 4 : 3) ||
-      (mode === 'INTEGRADO' && c.courseLabel === 'ENF')
-    )
-      throw new SheetImportError(
-        'Confira se a lista é do integrado ou do subsequente e confirme a turma, o curso e a série ou módulo.',
-      );
-    const bindings: Record<string, string> = {};
-    if (c.bindings !== undefined) {
+  const contexts: Array<SheetContext & { sourceChoice?: unknown }> =
+    rawContexts.map((value) => {
+      const c = object(value, [
+        'sheetName',
+        'scopeId',
+        'periodLabel',
+        'className',
+        'courseLabel',
+        'stage',
+        'bindings',
+        'confirmed',
+        ...(automatic ? ['sourceChoice'] : []),
+      ]);
+      if (automatic && !['header', 'existing'].includes(String(c.sourceChoice)))
+        throw new SheetImportError('Confira a origem da turma.');
       if (
-        !c.bindings ||
-        typeof c.bindings !== 'object' ||
-        Array.isArray(c.bindings) ||
-        Object.keys(c.bindings).length > 5000
+        c.confirmed !== true ||
+        typeof c.scopeId !== 'string' ||
+        !uuid.test(c.scopeId) ||
+        typeof c.courseLabel !== 'string' ||
+        !['ADM', 'DS', 'ENF'].includes(c.courseLabel) ||
+        !Number.isInteger(c.stage) ||
+        Number(c.stage) < 1 ||
+        Number(c.stage) >
+          (mode === 'SUBSEQUENTE' && c.courseLabel === 'ENF' ? 4 : 3) ||
+        (mode === 'INTEGRADO' && c.courseLabel === 'ENF')
       )
-        throw new SheetImportError('Confira as matrículas já cadastradas.');
-      for (const [key, id] of Object.entries(c.bindings)) {
+        throw new SheetImportError(
+          'Confira se a lista é do integrado ou do subsequente e confirme a turma, o curso e a série ou módulo.',
+        );
+      const bindings: Record<string, string> = {};
+      if (c.bindings !== undefined) {
         if (
-          normalizeSchoolRegistration(key) !== key ||
-          typeof id !== 'string' ||
-          (id !== 'new' && !uuid.test(id))
+          !c.bindings ||
+          typeof c.bindings !== 'object' ||
+          Array.isArray(c.bindings) ||
+          Object.keys(c.bindings).length > 5000
         )
           throw new SheetImportError('Confira as matrículas já cadastradas.');
-        bindings[key] = id === 'new' ? id : id.toLowerCase();
+        for (const [key, id] of Object.entries(c.bindings)) {
+          if (
+            normalizeSchoolRegistration(key) !== key ||
+            typeof id !== 'string' ||
+            (id !== 'new' && !uuid.test(id))
+          )
+            throw new SheetImportError('Confira as matrículas já cadastradas.');
+          bindings[key] = id === 'new' ? id : id.toLowerCase();
+        }
       }
-    }
-    return {
-      sheetName: text(c.sheetName, 100),
-      scopeId: c.scopeId.toLowerCase(),
-      periodLabel: text(c.periodLabel, 60),
-      className: text(c.className, 100),
-      courseLabel: c.courseLabel as SheetContext['courseLabel'],
-      stage: Number(c.stage),
-      bindings,
-    };
-  });
+      return {
+        sheetName: text(c.sheetName, 100),
+        scopeId: c.scopeId.toLowerCase(),
+        periodLabel: text(c.periodLabel, 60),
+        className: text(c.className, 100),
+        courseLabel: c.courseLabel as SheetContext['courseLabel'],
+        stage: Number(c.stage),
+        bindings,
+        ...(automatic ? { sourceChoice: c.sourceChoice } : {}),
+      };
+    });
   if (
     new Set(contexts.map((c) => c.scopeId)).size !== contexts.length ||
     new Set(contexts.map((c) => c.sheetName)).size !== contexts.length
@@ -305,6 +352,25 @@ export async function parseSheetInput(
       throw new SheetImportError(
         `Curso ou série/módulo divergente na aba ${sheet + 1}.`,
       );
+    if (automatic) {
+      const h = headerMetadata(s, mode, header.courseLabel, header.stage);
+      if (
+        context.className !== h.classCode ||
+        context.periodLabel !== h.periodLabel ||
+        (context.sourceChoice === 'header' && context.scopeId !== h.scopeId)
+      )
+        throw new SheetImportError(
+          `Os dados da aba ${sheet + 1} mudaram. Leia o arquivo novamente.`,
+        );
+      Object.assign(context, {
+        header: {
+          classCode: h.classCode,
+          schoolYear: h.schoolYear,
+          reference: h.reference,
+          useExisting: context.sourceChoice === 'existing',
+        },
+      });
+    }
     for (let i = 6; i < s.rows.length; i++) {
       const cells = s.rows[i];
       if (cells.every((x) => !x.trim())) continue;

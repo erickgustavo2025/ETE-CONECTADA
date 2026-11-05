@@ -6,6 +6,7 @@ export type ImportContextView = {
   periodLabel: string;
   courseLabel: 'ADM' | 'DS' | 'ENF';
   stage: number;
+  sourceChoice?: 'header' | 'existing';
   confirmed: boolean;
   bindings: Record<string, string>;
 };
@@ -15,6 +16,16 @@ export type ImportInspection = {
     courseLabel: 'ADM' | 'DS' | 'ENF';
     stage: number;
     rows: number;
+    scopeId?: string;
+    classCode?: string;
+    periodLabel?: string;
+    reference?: {
+      entryPeriod: string;
+      completionPeriod: string;
+      startsOn: string;
+      endsOn: string;
+      totalModules: number;
+    } | null;
   }>;
   sources: Array<{
     scopeId: string;
@@ -40,6 +51,12 @@ export type ImportCounts = {
   identityChanges: number;
 };
 export type ImportPreviewView = {
+  sheets?: Array<{
+    sheetName: string;
+    className: string;
+    periodLabel: string;
+    reference: { startsOn: string; endsOn: string } | null;
+  }>;
   token: string;
   expiresAt: string;
   calendarComparisons?: Array<{

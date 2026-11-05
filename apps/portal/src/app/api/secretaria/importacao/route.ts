@@ -71,6 +71,7 @@ async function handlePOST(request: Request) {
           ![
             'action',
             'mode',
+            'format',
             'contexts',
             'fileBase64',
             'token',
@@ -90,6 +91,9 @@ async function handlePOST(request: Request) {
         'Confira o arquivo, a ação e o contexto.',
         400,
       );
+    if (body.format !== undefined && body.format !== 'school-header-v1')
+      throw new SheetImportError('Leia o arquivo novamente.', 400);
+    const automatic = body.format === 'school-header-v1';
     const file = Buffer.from(body.fileBase64, 'base64');
     if (file.toString('base64') !== body.fileBase64)
       throw new SheetImportError('Arquivo inválido.', 400);
@@ -97,14 +101,14 @@ async function handlePOST(request: Request) {
       if (
         (body.mode !== 'INTEGRADO' && body.mode !== 'SUBSEQUENTE') ||
         Object.keys(body).some(
-          (key) => !['action', 'mode', 'fileBase64'].includes(key),
+          (key) => !['action', 'mode', 'format', 'fileBase64'].includes(key),
         )
       )
         throw new SheetImportError(
           'Escolha a modalidade e envie somente o arquivo para inspeção.',
           400,
         );
-      const sheets = await inspectSchoolSheet(file, body.mode);
+      const sheets = await inspectSchoolSheet(file, body.mode, automatic);
       const sources = await schoolImportSources(
         getDb(),
         session.accountId,
@@ -112,7 +116,12 @@ async function handlePOST(request: Request) {
       );
       return json({ sheets, sources });
     }
-    const input = await parseSheetInput(file, body.mode, body.contexts);
+    const input = await parseSheetInput(
+      file,
+      body.mode,
+      body.contexts,
+      automatic,
+    );
     const result =
       body.action === 'preview'
         ? await previewSheetImport(getDb(), session.accountId, input)

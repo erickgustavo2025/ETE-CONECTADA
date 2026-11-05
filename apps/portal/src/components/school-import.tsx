@@ -160,7 +160,7 @@ export default function SchoolImport({
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, format: 'school-header-v1' }),
       cache: 'no-store',
     });
     const value = await response.json();
@@ -214,9 +214,10 @@ export default function SchoolImport({
             sheetName: s.sheetName,
             courseLabel: s.courseLabel,
             stage: s.stage,
-            scopeId: '',
-            className: '',
-            periodLabel: '',
+            scopeId: s.scopeId || '',
+            className: s.classCode || '',
+            periodLabel: s.periodLabel || '',
+            sourceChoice: 'header',
             confirmed: false,
             bindings: {},
           })),
@@ -421,26 +422,16 @@ export default function SchoolImport({
           </p>
           <h2>Confira cada aba</h2>
           <p>
-            {subsequent
-              ? 'Escolha a turma e o semestre de ingresso cadastrados no calendário. Confira as datas, mesmo que os nomes sejam parecidos.'
-              : 'Para atualizar alunos, escolha a turma já cadastrada. Cadastre uma nova turma somente se for outro grupo de alunos. Confira o curso e o ano de ingresso.'}
+            Turma, curso e período foram lidos do arquivo. Confira os dados de
+            cada aba antes de continuar.
           </p>
           {subsequent && (
-            <>
-              <p>
-                Ingresso é o semestre em que a turma começou o curso e não muda
-                ao passar de módulo. Período letivo é o semestre do módulo desta
-                aba. Ex.: uma turma que ingressou em 2026.2 pode cursar o
-                segundo módulo em 2027.1. Use o calendário da escola para
-                conferir as informações.
-              </p>
-              <p className={styles.notice}>
-                Escolha uma turma com calendário cadastrado para cada aba. Se a
-                turma ainda não aparecer,{' '}
-                <a href="/secretaria/calendarios">cadastre o calendário</a> e
-                leia o arquivo novamente.
-              </p>
-            </>
+            <p className={styles.notice}>
+              O ingresso e a conclusão são estimados pelo módulo e semestre da
+              planilha: três módulos em Administração e DS, quatro em
+              Enfermagem. Uma referência já cadastrada não será substituída pela
+              estimativa. Não é preciso cadastrar calendário antes de importar.
+            </p>
           )}
           <fieldset disabled={!!busy} className={styles.contexts}>
             <legend className={styles.srOnly}>Dados das turmas</legend>
@@ -461,51 +452,43 @@ export default function SchoolImport({
                 </p>
                 <div className={styles.fields}>
                   <div className={styles.wide}>
-                    <label htmlFor={`scope-${index}`}>Turma e ingresso</label>
+                    <label htmlFor={`scope-${index}`}>Lista da turma</label>
                     <select
                       id={`scope-${index}`}
                       name={`scope-${index}`}
-                      required
                       value={context.scopeId}
-                      {...validation.field(`scope-${index}`)}
-                      onChange={(e) => {
-                        const source = inspection.sources.find(
-                          (s) => s.scopeId === e.target.value,
-                        );
+                      onChange={(event) =>
                         updateContext(index, {
-                          scopeId:
-                            e.target.value === 'new'
-                              ? crypto.randomUUID()
-                              : e.target.value,
-                          className: source?.className || '',
-                          periodLabel:
-                            source?.calendar?.modules.find(
-                              (m) => m.number === context.stage,
-                            )?.periodLabel ||
-                            source?.periodLabel ||
-                            '',
+                          scopeId: event.target.value,
+                          sourceChoice:
+                            event.target.value ===
+                            inspection.sheets[index].scopeId
+                              ? 'header'
+                              : 'existing',
                           bindings: {},
-                        });
-                      }}
+                        })
+                      }
                     >
-                      <option value="">Selecione após conferir</option>
-                      {context.scopeId &&
-                        !inspection.sources.some(
-                          (s) => s.scopeId === context.scopeId,
-                        ) && (
-                          <option value={context.scopeId}>Nova turma</option>
-                        )}
+                      <option value={inspection.sheets[index].scopeId}>
+                        Usar turma e período do arquivo
+                      </option>
                       {inspection.sources
-                        .filter((s) => s.courseLabel === context.courseLabel)
-                        .map((s) => (
-                          <option key={s.scopeId} value={s.scopeId}>
-                            {s.label}
+                        .filter(
+                          (source) =>
+                            source.courseLabel === context.courseLabel &&
+                            source.scopeId !== inspection.sheets[index].scopeId,
+                        )
+                        .map((source) => (
+                          <option key={source.scopeId} value={source.scopeId}>
+                            Atualizar lista anterior: {source.label}
                           </option>
                         ))}
-                      {!subsequent && (
-                        <option value="new">Cadastrar nova turma</option>
-                      )}
                     </select>
+                    <p>
+                      Use uma lista anterior somente se estes alunos já foram
+                      importados nela. A importação não promove nem transfere
+                      alunos.
+                    </p>
                   </div>
                   <div>
                     <label htmlFor={`class-${index}`}>Nome da turma</label>
@@ -516,9 +499,7 @@ export default function SchoolImport({
                       maxLength={100}
                       value={context.className}
                       {...validation.field(`class-${index}`)}
-                      onChange={(e) =>
-                        updateContext(index, { className: e.target.value })
-                      }
+                      readOnly
                     />
                   </div>
                   <div>
@@ -531,12 +512,23 @@ export default function SchoolImport({
                       placeholder={subsequent ? 'Ex.: 2026.2' : 'Ex.: 2026'}
                       value={context.periodLabel}
                       {...validation.field(`period-${index}`)}
-                      onChange={(e) =>
-                        updateContext(index, { periodLabel: e.target.value })
-                      }
+                      readOnly
                     />
                   </div>
                 </div>
+                {inspection.sheets[index].reference && (
+                  <p>
+                    Ingresso estimado:{' '}
+                    <strong>
+                      {inspection.sheets[index].reference!.entryPeriod}
+                    </strong>{' '}
+                    · Conclusão estimada:{' '}
+                    <strong>
+                      {inspection.sheets[index].reference!.completionPeriod}
+                    </strong>
+                    . Confira repetências ou correções já registradas.
+                  </p>
+                )}
                 <label className={styles.check}>
                   <input
                     type="checkbox"
