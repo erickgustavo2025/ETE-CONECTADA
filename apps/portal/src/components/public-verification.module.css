@@ -1,0 +1,93 @@
+.page {
+  width: min(100% - 40px, 800px);
+  margin: 40px auto;
+  outline: none;
+}
+.panel {
+  padding: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--white);
+  box-shadow: var(--shadow-panel);
+}
+.panel h1 {
+  margin: 0 0 16px;
+  font-size: clamp(28px, 4vw, 36px);
+}
+.panel h2 {
+  font-size: 23px;
+  line-height: 1.35;
+}
+.panel p {
+  line-height: 1.65;
+}
+.lead,
+.note {
+  color: var(--muted);
+}
+.notice {
+  padding: 16px 20px;
+  margin: 24px 0;
+  border-left: 4px solid var(--blue);
+  background: var(--pale);
+}
+.notice p {
+  margin: 4px 0 0;
+}
+.status {
+  margin: 24px 0;
+  min-height: 130px;
+}
+.status h2 {
+  margin: 0 0 12px;
+  color: var(--navy);
+}
+.status[data-state='CANCELLED'] h2,
+.status[data-state='SUPERSEDED'] h2 {
+  color: var(--red);
+}
+.section {
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+.details {
+  display: grid;
+  gap: 16px;
+}
+.details div {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+}
+.details dt {
+  color: var(--muted);
+}
+.details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+}
+.note {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+@media (max-width: 650px) {
+  .page {
+    margin: 24px auto;
+  }
+  .panel {
+    padding: 24px 20px;
+  }
+  .details div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .panel h2 {
+    font-size: 21px;
+  }
+}

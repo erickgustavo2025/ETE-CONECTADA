@@ -61,6 +61,7 @@ export async function searchDocuments(body: Record<string, unknown>) {
       select: {
         ...documentSelect,
         studentId: true,
+        publicCode: true,
         enrollmentId: true,
         sourcePdfSha256: true,
         createdBy: { select: { student: { select: { fullName: true } } } },
@@ -78,27 +79,36 @@ export async function searchDocuments(body: Record<string, unknown>) {
     if (!row)
       throw new RequestError('Minuta não encontrada. Atualize a lista.', 404);
     const period = snapshotText(row.snapshot, 'periodLabel');
-    const successors = period
-      ? await db.declarationDocument.findMany({
-          where: {
-            studentId: row.studentId,
-            enrollmentId: row.enrollmentId,
-            status: row.status,
-            id: { not: row.id },
-            ...(row.status === 'DRAFT'
-              ? { snapshot: { path: ['periodLabel'], equals: period } }
-              : {}),
-            terminalActions: { none: {} },
-            predecessorActions: { none: {} },
-          },
-          select: documentSelect,
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          take: 100,
-        })
-      : [];
+    const successors =
+      period && row.status === 'DRAFT'
+        ? await db.declarationDocument.findMany({
+            where: {
+              studentId: row.studentId,
+              enrollmentId: row.enrollmentId,
+              status: row.status,
+              id: { not: row.id },
+              ...(row.status === 'DRAFT'
+                ? { snapshot: { path: ['periodLabel'], equals: period } }
+                : {}),
+              terminalActions: { none: {} },
+              predecessorActions: { none: {} },
+            },
+            select: documentSelect,
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            take: 100,
+          })
+        : [];
     return {
       document: {
         ...summary(row),
+        verificationPath:
+          row.status === 'ISSUED' &&
+          row.snapshot &&
+          typeof row.snapshot === 'object' &&
+          !Array.isArray(row.snapshot) &&
+          row.snapshot.verificationVersion === 1
+            ? '/validar/' + row.publicCode
+            : null,
         body: snapshotText(row.snapshot, 'body'),
         sourcePdfSha256: row.sourcePdfSha256,
         history: [

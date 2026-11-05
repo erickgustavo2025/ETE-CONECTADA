@@ -229,6 +229,11 @@ async function main() {
         ]),
       });
     const cases: [string, number, unknown?][] = [
+      [
+        '/api/documentos/verificacao',
+        404,
+        { code: 'A'.repeat(43), fullName: 'Pessoa fictícia' },
+      ],
       ['/api/secretaria/documentos/busca', 404, {}],
       ['/api/secretaria/documentos/arquivo', 404, {}],
       ['/api/secretaria/documentos/alteracoes', 404, {}],
@@ -295,6 +300,21 @@ async function main() {
       );
       assert.equal(typeof data.error, 'string');
     }
+    const publicPage = await request('/validar/' + 'A'.repeat(43));
+    assert.equal(
+      publicPage.status,
+      404,
+      'Consulta pública experimental indisponível em produção mesmo com a chave true.',
+    );
+    assert.match(publicPage.headers.get('x-robots-tag') ?? '', /noindex/);
+    const publicHtml = await publicPage.text();
+    for (const privateValue of [
+      token,
+      tokenHash,
+      account.email,
+      student.fullName!,
+    ])
+      assert.ok(!publicHtml.includes(privateValue));
     const registry = await request('/secretaria/documentos');
     assert.equal(
       registry.status,

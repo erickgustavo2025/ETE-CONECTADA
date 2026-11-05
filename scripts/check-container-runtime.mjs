@@ -26,6 +26,7 @@ for (const name of ['musl', 'musl-utils']) {
   );
   assert.match(entry ?? '', /^V:1\.2\.6-r3$/m, 'Correção do musl ausente.');
 }
+await access('/app/licenses/third-party/qrcode-generator-MIT.txt');
 for (const name of ['Manrope-OFL.txt', 'SourceSans3-OFL.txt'])
   await access(`/app/licenses/fonts/${name}`);
 for (const file of [

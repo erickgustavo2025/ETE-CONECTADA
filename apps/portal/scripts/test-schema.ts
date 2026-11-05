@@ -246,6 +246,10 @@ async function main() {
     );
     assert.match(constraint('declaration_pdf_archives_size_check'), /16777216/);
     assert.match(constraint('declaration_pdf_archives_pages_check'), /100/);
+    assert.match(
+      constraint('declaration_pdf_archives_template_check'),
+      /minuta-a4-qr-v1/,
+    );
     assert.equal(
       column('declaration_documents', 'archive_sha256').is_nullable,
       'YES',

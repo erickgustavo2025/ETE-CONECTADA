@@ -72,6 +72,12 @@ jobs:
           npm run test:unit
           npm run test:guards
 
+      - name: Conferir leitura do QR nos dois PDFs
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends poppler-utils
+          npm run test:pdf-qr
+
       - name: Compilar portal e site
         run: npm run build
 
@@ -82,7 +88,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       TEST_DB_CONTAINER: ete-test-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
@@ -137,7 +143,7 @@ jobs:
         run: npm exec --workspace @ete-conectada/portal -- playwright install --with-deps chromium
 
       - name: Testar jornadas em navegador com dados sintéticos
-        run: npm run test:browser
+        run: npm run test:browser --workspace @ete-conectada/portal -- --global-timeout=600000
         env:
           NEXT_TELEMETRY_DISABLED: '1'
 

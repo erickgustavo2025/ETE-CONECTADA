@@ -112,6 +112,11 @@ export async function changeDeclarationDocument(
       );
     }
     if (original.status === 'ISSUED') {
+      if (input.action === 'SUPERSEDED')
+        throw new RequestError(
+          'Para substituir uma declaração emitida, faça uma nova emissão.',
+          422,
+        );
       const current = await tx.declarationCurrentIssue.findUnique({
         where: {
           enrollmentId_documentType: {
@@ -169,17 +174,6 @@ export async function changeDeclarationDocument(
         createdById: accountId,
       },
     });
-    if (original.status === 'ISSUED' && input.successorId) {
-      await tx.declarationCurrentIssue.update({
-        where: {
-          enrollmentId_documentType: {
-            enrollmentId: original.enrollmentId,
-            documentType: 'DECLARACAO_VINCULO',
-          },
-        },
-        data: { documentId: input.successorId },
-      });
-    }
     return { created: true, action };
   });
 }

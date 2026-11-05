@@ -10,6 +10,7 @@ import { createDeclarationPdf } from './declaration-pdf';
 import { preparePdfArchive } from './declaration-pdf-archive-input';
 import { RequestError, validRequestId } from './declaration-requests';
 import { calendarDay } from './course-calendar-input';
+import { verificationLink } from './public-verification-input';
 
 const issuedSelect = {
   id: true,
@@ -80,10 +81,18 @@ export async function issueTestDeclaration(accountId: string, value: unknown) {
   const createdAt = new Date();
   const id = randomUUID(),
     publicCode = randomBytes(32).toString('base64url');
+  const verification = content
+    ? { code: publicCode, url: verificationLink(publicCode) }
+    : null;
   const file = content
     ? await preparePdfArchive(
-        await createDeclarationPdf(content.student, content.fields),
+        await createDeclarationPdf(
+          content.student,
+          content.fields,
+          verification!,
+        ),
         1,
+        'minuta-a4-qr-v1',
       )
     : null;
   return db.$transaction(
@@ -144,7 +153,11 @@ export async function issueTestDeclaration(accountId: string, value: unknown) {
           origin: 'STUDENT_REQUEST',
           requestKey: input.requestKey,
           snapshotVersion: 2,
-          snapshot: content.snapshot,
+          snapshot: {
+            ...content.snapshot,
+            verificationVersion: 1,
+            verificationUrl: verification!.url,
+          },
           sourcePdfSha256: file.sha256,
           archiveSha256: file.sha256,
           sourcePdfPage: 1,

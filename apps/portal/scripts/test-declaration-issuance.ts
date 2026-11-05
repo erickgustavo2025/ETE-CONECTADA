@@ -9,6 +9,8 @@ import { readArchivedDeclarationPdf } from '../src/lib/declaration-pdf-archive';
 import { searchDocuments } from '../src/lib/document-search';
 
 async function main() {
+  const previousOrigin = process.env.PORTAL_PUBLIC_URL;
+  process.env.PORTAL_PUBLIC_URL = 'https://portal.example.invalid';
   const previous = process.env.DECLARATION_REGISTRY_PREVIEW;
   process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
   const env = await openTestEnvironment();
@@ -362,6 +364,8 @@ async function main() {
       await db.courseOffering.deleteMany({ where: { id: { in: offerings } } });
     } finally {
       await env.close();
+      if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
+      else process.env.PORTAL_PUBLIC_URL = previousOrigin;
       if (previous === undefined)
         delete process.env.DECLARATION_REGISTRY_PREVIEW;
       else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
