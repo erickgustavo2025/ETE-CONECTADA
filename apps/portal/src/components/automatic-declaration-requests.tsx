@@ -1,4 +1,5 @@
 'use client';
+import { newRequestKey as newKey } from '@/lib/request-key';
 import { useEffect, useRef, useState } from 'react';
 import BirthplaceDialog, {
   type BirthplaceSummary,
@@ -16,17 +17,9 @@ type Props = {
   enrollmentId: string | null;
   initialRequests: RequestSummary[];
   birthplace: BirthplaceSummary | null;
+  issuanceBlocked?: boolean;
 };
-const newKey = () => {
-  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 15) | 64;
-  bytes[8] = (bytes[8] & 63) | 128;
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(
-    '',
-  );
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-};
+
 const failure = (value: { error?: unknown }, fallback: string) =>
   typeof value.error === 'string' ? value.error : fallback;
 
@@ -34,6 +27,7 @@ export default function AutomaticDeclarationRequests({
   enrollmentId,
   initialRequests,
   birthplace,
+  issuanceBlocked = false,
 }: Props) {
   const [requests, setRequests] = useState(initialRequests);
   const [busy, setBusy] = useState('');
@@ -222,6 +216,12 @@ export default function AutomaticDeclarationRequests({
 
   return (
     <div className="student-requests">
+      {issuanceBlocked && (
+        <p className="document-notice">
+          A emissão de novas declarações está bloqueada. Procure a secretaria.
+          Você pode abrir e baixar os documentos anteriores.
+        </p>
+      )}
       <div className="request-callout">
         <div>
           <h2>Precisa de uma declaração?</h2>
@@ -233,7 +233,7 @@ export default function AutomaticDeclarationRequests({
         <button
           className="ete-button"
           type="button"
-          disabled={!!busy || !enrollmentId}
+          disabled={!!busy || !enrollmentId || issuanceBlocked}
           aria-busy={busy === 'request'}
           onClick={() => {
             setFailed(false);

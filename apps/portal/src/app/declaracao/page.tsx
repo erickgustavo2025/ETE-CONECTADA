@@ -10,9 +10,13 @@ export const metadata = { title: 'Solicitar declaração | ETE CONECTADA' };
 export default async function DeclarationPage() {
   const session = await currentSession();
   if (!session) redirect('/login');
-  const [student, requests] = await Promise.all([
+  const [student, requests, access] = await Promise.all([
     declarationStudent(getDb(), session.studentId),
     studentRequests(session.studentId),
+    getDb().student.findUnique({
+      where: { id: session.studentId },
+      select: { issuanceBlocked: true },
+    }),
   ]);
   const enrollment = student?.enrollments[0];
   const automatic =
@@ -64,6 +68,7 @@ export default async function DeclarationPage() {
         )}
         <StudentDeclarationRequests
           automatic={automatic}
+          issuanceBlocked={access?.issuanceBlocked ?? true}
           enrollmentId={enrollment?.id ?? null}
           initialRequests={requests}
           birthplace={
