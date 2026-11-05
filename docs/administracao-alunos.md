@@ -1,5 +1,7 @@
 # Alunos e acesso
 
+A exigência adicional de 05/11 para histórico administrativo sem edição ou exclusão está em [Histórico administrativo protegido](seguranca/auditoria-administrativa.md). A proteção atual contra UPDATE descrita abaixo não cobre ainda DELETE, TRUNCATE nem exclusões em cascata; o reforço e os testes completos são pendências da EC067.
+
 Fatia experimental EC124, disponível apenas em desenvolvimento/teste com DECLARATION_REGISTRY_PREVIEW=true. Produção continua recusada. Não altera papel, senha, e-mail, filiação ou situação escolar.
 
 A secretaria pode buscar alunos por nome/matrícula, modalidade, turma e situação de bloqueio. São20 resultados por página e até10 matrículas recentes por aluno, sem CPF, nascimento, filiação, senha ou tokens. A conta da secretaria não aparece como aluno administrável. O detalhe traz o histórico dos bloqueios,20 registros por página.
