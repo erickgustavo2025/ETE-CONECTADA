@@ -747,7 +747,11 @@ async function main() {
     const pages = await fetch(`${base}/secretaria/declaracoes`, {
       headers: { Cookie: studentCookie },
     });
-    assert.match(await pages.text(), /Acesso restrito ao atendimento escolar/);
+    assert.equal(
+      pages.status,
+      404,
+      'Aluno não acessa o painel administrativo e não recebe a tela antiga.',
+    );
     console.log(
       'OK: solicitações persistidas e concorrentes, isolamento de alunos, preparação sem liberar retirada, confirmação e auditoria da retirada, autorização/origem, fotos e PDF do aluno removidos, frequência e lote A4.',
     );

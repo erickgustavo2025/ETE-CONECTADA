@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { downloadDeclaration } from './declaration-download';
 import { useFormValidation } from './use-form-validation';
 import {
   documentStateLabels,
@@ -17,6 +18,7 @@ const date = (value: string) =>
   }).format(new Date(value));
 type Filters = {
   query: string;
+  records: 'documents' | 'requests';
   className: string;
   mode: string;
   status: string;
@@ -24,6 +26,7 @@ type Filters = {
   to: string;
 };
 const initial: Filters = {
+  records: 'documents',
   query: '',
   className: '',
   mode: '',
@@ -47,10 +50,12 @@ async function search(body: object, signal?: AbortSignal) {
   return result;
 }
 export default function DocumentRegistry() {
+  const [fileBusy, setFileBusy] = useState(false);
+  const [fileError, setFileError] = useState('');
   const validation = useFormValidation('registry-search-error'),
     actionValidation = useFormValidation('registry-action-error');
   const [filters, setFilters] = useState(initial),
-    [applied, setApplied] = useState<Filters | null>(null);
+    [applied, setApplied] = useState<Filters | null>(initial);
   const [student, setStudent] = useState<DocumentStudent | null>(null),
     [page, setPage] = useState(1),
     [revision, setRevision] = useState(0);
@@ -106,6 +111,7 @@ export default function DocumentRegistry() {
     if (!documentId) return;
     const controller = new AbortController();
     setDetail(null);
+    setFileError('');
     setDetailError('');
     setDetailLoading(true);
     search({ documentId }, controller.signal)
@@ -167,6 +173,47 @@ export default function DocumentRegistry() {
     window.addEventListener('beforeunload', unload);
     return () => window.removeEventListener('beforeunload', unload);
   }, [saving]);
+  async function downloadOriginal() {
+    if (!detail || fileBusy) return;
+    setFileBusy(true);
+    setFileError('');
+    try {
+      const response = await fetch('/api/secretaria/documentos/arquivo', {
+        method: 'POST',
+        cache: 'no-store',
+        signal: AbortSignal.timeout(20000),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentId: detail.document.id,
+          download: true,
+        }),
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(
+          typeof result.error === 'string'
+            ? result.error
+            : 'Não foi possível baixar o PDF.',
+        );
+      }
+      if (response.headers.get('content-type') !== 'application/pdf')
+        throw new Error(
+          'Arquivo indisponível. Atualize a lista e tente novamente.',
+        );
+      await downloadDeclaration(
+        response,
+        'declaracao-original-' + detail.document.id.slice(-8) + '.pdf',
+      );
+    } catch (error) {
+      setFileError(
+        error instanceof Error && error.name === 'Error'
+          ? error.message
+          : 'Não foi possível baixar o PDF. Tente novamente.',
+      );
+    } finally {
+      setFileBusy(false);
+    }
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!validation.ready || !validation.validate(event.currentTarget)) return;
@@ -270,13 +317,11 @@ export default function DocumentRegistry() {
     totalPages = Math.max(1, Math.ceil((results?.total ?? 0) / 20));
   return (
     <section className="document-page">
-      <Link href="/secretaria/declaracoes">
-        Voltar ao atendimento de declarações
-      </Link>
-      <h1>Histórico de documentos</h1>
+      <h1>Declarações dos alunos</h1>
       <p className="document-intro">
-        Encontre o aluno para consultar os documentos e acompanhar cancelamentos
-        e substituições.
+        Consulte as solicitações e os documentos de cada aluno. Use os filtros
+        para encontrar uma turma, conferir uma declaração ou registrar seu
+        cancelamento.
       </p>
       <aside className="document-notice">
         <strong>Área de testes: documentos sem validade oficial</strong>
@@ -291,12 +336,31 @@ export default function DocumentRegistry() {
         aria-label="Buscar documentos por aluno"
       >
         <div className={styles.filters}>
+          <label className="declaration-field">
+            Consultar
+            <select
+              name="records"
+              disabled={!validation.ready}
+              aria-label="Consultar"
+              value={filters.records}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  records: e.target.value as Filters['records'],
+                  status: '',
+                })
+              }
+            >
+              <option value="documents">Documentos</option>
+              <option value="requests">Solicitações</option>
+            </select>
+          </label>
           <label className={'declaration-field ' + styles.wide}>
             Nome ou matrícula do aluno
             <input
               name="query"
+              disabled={!validation.ready}
               type="search"
-              required
               minLength={2}
               maxLength={180}
               value={filters.query}
@@ -310,6 +374,8 @@ export default function DocumentRegistry() {
             Modalidade
             <select
               name="mode"
+              disabled={!validation.ready}
+              aria-label="Modalidade"
               value={filters.mode}
               onChange={(e) => setFilters({ ...filters, mode: e.target.value })}
             >
@@ -322,13 +388,24 @@ export default function DocumentRegistry() {
             Situação
             <select
               name="status"
+              disabled={!validation.ready}
+              aria-label="Situação"
               value={filters.status}
               onChange={(e) =>
                 setFilters({ ...filters, status: e.target.value })
               }
             >
               <option value="">Todas as situações</option>
-              {Object.entries(documentStateLabels).map(([value, label]) => (
+              {Object.entries(
+                filters.records === 'requests'
+                  ? {
+                      REQUESTED: 'Pedido antigo recebido',
+                      IN_PREPARATION: 'Pedido antigo em preparação',
+                      READY_FOR_PICKUP: 'Atendimento antigo concluído',
+                      AVAILABLE: 'PDF gerado automaticamente',
+                    }
+                  : documentStateLabels,
+              ).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -339,6 +416,7 @@ export default function DocumentRegistry() {
             Nome exato da turma (opcional)
             <input
               name="className"
+              disabled={!validation.ready}
               maxLength={120}
               placeholder="Ex.: 1A DS"
               value={filters.className}
@@ -351,6 +429,7 @@ export default function DocumentRegistry() {
             Registrado a partir de
             <input
               name="from"
+              disabled={!validation.ready}
               type="date"
               value={filters.from}
               onChange={(e) => setFilters({ ...filters, from: e.target.value })}
@@ -361,6 +440,7 @@ export default function DocumentRegistry() {
             Registrado até
             <input
               name="to"
+              disabled={!validation.ready}
               type="date"
               value={filters.to}
               onChange={(e) => setFilters({ ...filters, to: e.target.value })}
@@ -381,7 +461,7 @@ export default function DocumentRegistry() {
               ? 'Carregando…'
               : loading
                 ? 'Buscando…'
-                : 'Buscar aluno'}
+                : 'Buscar declarações'}
           </button>
           <button
             type="button"
@@ -420,8 +500,7 @@ export default function DocumentRegistry() {
       ) : null}
       {!applied && (
         <p className="document-empty">
-          Digite o nome ou a matrícula. A lista de todos os alunos não é exibida
-          aqui.
+          Use os filtros para consultar as declarações.
         </p>
       )}
       {results && !loading && !error && (
@@ -442,7 +521,12 @@ export default function DocumentRegistry() {
               </button>
             </div>
           ) : (
-            <h2>Alunos encontrados: {results.total}</h2>
+            <h2>
+              {applied?.records === 'requests'
+                ? 'Solicitações encontradas'
+                : 'Alunos encontrados'}
+              : {results.total}
+            </h2>
           )}
           {!results.total && (
             <p className="document-empty">
@@ -451,6 +535,52 @@ export default function DocumentRegistry() {
             </p>
           )}
           <ul className={styles.rows}>
+            {results.requests?.map((request) => (
+              <li className={styles.row} key={request.id}>
+                <strong>{request.name}</strong>
+                <p>
+                  Matrícula: {request.registration || 'Não informada'} ·{' '}
+                  {request.mode === 'INTEGRADO' ? 'Integrado' : 'Subsequente'} ·{' '}
+                  {request.className}
+                </p>
+                <p>
+                  Solicitada em {date(request.createdAt)}
+                  {request.period ? ' · ' + request.period : ''}
+                </p>
+                <p>
+                  {
+                    {
+                      REQUESTED: 'Pedido antigo recebido',
+                      IN_PREPARATION: 'Pedido antigo em preparação',
+                      READY_FOR_PICKUP: 'Atendimento antigo concluído',
+                      AVAILABLE: 'PDF gerado automaticamente',
+                    }[request.status]
+                  }
+                </p>
+                {request.document ? (
+                  <>
+                    <p>
+                      Situação do documento:{' '}
+                      {documentStateLabels[request.document.state]}
+                    </p>
+                    <button
+                      className="ete-button ete-button--secondary"
+                      onClick={() => {
+                        trigger.current = document.activeElement as HTMLElement;
+                        setDocumentId(request.document!.id);
+                      }}
+                    >
+                      Consultar declaração
+                    </button>
+                  </>
+                ) : (
+                  <p>
+                    Registro do atendimento anterior, sem PDF disponível neste
+                    pedido.
+                  </p>
+                )}
+              </li>
+            ))}
             {results.students.map((s) => (
               <li className={styles.row} key={s.id}>
                 <strong>{s.name}</strong>
@@ -487,7 +617,7 @@ export default function DocumentRegistry() {
                     setDocumentId(d.id);
                   }}
                 >
-                  Conferir documento {d.id.slice(-8)}
+                  Ver declaração {d.id.slice(-8)}
                 </button>
               </li>
             ))}
@@ -525,12 +655,9 @@ export default function DocumentRegistry() {
         </>
       )}
       {documentId && (
-        <section
-          aria-label="Conferência do documento"
-          aria-busy={detailLoading}
-        >
+        <section aria-label="Detalhes da declaração" aria-busy={detailLoading}>
           <h2 ref={heading} tabIndex={-1}>
-            Conferência do documento
+            Detalhes da declaração
           </h2>
           {detailLoading ? (
             <p role="status">Carregando o documento…</p>
@@ -558,6 +685,16 @@ export default function DocumentRegistry() {
                   {detail.document.body ||
                     'Texto não disponível neste registro de teste.'}
                 </div>
+                {fileError && <p role="alert">{fileError}</p>}
+                {detail.document.hasOriginal && (
+                  <button
+                    className="ete-button ete-button--secondary"
+                    disabled={fileBusy}
+                    onClick={downloadOriginal}
+                  >
+                    {fileBusy ? 'Baixando PDF…' : 'Baixar PDF original'}
+                  </button>
+                )}
                 {detail.document.verificationPath && (
                   <Link
                     className="ete-button ete-button--secondary"

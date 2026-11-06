@@ -75,24 +75,14 @@ async function main() {
       fetch(base + '/api/secretaria/solicitacoes?' + query, {
         headers: { Cookie: cookie },
       });
-    const html = await (
-      await fetch(base + '/secretaria/declaracoes', {
-        headers: { Cookie: cookies.secretary },
-      })
-    ).text();
-    for (const label of ['Integrado', 'Subsequente']) {
-      const button = html.match(
-        new RegExp(
-          '<button[^>]*aria-pressed="(?:true|false)"[^>]*>' +
-            label +
-            '</button>',
-        ),
-      )?.[0];
-      assert.ok(
-        button?.includes('disabled=""'),
-        'Filtro deve aguardar os handlers do cliente no HTML inicial.',
-      );
-    }
+    const legacyPage = await fetch(base + '/secretaria/declaracoes', {
+      headers: { Cookie: cookies.secretary },
+    });
+    assert.equal(
+      legacyPage.status,
+      404,
+      'Sem a chave de revisão não deve reaparecer a tela antiga de preparar/retirada.',
+    );
     for (const mode of ['admin', 'integrado', 'INTEGRADO,SUBSEQUENTE', '']) {
       assert.equal(
         (await get('mode=' + encodeURIComponent(mode))).status,

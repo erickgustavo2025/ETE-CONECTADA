@@ -209,12 +209,16 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
   }
 });
 
-test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo aluno', async ({
+test('aluno gera PDF e secretaria consulta o mesmo documento sem aprovação por pedido', async ({
   page,
   context,
 }) => {
   const { openTestEnvironment } =
     await import('../../scripts/test-environment');
+  const previousPreview = process.env.DECLARATION_REGISTRY_PREVIEW;
+  const previousOrigin = process.env.PORTAL_PUBLIC_URL;
+  process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
+  process.env.PORTAL_PUBLIC_URL = 'https://portal.example.invalid';
   const environment = await openTestEnvironment({ http: true });
   const { db, base } = environment;
   const suffix = randomBytes(8).toString('hex');
@@ -303,126 +307,103 @@ test('aluno solicita, secretaria gera PDF e libera retirada acompanhada pelo alu
     await expect(
       page.getByRole('heading', { name: 'Declaração de vínculo' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Solicitar declaração' }).click();
-    await page.getByLabel(/Confirmo/).check();
     await page
-      .getByRole('button', { name: 'Enviar solicitação', exact: true })
+      .getByRole('button', { name: 'Gerar declaração', exact: true })
+      .click();
+    const birthplace = page.getByRole('dialog', { name: 'Onde você nasceu?' });
+    await birthplace
+      .getByLabel('Confirmo que este é meu local de nascimento.')
+      .check();
+    await birthplace
+      .getByRole('button', { name: 'Gerar declaração', exact: true })
       .click();
     await expect(
-      page.getByText('Solicitação enviada. Acompanhe o atendimento abaixo.'),
-    ).toBeVisible();
-    await expect(page.getByText('Solicitada', { exact: true })).toBeVisible();
-
-    await page.context().clearCookies();
-    await login(page, base, secretaryAccount.email!, password);
-    await page.goto(`${base}/secretaria/declaracoes`);
-    await expect(
-      page.getByRole('heading', { name: 'Solicitações dos alunos' }),
-    ).toBeVisible();
-    await expect(page.getByText(student.fullName!)).toBeVisible();
-    await page.getByRole('button', { name: 'Preparar declaração' }).click();
-    for (const width of [320, 640, 1440]) {
-      await page.setViewportSize({ width, height: 900 });
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= window.innerWidth,
-        ),
-      ).toBe(true);
-    }
-    await page.setViewportSize({ width: 320, height: 900 });
-    await expect(page.getByLabel('Cidade e estado de nascimento')).toHaveValue(
-      'Recife/PE',
-    );
-    await expect(page.getByLabel('Nome do pai ou da mãe')).toHaveValue(
-      'RESPONSÁVEL SINTÉTICO UM',
-    );
-    await expect(
-      page.getByLabel('Nome do outro pai ou da outra mãe (se houver)'),
-    ).toHaveValue('RESPONSÁVEL SINTÉTICO DOIS');
-    await expect(page.getByLabel('Nome oficial do curso técnico')).toHaveValue(
-      'Desenvolvimento de Sistemas',
-    );
-    await expect(page.getByLabel('Período letivo')).not.toHaveValue('');
-    await page
-      .getByLabel('Dias e horários, se necessário')
-      .fill('Dias e horários fictícios para teste');
-    await expect(
-      page.getByText('100%, conforme orientação da secretaria', {
-        exact: false,
-      }),
-    ).toBeVisible();
-    await page.getByLabel(/Conferi a matrícula, os dados pessoais/).check();
-    const downloadEvent = page.waitForEvent('download');
-    await page
-      .getByRole('button', { name: 'Baixar só esta declaração' })
-      .click();
-    const download = await downloadEvent;
-    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
-    const pdfPath = await download.path();
-    expect(pdfPath).toBeTruthy();
-    const pdf = await import('node:fs/promises').then(({ readFile }) =>
-      readFile(pdfPath!),
-    );
-    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
-    await expect(
-      page.getByText(/PDF de teste pronto\. Abra o arquivo/),
+      page.getByText('Disponível para baixar', { exact: true }),
     ).toBeVisible();
     const request = await db.declarationRequest.findFirstOrThrow({
       where: { studentId: student.id },
+      include: { document: { include: { archive: true } } },
     });
-    expect(request.status).toBe('IN_PREPARATION');
-
-    const release = page.getByRole('button', { name: 'Liberar retirada' });
-    await release.focus();
-    await release.press('Enter');
-    await expect(
-      page.getByRole('button', { name: 'Ainda não está pronto' }),
-    ).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(release).toBeFocused();
-    await release.press('Enter');
-    const confirm = page.getByRole('button', {
-      name: 'Confirmar retirada disponível',
-    });
-    await expect(confirm).toBeDisabled();
-    await page.getByLabel(/Confirmo que o documento foi impresso/).check();
-    await confirm.click();
-    await expect(
-      page.getByText(/marcada como pronta para retirada/),
-    ).toBeVisible();
-    const completed = await db.declarationRequest.findUniqueOrThrow({
-      where: { id: request.id },
-    });
-    expect(completed.status).toBe('READY_FOR_PICKUP');
-    expect(completed.readyAt).toBeTruthy();
-
-    await context.clearCookies();
-    await login(page, base, studentAccount.email!, password);
-    await page.goto(`${base}/declaracao`);
-    await expect(
-      page.getByText('Pronta para retirada', { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText('Você já pode buscar na secretaria da escola.'),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Atualizar status' }),
-    ).toBeVisible();
-    await expect(page.getByRole('link', { name: /PDF|baixar/i })).toHaveCount(
-      0,
+    expect(request.status).toBe('AVAILABLE');
+    expect(request.document?.snapshot).toMatchObject({ mode: 'INTEGRADO' });
+    expect(JSON.stringify(request.document?.snapshot)).toContain('100%');
+    const downloadEvent = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Baixar', exact: true }).click();
+    const download = await downloadEvent;
+    const pdf = await import('node:fs/promises').then(async ({ readFile }) =>
+      readFile((await download.path())!),
     );
+    expect(pdf).toEqual(Buffer.from(request.document!.archive!.bytes));
+    await context.clearCookies();
+    await login(page, base, secretaryAccount.email!, password);
+    await page.goto(base + '/secretaria/declaracoes');
+    await expect(
+      page.getByRole('heading', {
+        name: 'Declarações dos alunos',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page.getByLabel('Nome ou matrícula do aluno').fill(suffix);
+    await page
+      .getByRole('button', { name: 'Buscar declarações', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Ver documentos de ' + student.fullName })
+      .click();
+    await page
+      .getByRole('button', {
+        name: 'Ver declaração ' + request.document!.id.slice(-8),
+      })
+      .click();
+    await expect(
+      page.getByRole('region', {
+        name: 'Detalhes da declaração',
+        exact: true,
+      }),
+    ).toContainText('100%');
+    await expect(
+      page.getByRole('button', {
+        name: /Preparar declaração|Liberar retirada/,
+      }),
+    ).toHaveCount(0);
+    expect(
+      await db.declarationDocument.count({ where: { studentId: student.id } }),
+    ).toBe(1);
+    expect(
+      (
+        await db.declarationRequest.findUniqueOrThrow({
+          where: { id: request.id },
+        })
+      ).status,
+    ).toBe('AVAILABLE');
   } finally {
     try {
       if (studentId) {
         const ids = [studentId, secretaryId].filter((id): id is string => !!id);
+        await db.declarationCurrentIssue.deleteMany({
+          where: { studentId: { in: ids } },
+        });
+        await db.declarationDocumentAction.deleteMany({
+          where: { studentId: { in: ids } },
+        });
         await db.declarationRequest.deleteMany({
           where: { studentId: { in: ids } },
         });
-        await db.account.deleteMany({ where: { studentId: { in: ids } } });
+        await db.declarationDocument.deleteMany({
+          where: { studentId: { in: ids } },
+        });
+        await db.declarationPdfArchive.deleteMany({
+          where: { documents: { none: {} } },
+        });
         await db.student.deleteMany({ where: { id: { in: ids } } });
       }
     } finally {
       await environment.close();
+      if (previousPreview === undefined)
+        delete process.env.DECLARATION_REGISTRY_PREVIEW;
+      else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
+      if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
+      else process.env.PORTAL_PUBLIC_URL = previousOrigin;
     }
   }
 });

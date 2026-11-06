@@ -51,6 +51,23 @@ function day(value: string, key: string) {
   return date;
 }
 export async function searchDocuments(body: Record<string, unknown>) {
+  const allowed = [
+    'documentId',
+    'query',
+    'className',
+    'mode',
+    'status',
+    'studentId',
+    'from',
+    'to',
+    'page',
+    'records',
+  ];
+  if (Object.keys(body).some((key) => !allowed.includes(key)))
+    throw new DeclarationValidationError('Confira os filtros da busca.');
+  const records = body.records ?? 'documents';
+  if (!['documents', 'requests'].includes(String(records)))
+    throw new DeclarationValidationError('Escolha documentos ou solicitações.');
   const db = getDb();
   const documentId = text(body, 'documentId', 36);
   if (documentId) {
@@ -64,6 +81,7 @@ export async function searchDocuments(body: Record<string, unknown>) {
         publicCode: true,
         enrollmentId: true,
         sourcePdfSha256: true,
+        archiveSha256: true,
         createdBy: { select: { student: { select: { fullName: true } } } },
         terminalActions: {
           select: {
@@ -110,6 +128,7 @@ export async function searchDocuments(body: Record<string, unknown>) {
             ? '/validar/' + row.publicCode
             : null,
         body: snapshotText(row.snapshot, 'body'),
+        hasOriginal: row.archiveSha256 !== null,
         sourcePdfSha256: row.sourcePdfSha256,
         history: [
           {
@@ -154,7 +173,11 @@ export async function searchDocuments(body: Record<string, unknown>) {
     );
   if (
     status &&
-    !['DRAFT', 'ISSUED', 'CANCELLED', 'SUPERSEDED'].includes(status)
+    !(
+      records === 'requests'
+        ? ['REQUESTED', 'IN_PREPARATION', 'READY_FOR_PICKUP', 'AVAILABLE']
+        : ['DRAFT', 'ISSUED', 'CANCELLED', 'SUPERSEDED']
+    ).includes(status)
   )
     throw new DeclarationValidationError(
       'Escolha uma situação válida.',
@@ -170,6 +193,99 @@ export async function searchDocuments(body: Record<string, unknown>) {
   const page = body.page === undefined ? 1 : Number(body.page);
   if (!Number.isSafeInteger(page) || page < 1 || page > 10000)
     throw new DeclarationValidationError('Escolha uma página válida.');
+  if (records === 'requests') {
+    const where: Prisma.DeclarationRequestWhereInput = {
+      ...(status
+        ? {
+            status: status as
+              | 'REQUESTED'
+              | 'IN_PREPARATION'
+              | 'READY_FOR_PICKUP'
+              | 'AVAILABLE',
+          }
+        : {}),
+      ...(studentId ? { studentId: studentId.toLowerCase() } : {}),
+      ...(mode || className
+        ? {
+            enrollment: {
+              ...(mode ? { mode: mode as 'INTEGRADO' | 'SUBSEQUENTE' } : {}),
+              ...(className ? { className } : {}),
+            },
+          }
+        : {}),
+      ...(query
+        ? {
+            student: {
+              OR: [
+                { fullName: { contains: query, mode: 'insensitive' } },
+                { schoolRegistration: { startsWith: query } },
+              ],
+            },
+          }
+        : {}),
+      ...(from || to
+        ? {
+            createdAt: {
+              ...(from ? { gte: from } : {}),
+              ...(to ? { lt: new Date(to.getTime() + 86400000) } : {}),
+            },
+          }
+        : {}),
+    };
+    return db.$transaction(
+      async (tx) => {
+        const total = await tx.declarationRequest.count({ where });
+        const actual = Math.min(page, Math.max(1, Math.ceil(total / 20)));
+        const rows = await tx.declarationRequest.findMany({
+          where,
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+            student: { select: { fullName: true, schoolRegistration: true } },
+            enrollment: {
+              select: { className: true, mode: true, periodLabel: true },
+            },
+            document: {
+              select: {
+                id: true,
+                status: true,
+                terminalActions: { select: { action: true } },
+              },
+            },
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          skip: (actual - 1) * 20,
+          take: 20,
+        });
+        return {
+          students: [],
+          documents: [],
+          requests: rows.map((r) => ({
+            id: r.id,
+            name: r.student.fullName ?? 'Aluno sem nome informado',
+            registration: r.student.schoolRegistration,
+            status: r.status,
+            createdAt: r.createdAt.toISOString(),
+            className: r.enrollment.className,
+            mode: r.enrollment.mode,
+            period: r.enrollment.periodLabel,
+            document: r.document
+              ? {
+                  id: r.document.id,
+                  state: (r.document.terminalActions[0]?.action ??
+                    r.document.status) as DocumentState,
+                }
+              : null,
+          })),
+          total,
+          page: actual,
+          pageSize: 20,
+        };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
   const filters: Prisma.DeclarationDocumentWhereInput[] = [];
   if (className)
     filters.push({ snapshot: { path: ['className'], equals: className } });
@@ -210,14 +326,16 @@ export async function searchDocuments(body: Record<string, unknown>) {
           pageSize,
         };
       }
-      if (!query)
-        return { students: [], documents: [], total: 0, page: 1, pageSize };
       const where: Prisma.StudentWhereInput = {
         declarationDocuments: { some: documentWhere },
-        OR: [
-          { fullName: { contains: query, mode: 'insensitive' } },
-          { schoolRegistration: { startsWith: query } },
-        ],
+        ...(query
+          ? {
+              OR: [
+                { fullName: { contains: query, mode: 'insensitive' } },
+                { schoolRegistration: { startsWith: query } },
+              ],
+            }
+          : {}),
       };
       const total = await tx.student.count({ where });
       const actual = Math.min(page, Math.max(1, Math.ceil(total / pageSize)));

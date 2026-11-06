@@ -1,5 +1,7 @@
 # Turmas e períodos a partir do XLS
 
+Na correção da fase de teste, a tela e API de cadastro manual foram aposentadas: o atalho antigo leva à importação e as operações manuais autenticadas recebem410. Referências e histórico internos são preservados; ver [Painel de declarações](painel-declaracoes.md).
+
 EC125 substitui o cadastro prévio de calendário na importação das duas modalidades. O arquivo continua passando pelo leitor isolado, limites, validação de conteúdo, prévia privada e confirmação transacional já existentes.
 
 ## Conferência da secretaria
