@@ -230,6 +230,7 @@ async function main() {
       });
     const cases: [string, number, unknown?][] = [
       ['/api/secretaria/documentos/busca', 404, {}],
+      ['/api/secretaria/documentos/arquivo', 404, {}],
       ['/api/secretaria/documentos/alteracoes', 404, {}],
       [
         '/api/login',

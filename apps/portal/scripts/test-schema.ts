@@ -35,8 +35,10 @@ const columns: Record<string, string> = {
     'id offering_id revision schedule created_at created_by_id',
   sheet_import_previews:
     'actor_id token_hash input_hash snapshot_hash expires_at consumed_at result',
+  declaration_pdf_archives:
+    'sha256 bytes page_count template_version created_at',
   declaration_documents:
-    'id public_code student_id enrollment_id created_by_id created_at status snapshot_version snapshot source_pdf_sha256 source_pdf_page',
+    'id public_code student_id enrollment_id created_by_id created_at status snapshot_version snapshot source_pdf_sha256 source_pdf_page archive_sha256',
   declaration_requests:
     'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id',
   portal_schema_migrations: 'version applied_at',
@@ -232,6 +234,21 @@ async function main() {
       /FOREIGN KEY \(enrollment_id, student_id\) REFERENCES enrollments\(id, student_id\).*ON DELETE RESTRICT/,
     );
     assert.match(constraint('declaration_documents_status_check'), /DRAFT/);
+    assert.match(
+      constraint('declaration_documents_archive_hash_check'),
+      /source_pdf_sha256/,
+    );
+    assert.match(
+      constraint('declaration_pdf_archives_hash_check'),
+      /sha256\(bytes\)/,
+    );
+    assert.match(constraint('declaration_pdf_archives_size_check'), /16777216/);
+    assert.match(constraint('declaration_pdf_archives_pages_check'), /100/);
+    assert.equal(
+      column('declaration_documents', 'archive_sha256').is_nullable,
+      'YES',
+    );
+    assert.equal(column('declaration_pdf_archives', 'bytes').udt_name, 'bytea');
     assert.match(constraint('declaration_documents_code_check'), /43/);
     assert.match(constraint('declaration_documents_hash_check'), /64/);
     assert.match(

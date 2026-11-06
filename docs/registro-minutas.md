@@ -27,8 +27,12 @@ CPF isolado, credenciais e dados de sessão não fazem parte do registro.
 O SHA-256 corresponde aos bytes do **PDF completo retornado pela geração**.
 Em lote, cada registro guarda o mesmo hash do arquivo e a posição de sua
 página, de 1 a 100. Não confundir esse hash com um arquivo individual extraído
-do lote. Os bytes do PDF não são armazenados nesta etapa; isso ainda depende
-da definição de guarda do documento final.
+do lote. Novas minutas registradas guardam também os bytes exatos do PDF original, com
+limite de 16 MiB, número de páginas e versão do modelo. Um lote guarda um arquivo
+compartilhado, sem duplicar os bytes por aluno. O banco confere hash e tamanho e
+recusa alteração do arquivo ou sua exclusão enquanto houver registros vinculados.
+Minutas antigas continuam sem arquivo; nunca são reconstruídas com dados atuais.
+Isso não transforma a minuta em documento oficial. Retenção institucional segue pendente.
 
 A FK composta impede misturar o aluno com a matrícula de outra pessoa. Um
 gatilho bloqueia alterações do registro; referências a aluno, matrícula e
@@ -78,7 +82,16 @@ Endpoints privados, com origem e papel ativo conferidos no servidor:
   (CANCELLED/SUPERSEDED), `reason`, `confirmed: true` e, para substituir,
   `successorId`. O cliente não escolhe conta responsável ou data.
 
-Não há consulta pública, QR funcional ou download histórico nesta entrega.
+POST `/api/secretaria/documentos/arquivo` recebe somente documentId e download
+opcional, exige sessão de secretaria ativa e mesma origem. Retorna o original
+para abrir ou baixar, com no-store, somente quando o experimento estiver ativo
+em desenvolvimento/teste. O aluno não acessa o lote, nem usando código público.
+
+Reversão operacional: desativar o experimento e voltar à versão anterior da aplicação;
+a migração é aditiva, e os arquivos guardados devem ser preservados. Não remover
+a tabela nem reconstruir bytes históricos para reverter a funcionalidade.
+
+Não há consulta pública, QR funcional ou download histórico do aluno nesta entrega.
 O código de consulta não concede acesso à conta, ao cadastro ou ao PDF.
 A assinatura oficial e a guarda do arquivo final seguem etapas próprias.
 
