@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { openTestEnvironment } from '../../scripts/test-environment';
 import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
+import { issueTestDeclaration } from '../../src/lib/declaration-issuance';
 
 test('secretaria consulta minutas e registra cancelamento/substituição com recuperação de rede', async ({
   page,
@@ -115,7 +116,7 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
       .click();
     const open = (index: number) =>
       page.getByRole('button', {
-        name: 'Conferir minuta ' + docs[index].id.slice(-8),
+        name: 'Conferir documento ' + docs[index].id.slice(-8),
       });
     await open(0).click();
     await expect(
@@ -134,7 +135,7 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
       });
     }
     await page
-      .getByRole('button', { name: 'Cancelar minuta', exact: true })
+      .getByRole('button', { name: 'Cancelar documento', exact: true })
       .click();
     const modal = page.getByRole('dialog');
     await expect(
@@ -143,10 +144,10 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     await page.keyboard.press('Escape');
     await expect(modal).not.toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Cancelar minuta', exact: true }),
+      page.getByRole('button', { name: 'Cancelar documento', exact: true }),
     ).toBeFocused();
     await page
-      .getByRole('button', { name: 'Cancelar minuta', exact: true })
+      .getByRole('button', { name: 'Cancelar documento', exact: true })
       .click();
     await modal
       .getByLabel('Motivo', { exact: true })
@@ -170,7 +171,7 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     await modal.getByRole('button', { name: 'Repetir o mesmo envio' }).click();
     await expect(modal).not.toBeVisible();
     await expect(
-      page.getByText('Minuta cancelada. O pedido do aluno foi preservado.'),
+      page.getByText('Documento cancelado. O pedido do aluno foi preservado.'),
     ).toBeVisible();
     expect(
       await db.declarationDocumentAction.count({
@@ -182,9 +183,9 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
       page.getByText('Texto da minuta fictícia 1', { exact: true }),
     ).toBeVisible();
     await page
-      .getByRole('button', { name: 'Substituir minuta', exact: true })
+      .getByRole('button', { name: 'Substituir documento', exact: true })
       .click();
-    await modal.getByLabel('Minuta corrigida').selectOption(docs[2].id);
+    await modal.getByLabel('Documento substituto').selectOption(docs[2].id);
     await modal
       .getByLabel('Motivo', { exact: true })
       .fill('Nova minuta com os dados corrigidos.');
@@ -193,11 +194,11 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     await expect(modal).not.toBeVisible();
     await expect(
       page.getByText(
-        'Minuta substituída. O histórico original foi preservado.',
+        'Documento substituído. O histórico original foi preservado.',
       ),
     ).toBeVisible();
     await page
-      .getByRole('button', { name: 'Ver minuta substituta', exact: true })
+      .getByRole('button', { name: 'Ver documento substituto', exact: true })
       .click();
     await expect(
       page.getByText('Texto da minuta fictícia 2', { exact: true }),
@@ -209,14 +210,88 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
         })
       ).status,
     ).toBe(request.status);
+    const studentAccount = await db.account.create({
+      data: {
+        studentId: ids[1],
+        email: randomUUID() + '@example.invalid',
+        passwordHash: 'ficticio',
+        status: 'active',
+        role: 'student',
+      },
+    });
+    await db.studentDetails.create({
+      data: {
+        studentId: ids[1],
+        parentOne: 'Filiação fictícia',
+        parentageSource: 'SCHOOL_RECORD',
+        birthCity: 'Recife',
+        birthState: 'PE',
+        birthCountry: 'BR',
+        birthplaceSource: 'SCHOOL_RECORD',
+      },
+    });
+    const issued = await issueTestDeclaration(studentAccount.id, {
+      enrollmentId: e.id,
+      requestKey: randomUUID(),
+    });
+    await page.reload();
+    await page.getByLabel('Nome ou matrícula do aluno').fill(tag);
+    await page
+      .getByRole('button', { name: 'Buscar aluno', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Ver documentos de Aluno sintético ' + tag })
+      .click();
+    await page
+      .getByRole('button', {
+        name: 'Conferir documento ' + issued.document.id.slice(-8),
+        exact: true,
+      })
+      .click();
+    await expect(
+      page
+        .getByRole('region', { name: 'Conferência do documento', exact: true })
+        .locator('p')
+        .first()
+        .getByText('Emitida para teste', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Substituir documento', exact: true }),
+    ).toHaveCount(0);
+    await page.screenshot({
+      path: test.info().outputPath('emissao-teste-1440.png'),
+      fullPage: true,
+    });
+    await page
+      .getByRole('button', { name: 'Cancelar documento', exact: true })
+      .click();
+    await modal
+      .getByLabel('Motivo', { exact: true })
+      .fill('Cancelamento da emissão de teste.');
+    await modal.getByLabel('Conferi o aluno').check();
+    await modal.getByRole('button', { name: 'Confirmar cancelamento' }).click();
+    await expect(modal).not.toBeVisible();
+    expect(
+      (
+        await db.declarationDocumentAction.findUniqueOrThrow({
+          where: { documentId: issued.document.id },
+        })
+      ).action,
+    ).toBe('CANCELLED');
     expect(errors).toEqual([]);
   } finally {
     try {
+      await db.declarationCurrentIssue.deleteMany({
+        where: { studentId: { in: ids } },
+      });
       await db.declarationDocumentAction.deleteMany({
         where: { studentId: { in: ids } },
       });
       await db.declarationDocument.deleteMany({
         where: { studentId: { in: ids } },
+      });
+      await db.declarationPdfArchive.deleteMany({
+        where: { documents: { none: {} } },
       });
       await db.student.deleteMany({ where: { id: { in: ids } } });
     } finally {

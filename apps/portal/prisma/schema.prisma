@@ -285,6 +285,8 @@ model DeclarationDocument {
   createdById String @map("created_by_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   status String @default("DRAFT") @db.VarChar(16)
+  origin String @default("STAFF_DRAFT") @db.VarChar(24)
+  requestKey String? @map("request_key") @db.Uuid
   snapshotVersion Int @default(1) @map("snapshot_version")
   snapshot Json @db.JsonB
   sourcePdfSha256 String @map("source_pdf_sha256") @db.Char(64)
@@ -296,6 +298,8 @@ model DeclarationDocument {
   createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
   terminalActions DeclarationDocumentAction[] @relation("DocumentTerminalAction")
   predecessorActions DeclarationDocumentAction[] @relation("DocumentSuccessor")
+  currentIssues DeclarationCurrentIssue[]
+  @@unique([createdById, requestKey])
   @@unique([id, studentId, enrollmentId])
   @@index([studentId, createdAt])
   @@index([enrollmentId])
@@ -313,6 +317,17 @@ model DeclarationPdfArchive {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   documents DeclarationDocument[]
   @@map("declaration_pdf_archives")
+}
+
+// Ponteiro atual mutável separado do documento e dos eventos imutáveis.
+model DeclarationCurrentIssue {
+  enrollmentId String @map("enrollment_id") @db.Uuid
+  documentType String @default("DECLARACAO_VINCULO") @map("document_type") @db.VarChar(32)
+  studentId String @map("student_id") @db.Uuid
+  documentId String @unique @map("document_id") @db.Uuid
+  document DeclarationDocument @relation(fields: [documentId, studentId, enrollmentId], references: [id, studentId, enrollmentId], onDelete: Restrict, onUpdate: NoAction, map: "declaration_current_issues_document_fkey")
+  @@id([enrollmentId, documentType])
+  @@map("declaration_current_issues")
 }
 
 // Evento terminal único; a minuta original e o evento não são reescritos.

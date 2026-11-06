@@ -114,3 +114,9 @@ As duas verificações integram `npm run test:integration`. O teste Chromium
 `documents.spec.ts` verifica teclado, tela de 320/1440px e resposta perdida após
 uma escrita real, seguida de repetição idempotente. Produção recusa página e
 APIs mesmo com a variável experimental definida como true.
+
+## Evolução do registro
+
+O núcleo de emissão individual e o estado de documento emitido para teste estão
+descritos em [Emissão registrada](emissao-registrada.md). A preparação antiga
+continua gerando minutas; ela não é convertida automaticamente em emissão.

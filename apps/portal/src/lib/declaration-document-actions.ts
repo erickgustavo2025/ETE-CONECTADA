@@ -80,6 +80,8 @@ export async function changeDeclarationDocument(
         'Seu acesso à secretaria mudou. Entre novamente.',
         403,
       );
+    // Mesma ordem de locks da emissão e da importação escolar.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(774056)::text`;
     const ids = [
       ...new Set([
         input.documentId,
@@ -109,10 +111,27 @@ export async function changeDeclarationDocument(
         409,
       );
     }
+    if (original.status === 'ISSUED') {
+      const current = await tx.declarationCurrentIssue.findUnique({
+        where: {
+          enrollmentId_documentType: {
+            enrollmentId: original.enrollmentId,
+            documentType: 'DECLARACAO_VINCULO',
+          },
+        },
+      });
+      if (current?.documentId !== original.id)
+        throw new RequestError(
+          'O documento atual mudou. Atualize a lista.',
+          409,
+        );
+    }
     if (input.successorId) {
       const successor = rows.find((row) => row.id === input.successorId);
       if (
         !successor ||
+        successor.status !== original.status ||
+        successor.origin !== original.origin ||
         successor.studentId !== original.studentId ||
         successor.enrollmentId !== original.enrollmentId
       )
@@ -126,7 +145,8 @@ export async function changeDeclarationDocument(
           : undefined;
       if (
         !period(original.snapshot) ||
-        period(original.snapshot) !== period(successor.snapshot)
+        (original.status === 'DRAFT' &&
+          period(original.snapshot) !== period(successor.snapshot))
       )
         throw new RequestError(
           'A substituta precisa ser do mesmo período letivo.',
@@ -149,6 +169,17 @@ export async function changeDeclarationDocument(
         createdById: accountId,
       },
     });
+    if (original.status === 'ISSUED' && input.successorId) {
+      await tx.declarationCurrentIssue.update({
+        where: {
+          enrollmentId_documentType: {
+            enrollmentId: original.enrollmentId,
+            documentType: 'DECLARACAO_VINCULO',
+          },
+        },
+        data: { documentId: input.successorId },
+      });
+    }
     return { created: true, action };
   });
 }

@@ -120,7 +120,7 @@ export default function DocumentRegistry() {
           setDetailError(
             err instanceof Error
               ? err.message
-              : 'Não foi possível abrir a minuta.',
+              : 'Não foi possível abrir o documento.',
           );
       })
       .finally(() => {
@@ -207,7 +207,7 @@ export default function DocumentRegistry() {
     if (uncertain) {
       setRevision((r) => r + 1);
       setMessage(
-        'Confira a situação atual da minuta antes de tentar outra ação.',
+        'Confira a situação atual do documento antes de tentar outra ação.',
       );
     }
   }
@@ -249,8 +249,8 @@ export default function DocumentRegistry() {
       }
       setMessage(
         pending === 'CANCELLED'
-          ? 'Minuta cancelada. O pedido do aluno foi preservado.'
-          : 'Minuta substituída. O histórico original foi preservado.',
+          ? 'Documento cancelado. O pedido do aluno foi preservado.'
+          : 'Documento substituído. O histórico original foi preservado.',
       );
       setPending(null);
       setRevision((r) => r + 1);
@@ -275,14 +275,14 @@ export default function DocumentRegistry() {
       </Link>
       <h1>Histórico de documentos</h1>
       <p className="document-intro">
-        Encontre o aluno para conferir as minutas preparadas e acompanhar
-        cancelamentos e substituições.
+        Encontre o aluno para consultar os documentos e acompanhar cancelamentos
+        e substituições.
       </p>
       <aside className="document-notice">
-        <strong>Área de testes: minutas sem validade oficial</strong>
+        <strong>Área de testes: documentos sem validade oficial</strong>
         <p>
-          Este registro ainda não inclui assinatura digital nem documentos
-          oficiais. Cancelar uma minuta não cancela o pedido do aluno.
+          Os PDFs ainda usam modelos de revisão. Cancelar um documento não
+          cancela o pedido do aluno.
         </p>
       </aside>
       <form
@@ -348,7 +348,7 @@ export default function DocumentRegistry() {
             />
           </label>
           <label className="declaration-field">
-            Preparada a partir de
+            Registrado a partir de
             <input
               name="from"
               type="date"
@@ -358,7 +358,7 @@ export default function DocumentRegistry() {
             />
           </label>
           <label className="declaration-field">
-            Preparada até
+            Registrado até
             <input
               name="to"
               type="date"
@@ -456,7 +456,7 @@ export default function DocumentRegistry() {
                 <strong>{s.name}</strong>
                 <p>
                   Matrícula: {s.registration || 'Não informada'} · {s.count}{' '}
-                  minuta(s)
+                  documento(s)
                 </p>
                 <button
                   className="ete-button ete-button--secondary"
@@ -478,7 +478,7 @@ export default function DocumentRegistry() {
                   {d.mode === 'INTEGRADO' ? 'Integrado' : 'Subsequente'} ·{' '}
                   {d.className} · {d.period}
                   <br />
-                  Preparada em {date(d.createdAt)} · Página {d.page}
+                  Registrado em {date(d.createdAt)} · Página {d.page}
                 </p>
                 <button
                   className="ete-button ete-button--secondary"
@@ -487,7 +487,7 @@ export default function DocumentRegistry() {
                     setDocumentId(d.id);
                   }}
                 >
-                  Conferir minuta {d.id.slice(-8)}
+                  Conferir documento {d.id.slice(-8)}
                 </button>
               </li>
             ))}
@@ -525,12 +525,15 @@ export default function DocumentRegistry() {
         </>
       )}
       {documentId && (
-        <section aria-label="Conferência da minuta" aria-busy={detailLoading}>
+        <section
+          aria-label="Conferência do documento"
+          aria-busy={detailLoading}
+        >
           <h2 ref={heading} tabIndex={-1}>
-            Conferência da minuta
+            Conferência do documento
           </h2>
           {detailLoading ? (
-            <p role="status">Carregando a minuta…</p>
+            <p role="status">Carregando o documento…</p>
           ) : detailError ? (
             <div role="alert">
               <p>{detailError}</p>
@@ -549,13 +552,13 @@ export default function DocumentRegistry() {
                   · {date(detail.document.createdAt)}
                 </p>
                 <p className={styles.identity}>
-                  Minuta: {detail.document.id.slice(-8)}
+                  Documento: {detail.document.id.slice(-8)}
                 </p>
                 <div className={styles.body}>
                   {detail.document.body ||
                     'Texto não disponível neste registro de teste.'}
                 </div>
-                <h3>Histórico desta minuta</h3>
+                <h3>Histórico deste documento</h3>
                 <ol className={styles.history}>
                   {detail.document.history.map((event, i) => (
                     <li key={i}>
@@ -573,28 +576,30 @@ export default function DocumentRegistry() {
                           className="ete-button ete-button--secondary"
                           onClick={() => setDocumentId(event.relatedId!)}
                         >
-                          Ver minuta substituta
+                          Ver documento substituto
                         </button>
                       )}
                     </li>
                   ))}
                 </ol>
-                {detail.document.state === 'DRAFT' && (
+                {['DRAFT', 'ISSUED'].includes(detail.document.state) && (
                   <div className={styles.actions}>
                     <button
                       className="ete-button ete-button--danger-outline"
                       disabled={!validation.ready}
                       onClick={() => openAction('CANCELLED')}
                     >
-                      Cancelar minuta
+                      Cancelar documento
                     </button>
-                    <button
-                      className="ete-button ete-button--secondary"
-                      disabled={!validation.ready}
-                      onClick={() => openAction('SUPERSEDED')}
-                    >
-                      Substituir minuta
-                    </button>
+                    {detail.document.state === 'DRAFT' && (
+                      <button
+                        className="ete-button ete-button--secondary"
+                        disabled={!validation.ready}
+                        onClick={() => openAction('SUPERSEDED')}
+                      >
+                        Substituir documento
+                      </button>
+                    )}
                   </div>
                 )}
               </>
@@ -612,17 +617,19 @@ export default function DocumentRegistry() {
         }}
       >
         <h2 id="registry-action-title">
-          {pending === 'SUPERSEDED' ? 'Substituir minuta' : 'Cancelar minuta'}
+          {pending === 'SUPERSEDED'
+            ? 'Substituir documento'
+            : 'Cancelar documento'}
         </h2>
         <p>
-          Confira a minuta {detail?.document.id.slice(-8)}. Esta ação fica no
+          Confira o documento {detail?.document.id.slice(-8)}. Esta ação fica no
           histórico e não pode ser desfeita por esta tela.
         </p>
         <p>O pedido do aluno continua no atendimento.</p>
         <form noValidate onSubmit={save}>
           {pending === 'SUPERSEDED' && (
             <label className="declaration-field">
-              Minuta corrigida
+              Documento substituto
               <select
                 name="successorId"
                 required
@@ -639,14 +646,15 @@ export default function DocumentRegistry() {
                 ))}
               </select>
               <span>
-                Somente minutas disponíveis do mesmo aluno, matrícula e período.
-                Prepare uma nova minuta se a corrigida ainda não aparecer.
+                Somente documentos disponíveis do mesmo aluno, matrícula e
+                período. Para corrigir os dados, prepare outro documento antes
+                de substituir.
               </span>
             </label>
           )}
           {pending === 'SUPERSEDED' && successor && (
-            <section aria-label="Texto da minuta substituta">
-              <h3>Confira a minuta corrigida</h3>
+            <section aria-label="Texto do documento substituto">
+              <h3>Confira o documento substituto</h3>
               {candidate?.id === successor ? (
                 <>
                   <p>{documentStateLabels[candidate.state]}</p>
@@ -684,7 +692,7 @@ export default function DocumentRegistry() {
               onChange={(e) => setConfirmed(e.target.checked)}
               {...actionValidation.field('confirmed')}
             />
-            Conferi o aluno, a minuta e o motivo desta ação.
+            Conferi o aluno, o documento e o motivo desta ação.
           </label>
           <p role="alert" id="registry-action-error">
             {actionValidation.error}
@@ -711,7 +719,7 @@ export default function DocumentRegistry() {
                 (pending === 'SUPERSEDED' &&
                   (!successor ||
                     candidate?.id !== successor ||
-                    candidate.state !== 'DRAFT'))
+                    candidate.state !== detail?.document.state))
               }
             >
               {saving
