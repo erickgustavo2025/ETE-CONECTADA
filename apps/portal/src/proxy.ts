@@ -37,6 +37,8 @@ export function proxy(request: NextRequest) {
       : NextResponse.next({ request: { headers } });
   for (const [name, value] of Object.entries(security))
     response.headers.set(name, value);
+  if (path.startsWith('/validar/'))
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   return response;
 }
 

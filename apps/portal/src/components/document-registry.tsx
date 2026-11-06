@@ -558,6 +558,17 @@ export default function DocumentRegistry() {
                   {detail.document.body ||
                     'Texto não disponível neste registro de teste.'}
                 </div>
+                {detail.document.verificationPath && (
+                  <Link
+                    className="ete-button ete-button--secondary"
+                    href={detail.document.verificationPath}
+                    prefetch={false}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Verificar declaração
+                  </Link>
+                )}
                 <h3>Histórico deste documento</h3>
                 <ol className={styles.history}>
                   {detail.document.history.map((event, i) => (

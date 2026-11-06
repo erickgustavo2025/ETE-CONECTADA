@@ -8,8 +8,11 @@ export const accessPolicies = {
   'password-recovery': { limit: 5, windowMs: 15 * 60_000 },
   'password-reset-token': { limit: 10, windowMs: 5 * 60_000 },
   'login-account': { limit: 10, windowMs: 5 * 60_000 },
+  'document-lookup': { limit: 60, windowMs: 5 * 60_000 },
+  'document-name': { limit: 10, windowMs: 5 * 60_000 },
 } as const;
 const globalPolicy = { limit: 600, windowMs: 60_000 };
+const documentGlobalPolicy = { limit: 300, windowMs: 60_000 };
 export const accessBucketCapacity = 20_000;
 export type AccessAction = keyof typeof accessPolicies;
 export type AccessDecision =
@@ -93,8 +96,15 @@ export async function consumeAccessAttempt(
       if (action !== 'login-account') {
         const global = await consumeBucket(
           tx,
-          fingerprint(state, 'global', ''),
-          globalPolicy,
+          // Consultas públicas têm orçamento separado: não gastam admissões de login.
+          fingerprint(
+            state,
+            action.startsWith('document-')
+              ? 'global-public-document'
+              : 'global',
+            '',
+          ),
+          action.startsWith('document-') ? documentGlobalPolicy : globalPolicy,
           nowMs,
         );
         if (!global.allowed) return global;

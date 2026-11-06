@@ -3,6 +3,7 @@ import fontkit from '@pdf-lib/fontkit';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
+import { drawDeclarationQr, type PdfVerification } from './declaration-qr';
 import {
   declarationBody,
   DeclarationValidationError,
@@ -69,16 +70,21 @@ function centered(
   });
 }
 
-// Apenas minuta imprimível: não simula assinatura, carimbo, QR ou certificação.
+// Modelos de teste sem assinatura; QR opcional na emissão individual registrada.
 export async function createDeclarationPdf(
   student: DeclarationStudent,
   fields: DeclarationFields,
+  verification?: PdfVerification,
 ) {
-  return createDeclarationsPdf([{ student, fields }]);
+  return createDeclarationsPdf([{ student, fields, verification }]);
 }
 
 export async function createDeclarationsPdf(
-  items: { student: DeclarationStudent; fields: DeclarationFields }[],
+  items: {
+    student: DeclarationStudent;
+    fields: DeclarationFields;
+    verification?: PdfVerification;
+  }[],
 ) {
   if (!items.length || items.length > 100)
     throw new DeclarationValidationError(
@@ -100,7 +106,11 @@ export async function createDeclarationsPdf(
   const logo = await pdf.embedPng(government);
   const margin = 45;
   const width = 505.28;
-  pdf.setTitle('Declaração de vínculo - minuta para revisão');
+  pdf.setTitle(
+    items.some((item) => item.verification)
+      ? 'Declaração de vínculo - documento de teste'
+      : 'Declaração de vínculo - minuta para revisão',
+  );
   pdf.setAuthor('ETE Conectada');
   pdf.setSubject(
     'Minuta não assinada; modelo sujeito à validação da escola/GRE.',
@@ -110,13 +120,18 @@ export async function createDeclarationsPdf(
     const body = bodies[index];
     const page = pdf.addPage([595.28, 841.89]);
     try {
-      page.drawText('MINUTA PARA REVISÃO - NÃO É DOCUMENTO EMITIDO', {
-        x: margin,
-        y: 807,
-        size: 8,
-        font,
-        color: rgb(0.35, 0.35, 0.35),
-      });
+      page.drawText(
+        items[index].verification
+          ? 'DOCUMENTO DE TESTE - SEM VALIDADE OFICIAL'
+          : 'MINUTA PARA REVISÃO - NÃO É DOCUMENTO EMITIDO',
+        {
+          x: margin,
+          y: 807,
+          size: 8,
+          font,
+          color: rgb(0.35, 0.35, 0.35),
+        },
+      );
       page.drawImage(logo, { x: 35, y: 641, width: 145, height: 145 });
       page.drawText('Secretaria de Educação', {
         x: 190,
@@ -226,35 +241,63 @@ export async function createDeclarationsPdf(
             signature.x + 117.5,
           );
       }
-      // Reserva visual explícita: não contém QR, código válido ou assinatura.
-      page.drawRectangle({
-        x: margin,
-        y: 86,
-        width: 42,
-        height: 42,
-        borderWidth: 0.6,
-        borderColor: rgb(0.6, 0.6, 0.6),
-      });
-      centered(page, 'Espaço para', 111, font, 5.5, margin + 21);
-      centered(page, 'QR code', 101, font, 5.5, margin + 21);
-      page.drawText('Validação: endereço institucional a definir', {
-        x: 99,
-        y: 116,
-        font,
-        size: 7,
-      });
-      page.drawText('Código: reservado para a futura emissão', {
-        x: 99,
-        y: 103,
-        font,
-        size: 7,
-      });
-      page.drawText('Minuta sem QR code funcional e sem assinatura.', {
-        x: 99,
-        y: 90,
-        font,
-        size: 7,
-      });
+      const verification = items[index].verification;
+      if (verification) {
+        if (font.widthOfTextAtSize(verification.url, 6) > 439)
+          throw new DeclarationValidationError(
+            'O endereço de verificação não cabe no modelo. Configure um endereço mais curto.',
+          );
+        drawDeclarationQr(page, verification, margin, 84, 54);
+        page.drawText('Verificação de teste:', {
+          x: 111,
+          y: 125,
+          font,
+          size: 7,
+        });
+        page.drawText(verification.url, { x: 111, y: 113, font, size: 6 });
+        page.drawText('Código: ' + verification.code, {
+          x: 111,
+          y: 101,
+          font,
+          size: 7,
+        });
+        page.drawText('Consulte a situação atual. Sem validade oficial.', {
+          x: 111,
+          y: 89,
+          font,
+          size: 7,
+        });
+      } else {
+        // A preparação antiga mantém a reserva visual, sem promover minutas.
+        page.drawRectangle({
+          x: margin,
+          y: 86,
+          width: 42,
+          height: 42,
+          borderWidth: 0.6,
+          borderColor: rgb(0.6, 0.6, 0.6),
+        });
+        centered(page, 'Espaço para', 111, font, 5.5, margin + 21);
+        centered(page, 'QR code', 101, font, 5.5, margin + 21);
+        page.drawText('Validação: endereço institucional a definir', {
+          x: 99,
+          y: 116,
+          font,
+          size: 7,
+        });
+        page.drawText('Código: reservado para a futura emissão', {
+          x: 99,
+          y: 103,
+          font,
+          size: 7,
+        });
+        page.drawText('Minuta sem QR code funcional e sem assinatura.', {
+          x: 99,
+          y: 90,
+          font,
+          size: 7,
+        });
+      }
       page.drawLine({
         start: { x: margin, y: 80 },
         end: { x: 550, y: 80 },

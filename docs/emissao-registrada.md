@@ -60,3 +60,11 @@ Verificação: `npm run test:issuance`, integrado à bateria de integração, co
 isolamento entre contas/matrículas, repetição e concorrência, arquivo histórico,
 falha na última escrita e recuperação, cancelamento e os dois tipos de ensino.
 A jornada Chromium do acervo também consulta e cancela uma emissão de teste.
+
+## QR e consulta de teste
+
+A EC096 acrescenta a publicação explícita da consulta, QR e versão de arquivo
+minuta-a4-qr-v1 na nova emissão. Detalhes em [Verificação pública](verificacao-publica.md).
+Repetir uma tentativa anterior mantém exatamente o arquivo anterior, sem promover
+registros. O painel oferece Verificar declaração somente nos novos registros.
+A substituição manual de emissões é recusada no servidor: é preciso emitir outra.

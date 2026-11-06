@@ -1,3 +1,4 @@
+import { drawDeclarationQr } from '../src/lib/declaration-qr';
 import assert from 'node:assert/strict';
 import { PDFDocument } from 'pdf-lib';
 import { spawnSync } from 'node:child_process';
@@ -42,6 +43,7 @@ const connect = (url: string) =>
 const source = connect(expected.url);
 const target = connect(destinationUrl.toString());
 let archiveHash = '';
+let qrArchiveHash = '';
 const digest = (data: Buffer | string) =>
   createHash('sha256').update(data).digest('hex');
 const quote = (value: string) => '"' + value.replaceAll('"', '""') + '"';
@@ -139,6 +141,19 @@ async function checkRules(client: Client) {
   } finally {
     await client.query('ROLLBACK');
   }
+  const qrFile = await client.query<{
+    bytes: Buffer;
+    template_version: string;
+  }>(
+    'SELECT bytes,template_version FROM declaration_pdf_archives WHERE sha256=$1',
+    [qrArchiveHash],
+  );
+  assert.equal(qrFile.rows[0].template_version, 'minuta-a4-qr-v1');
+  assert.equal(digest(qrFile.rows[0].bytes), qrArchiveHash);
+  assert.equal(
+    (await PDFDocument.load(qrFile.rows[0].bytes)).getPageCount(),
+    1,
+  );
   const file = await client.query<{ bytes: Buffer }>(
     'SELECT bytes FROM declaration_pdf_archives WHERE sha256=$1',
     [archiveHash],
@@ -399,6 +414,25 @@ async function main() {
       archivePdf.addPage();
       const archiveBytes = Buffer.from(await archivePdf.save());
       archiveHash = digest(archiveBytes);
+      const issuedCode = randomBytes(32).toString('base64url');
+      const qrPdf = await PDFDocument.create();
+      drawDeclarationQr(
+        qrPdf.addPage([595.28, 841.89]),
+        {
+          code: issuedCode,
+          url: 'https://portal.example.invalid/validar/' + issuedCode,
+        },
+        45,
+        84,
+        54,
+      );
+      const qrBytes = Buffer.from(await qrPdf.save());
+      qrArchiveHash = digest(qrBytes);
+      await source.query(
+        "INSERT INTO declaration_pdf_archives(sha256,bytes,page_count,template_version) VALUES($1,$2,1,'minuta-a4-qr-v1')",
+        [qrArchiveHash, qrBytes],
+      );
+
       await source.query(
         "INSERT INTO declaration_pdf_archives(sha256,bytes,page_count,template_version) VALUES($1,$2,1,'minuta-a4-v1')",
         [archiveHash, archiveBytes],
@@ -426,7 +460,7 @@ async function main() {
         "INSERT INTO declaration_documents(id,public_code,student_id,enrollment_id,created_by_id,status,origin,request_key,snapshot_version,snapshot,source_pdf_sha256,source_pdf_page,archive_sha256) VALUES($1,$2,$3,$4,$5,'ISSUED','STUDENT_REQUEST',$6,2,$7,$8,1,$8)",
         [
           issuedDocument,
-          randomBytes(32).toString('base64url'),
+          issuedCode,
           otherStudent,
           otherEnrollment,
           otherAccount,
@@ -437,7 +471,7 @@ async function main() {
             subjectName: 'Aluno fictício',
             body: 'Emissão fictícia',
           }),
-          archiveHash,
+          qrArchiveHash,
         ],
       );
       await source.query(
@@ -627,8 +661,8 @@ async function main() {
           [[document, issuedDocument]],
         );
         await source.query(
-          'DELETE FROM declaration_pdf_archives WHERE sha256=$1',
-          [archiveHash],
+          'DELETE FROM declaration_pdf_archives WHERE sha256=ANY($1::text[])',
+          [[archiveHash, qrArchiveHash]],
         );
         await source.query('DELETE FROM students WHERE id=ANY($1::uuid[])', [
           [student, otherStudent],

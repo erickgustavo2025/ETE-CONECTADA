@@ -7,6 +7,8 @@ import { issueTestDeclaration } from '../../src/lib/declaration-issuance';
 test('secretaria consulta minutas e registra cancelamento/substituição com recuperação de rede', async ({
   page,
 }) => {
+  const previousOrigin = process.env.PORTAL_PUBLIC_URL;
+  process.env.PORTAL_PUBLIC_URL = 'https://portal.example.invalid';
   const previous = process.env.DECLARATION_REGISTRY_PREVIEW;
   process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
   const env = await openTestEnvironment({ http: true });
@@ -258,6 +260,9 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     await expect(
       page.getByRole('button', { name: 'Substituir documento', exact: true }),
     ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Verificar declaração', exact: true }),
+    ).toHaveAttribute('href', '/validar/' + issued.document.publicCode);
     await page.screenshot({
       path: test.info().outputPath('emissao-teste-1440.png'),
       fullPage: true,
@@ -296,6 +301,8 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
       await db.student.deleteMany({ where: { id: { in: ids } } });
     } finally {
       await env.close();
+      if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
+      else process.env.PORTAL_PUBLIC_URL = previousOrigin;
       if (previous === undefined)
         delete process.env.DECLARATION_REGISTRY_PREVIEW;
       else process.env.DECLARATION_REGISTRY_PREVIEW = previous;

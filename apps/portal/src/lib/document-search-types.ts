@@ -30,6 +30,7 @@ export type DocumentSearchResult = {
 export type DocumentDetailResult = {
   document: DocumentListItem & {
     body: string;
+    verificationPath: string | null;
     sourcePdfSha256: string;
     history: {
       action: string;
