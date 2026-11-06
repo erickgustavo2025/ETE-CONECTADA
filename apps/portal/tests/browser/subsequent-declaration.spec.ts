@@ -3,11 +3,15 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { hashPassword } from '../../src/lib/password';
 import { subsequentFixture } from '../../scripts/subsequent-declaration-fixture';
 
-test('subsequente pede com UF e município e secretaria baixa modelo preenchido pelo calendário', async ({
+test('subsequente gera com UF e município e secretaria consulta o PDF preenchido automaticamente', async ({
   page,
 }) => {
   const { openTestEnvironment } =
     await import('../../scripts/test-environment');
+  const previousPreview = process.env.DECLARATION_REGISTRY_PREVIEW;
+  const previousOrigin = process.env.PORTAL_PUBLIC_URL;
+  process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
+  process.env.PORTAL_PUBLIC_URL = 'https://portal.example.invalid';
   const environment = await openTestEnvironment({ http: true });
   const { db, base } = environment;
   const ids: string[] = [];
@@ -90,7 +94,7 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
     await login(studentAccount.email!);
     await page.goto(base + '/declaracao');
     await page
-      .getByRole('button', { name: 'Solicitar declaração', exact: true })
+      .getByRole('button', { name: 'Gerar declaração', exact: true })
       .click();
     await expect(
       page.getByRole('dialog', { name: 'Onde você nasceu?' }),
@@ -104,42 +108,53 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
       .getByLabel('Confirmo que este é meu local de nascimento.')
       .check();
     await page
-      .getByRole('button', { name: 'Enviar solicitação', exact: true })
+      .getByRole('dialog', { name: 'Onde você nasceu?' })
+      .getByRole('button', { name: 'Gerar declaração', exact: true })
       .click();
     await expect(
-      page.getByText('Solicitação enviada. Acompanhe o atendimento abaixo.'),
+      page.getByText('Disponível para baixar', { exact: true }),
     ).toBeVisible();
+    const request = await db.declarationRequest.findFirstOrThrow({
+      where: { studentId: student.id },
+      include: { document: { include: { archive: true } } },
+    });
+    expect(request.status).toBe('AVAILABLE');
+    const event = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Baixar', exact: true }).click();
+    const downloaded = await event;
+    const bytes = await import('node:fs/promises').then(async ({ readFile }) =>
+      readFile((await downloaded.path())!),
+    );
+    expect(bytes).toEqual(Buffer.from(request.document!.archive!.bytes));
     await page.context().clearCookies();
     await login(staffAccount.email!);
     await page.goto(base + '/secretaria/declaracoes');
     await page
-      .getByRole('button', { name: 'Subsequente', exact: true })
+      .getByLabel('Modalidade', { exact: true })
+      .selectOption('SUBSEQUENTE');
+    await page
+      .getByLabel('Nome ou matrícula do aluno')
+      .fill(student.schoolRegistration!);
+    await page
+      .getByRole('button', { name: 'Buscar declarações', exact: true })
       .click();
-    await page.getByRole('button', { name: 'Preparar declaração' }).click();
-    await expect(page.getByLabel('Cidade e estado de nascimento')).toHaveValue(
-      'Recife/PE',
-    );
-    await expect(page.getByLabel('Nome do pai ou da mãe')).toHaveValue(
-      'FILIAÇÃO FICTÍCIA DO SUBSEQUENTE',
-    );
-    const course = page.getByLabel('Nome oficial do curso técnico');
-    await expect(course).toHaveValue('Desenvolvimento de Sistemas');
-    await expect(course).toHaveAttribute('readonly', '');
-    await expect(page.getByLabel('Período letivo')).toHaveValue(
-      fixture.enrollment.periodLabel,
-    );
-    await expect(page.getByLabel('Dias e horários, se necessário')).toHaveValue(
-      'de segunda-feira a sexta-feira, das 18h20 às 21h00',
-    );
-    await expect(
-      page.getByText('2º módulo · Início do curso:', { exact: false }),
-    ).toBeVisible();
-    await expect(
-      page.getByText('Este modelo não informa frequência.', { exact: false }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Frequência do integrado' }),
-    ).toHaveCount(0);
+    await page
+      .getByRole('button', { name: 'Ver documentos de ' + student.fullName })
+      .click();
+    await page
+      .getByRole('button', {
+        name: 'Ver declaração ' + request.document!.id.slice(-8),
+      })
+      .click();
+    const detail = page.getByRole('region', {
+      name: 'Detalhes da declaração',
+      exact: true,
+    });
+    await expect(detail).toContainText('2º módulo');
+    await expect(detail).toContainText('Desenvolvimento de Sistemas');
+    await expect(detail).toContainText('Recife');
+    await expect(detail).toContainText('FILIAÇÃO FICTÍCIA DO SUBSEQUENTE');
+    await expect(detail).not.toContainText(/frequência/i);
     for (const width of [320, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await expect
@@ -150,22 +165,15 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
         )
         .toBe(true);
       await page.screenshot({
-        path: test.info().outputPath(`subsequente-preenchido-${width}.png`),
+        path: test.info().outputPath('subsequente-painel-' + width + '.png'),
         fullPage: true,
       });
     }
-    await page.getByLabel(/Conferi a matrícula, os dados pessoais/).check();
-    const downloadEvent = page.waitForEvent('download');
-    await page
-      .getByRole('button', { name: 'Baixar só esta declaração' })
-      .click();
-    const download = await downloadEvent;
-    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
-    expect(await download.failure()).toBeNull();
-    const request = await db.declarationRequest.findFirstOrThrow({
-      where: { studentId: student.id },
-    });
-    expect(request.status).toBe('IN_PREPARATION');
+    await expect(
+      page.getByRole('button', {
+        name: /Preparar declaração|Liberar retirada/,
+      }),
+    ).toHaveCount(0);
     const details = await db.studentDetails.findUniqueOrThrow({
       where: { studentId: student.id },
     });
@@ -175,6 +183,21 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
     expect(errors).toEqual([]);
   } finally {
     try {
+      await db.declarationCurrentIssue.deleteMany({
+        where: { studentId: { in: ids } },
+      });
+      await db.declarationDocumentAction.deleteMany({
+        where: { studentId: { in: ids } },
+      });
+      await db.declarationRequest.deleteMany({
+        where: { studentId: { in: ids } },
+      });
+      await db.declarationDocument.deleteMany({
+        where: { studentId: { in: ids } },
+      });
+      await db.declarationPdfArchive.deleteMany({
+        where: { documents: { none: {} } },
+      });
       await db.student.deleteMany({ where: { id: { in: ids } } });
       await db.courseCalendarVersion.deleteMany({
         where: { offeringId: fixture.enrollment.offeringId },
@@ -184,6 +207,11 @@ test('subsequente pede com UF e município e secretaria baixa modelo preenchido 
       });
     } finally {
       await environment.close();
+      if (previousPreview === undefined)
+        delete process.env.DECLARATION_REGISTRY_PREVIEW;
+      else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
+      if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
+      else process.env.PORTAL_PUBLIC_URL = previousOrigin;
     }
   }
 });

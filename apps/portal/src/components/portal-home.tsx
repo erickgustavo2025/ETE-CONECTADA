@@ -24,8 +24,7 @@ type PortalHomeProps = {
 const services = [
   {
     title: 'Declaração de vínculo',
-    detail:
-      'Solicite sua declaração e acompanhe quando estiver pronta para retirada.',
+    detail: 'Solicite sua declaração e consulte os documentos disponíveis.',
     icon: 'statement',
   },
   {
@@ -291,18 +290,6 @@ export default function PortalHome({
                   <ServiceIcon name="history" />
                 </span>
                 <span>Alunos e acesso</span>
-              </Link>
-            )}
-            {role === 'secretary' && (
-              <Link
-                className={styles.menuService}
-                href="/secretaria/calendarios"
-                onClick={() => setMenuOpen(false)}
-              >
-                <span className={styles.serviceIcon} aria-hidden="true">
-                  <ServiceIcon name="history" />
-                </span>
-                <span>Calendário do subsequente</span>
               </Link>
             )}
             {role === 'secretary' && (

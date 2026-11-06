@@ -86,6 +86,8 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
 }) => {
   const { openTestEnvironment } =
     await import('../../scripts/test-environment');
+  const previousPreview = process.env.DECLARATION_REGISTRY_PREVIEW;
+  process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
   const environment = await openTestEnvironment({ http: true });
   const { db, base } = environment;
   const students: string[] = [];
@@ -260,13 +262,13 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
           name:
             role === 'student'
               ? 'Declaração de vínculo'
-              : 'Declarações de vínculo',
+              : 'Declarações dos alunos',
           exact: true,
         }),
       ).toBeVisible();
       await reflow(page);
       if (role === 'student') {
-        await expect(page.getByText('Nenhuma solicitação ainda')).toBeVisible();
+        await expect(page.getByText('Nenhuma declaração ainda')).toBeVisible();
         let finish: () => void = () => {};
         const gate = new Promise<void>((resolve) => {
           finish = resolve;
@@ -279,14 +281,15 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
           });
         });
         await page
-          .getByRole('button', { name: 'Solicitar declaração', exact: true })
+          .getByRole('button', { name: 'Gerar declaração', exact: true })
           .click();
-        await page.getByLabel(/Confirmo/).check();
-        await page
-          .getByRole('button', { name: 'Enviar solicitação', exact: true })
+        const place = page.getByRole('dialog', { name: 'Onde você nasceu?' });
+        await place.getByLabel(/Confirmo/).check();
+        await place
+          .getByRole('button', { name: 'Gerar declaração', exact: true })
           .click();
         const submit = page.getByRole('button', {
-          name: 'Enviando solicitação…',
+          name: 'Gerando declaração…',
         });
         try {
           await expect(submit).toBeDisabled();
@@ -298,8 +301,8 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
           page.getByRole('alert').filter({ hasText: 'Falha sintética' }),
         ).toBeVisible();
         await expect(
-          page.getByRole('button', {
-            name: 'Solicitar declaração',
+          place.getByRole('button', {
+            name: 'Gerar declaração',
             exact: true,
           }),
         ).toBeEnabled();
@@ -320,7 +323,13 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
       if (students.length)
         await db.student.deleteMany({ where: { id: { in: students } } });
     } finally {
-      await environment.close();
+      try {
+        await environment.close();
+      } finally {
+        if (previousPreview === undefined)
+          delete process.env.DECLARATION_REGISTRY_PREVIEW;
+        else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
+      }
     }
   }
 });

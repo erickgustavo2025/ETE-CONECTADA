@@ -23,6 +23,17 @@ export type DocumentStudent = {
 export type DocumentSearchResult = {
   students: DocumentStudent[];
   documents: DocumentListItem[];
+  requests?: {
+    id: string;
+    name: string;
+    registration: string | null;
+    status: 'REQUESTED' | 'IN_PREPARATION' | 'READY_FOR_PICKUP' | 'AVAILABLE';
+    createdAt: string;
+    className: string;
+    mode: string;
+    period: string | null;
+    document: { id: string; state: DocumentState } | null;
+  }[];
   total: number;
   page: number;
   pageSize: number;
@@ -30,6 +41,7 @@ export type DocumentSearchResult = {
 export type DocumentDetailResult = {
   document: DocumentListItem & {
     body: string;
+    hasOriginal: boolean;
     verificationPath: string | null;
     sourcePdfSha256: string;
     history: {

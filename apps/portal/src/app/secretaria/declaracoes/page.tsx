@@ -1,48 +1,19 @@
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import PortalHome from '@/components/portal-home';
-import SecretaryDeclarations from '@/components/secretary-declarations';
+import DocumentRegistry from '@/components/document-registry';
+import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
 import { canManageDeclarations } from '@/lib/declaration-access';
 import { currentSession } from '@/lib/session';
 
-export const metadata = { title: 'Secretaria — Declarações | ETE CONECTADA' };
+export const metadata = { title: 'Declarações dos alunos | ETE CONECTADA' };
 export default async function SecretaryDeclarationsPage() {
+  if (!declarationRegistryPreviewEnabled()) notFound();
   const session = await currentSession();
   if (!session) redirect('/login');
+  if (!canManageDeclarations(session.role)) notFound();
   return (
     <PortalHome studentName={session.fullName} role={session.role} internalPage>
-      {canManageDeclarations(session.role) ? (
-        <>
-          {declarationRegistryPreviewEnabled() && (
-            <div>
-              <p>
-                Novas declarações são geradas pelo próprio aluno. Consulte os
-                documentos emitidos no histórico; os pedidos antigos continuam
-                abaixo.
-              </p>
-              <Link
-                href="/secretaria/documentos"
-                className="ete-button ete-button--secondary"
-              >
-                Consultar histórico de documentos
-              </Link>
-            </div>
-          )}
-          <SecretaryDeclarations />
-        </>
-      ) : (
-        <section className="document-page">
-          <h1>Acesso restrito ao atendimento escolar</h1>
-          <p>
-            Sua conta pode solicitar a declaração e acompanhar quando estiver
-            pronta para retirada.
-          </p>
-          <a href="/declaracao" className="ete-button">
-            Minha declaração de vínculo
-          </a>
-        </section>
-      )}
+      <DocumentRegistry />
     </PortalHome>
   );
 }

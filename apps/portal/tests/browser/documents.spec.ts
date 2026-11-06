@@ -88,14 +88,24 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     const request = await db.declarationRequest.create({
       data: { studentId: ids[1], enrollmentId: e.id },
     });
-    await page.goto(base + '/secretaria/documentos');
+    await page.goto(base + '/secretaria/declaracoes');
+    await expect(
+      page.getByRole('heading', {
+        name: 'Declarações dos alunos',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', {
+        name: /Preparar declaração|Liberar retirada/,
+      }),
+    ).toHaveCount(0);
     const submit = page.getByRole('button', {
-      name: 'Buscar aluno',
+      name: 'Buscar declarações',
       exact: true,
     });
     await expect(submit).toBeEnabled();
     await submit.click();
-    await expect(page.getByLabel('Nome ou matrícula do aluno')).toBeFocused();
     await page.getByLabel('Nome ou matrícula do aluno').fill(tag);
     await page.route(
       '**/api/secretaria/documentos/busca',
@@ -112,13 +122,13 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     await expect(
       page.getByRole('heading', { name: 'Alunos encontrados: 1' }),
     ).toBeVisible();
-    expect(page.url()).toBe(base + '/secretaria/documentos');
+    expect(page.url()).toBe(base + '/secretaria/declaracoes');
     await page
       .getByRole('button', { name: 'Ver documentos de Aluno sintético ' + tag })
       .click();
     const open = (index: number) =>
       page.getByRole('button', {
-        name: 'Conferir documento ' + docs[index].id.slice(-8),
+        name: 'Ver declaração ' + docs[index].id.slice(-8),
       });
     await open(0).click();
     await expect(
@@ -239,20 +249,20 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     await page.reload();
     await page.getByLabel('Nome ou matrícula do aluno').fill(tag);
     await page
-      .getByRole('button', { name: 'Buscar aluno', exact: true })
+      .getByRole('button', { name: 'Buscar declarações', exact: true })
       .click();
     await page
       .getByRole('button', { name: 'Ver documentos de Aluno sintético ' + tag })
       .click();
     await page
       .getByRole('button', {
-        name: 'Conferir documento ' + issued.document.id.slice(-8),
+        name: 'Ver declaração ' + issued.document.id.slice(-8),
         exact: true,
       })
       .click();
     await expect(
       page
-        .getByRole('region', { name: 'Conferência do documento', exact: true })
+        .getByRole('region', { name: 'Detalhes da declaração', exact: true })
         .locator('p')
         .first()
         .getByText('Emitida para teste', { exact: true }),
@@ -260,6 +270,24 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     await expect(
       page.getByRole('button', { name: 'Substituir documento', exact: true }),
     ).toHaveCount(0);
+    const archiveDownload = page.waitForEvent('download');
+    await page
+      .getByRole('button', { name: 'Baixar PDF original', exact: true })
+      .click();
+    const archiveFile = await archiveDownload;
+    const archived = await db.declarationDocument.findUniqueOrThrow({
+      where: { id: issued.document.id },
+      include: { archive: true },
+    });
+    const downloadedBytes = await import('node:fs/promises').then(
+      async ({ readFile }) => readFile((await archiveFile.path())!),
+    );
+    expect(downloadedBytes).toEqual(Buffer.from(archived.archive!.bytes));
+    expect(
+      await db.declarationDocument.count({
+        where: { studentId: ids[1], status: 'ISSUED' },
+      }),
+    ).toBe(1);
     await expect(
       page.getByRole('link', { name: 'Verificar declaração', exact: true }),
     ).toHaveAttribute('href', '/validar/' + issued.document.publicCode);

@@ -2,11 +2,13 @@ import { test, expect } from '@playwright/test';
 import { createHash, randomBytes } from 'node:crypto';
 import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
 
-test('secretaria separa modalidades, reinicia páginas e recupera falha sem mostrar pedidos antigos', async ({
+test('painel consulta pedidos anteriores por modalidade e turma, pagina e recupera falha sem controles de retirada', async ({
   page,
 }) => {
   const { openTestEnvironment } =
     await import('../../scripts/test-environment');
+  const previous = process.env.DECLARATION_REGISTRY_PREVIEW;
+  process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
   const environment = await openTestEnvironment({ http: true });
   const { db, base } = environment;
   const ids: string[] = [];
@@ -76,84 +78,118 @@ test('secretaria separa modalidades, reinicia páginas e recupera falha sem most
         });
       }
     }
-    const firstRequests = page.waitForResponse(
-      (response) =>
-        new URL(response.url()).pathname === '/api/secretaria/solicitacoes',
-    );
     await page.goto(base + '/secretaria/declaracoes');
-    expect((await firstRequests).status()).toBe(200);
-    const group = page.getByRole('group', { name: 'Modalidade do aluno' });
-    const integrated = group.getByRole('button', {
-      name: 'Integrado',
+    await expect(
+      page.getByRole('heading', {
+        name: 'Declarações dos alunos',
+        exact: true,
+      }),
+    ).toBeVisible();
+    const submit = page.getByRole('button', {
+      name: 'Buscar declarações',
       exact: true,
     });
-    const subsequent = group.getByRole('button', {
-      name: 'Subsequente',
+    await page
+      .getByLabel('Consultar', { exact: true })
+      .selectOption('requests');
+    await page
+      .getByLabel('Modalidade', { exact: true })
+      .selectOption('INTEGRADO');
+    const firstList = page.waitForResponse(
+      (r) =>
+        new URL(r.url()).pathname === '/api/secretaria/documentos/busca' &&
+        r.request().method() === 'POST' &&
+        r.request().postDataJSON().records === 'requests' &&
+        r.request().postDataJSON().mode === 'INTEGRADO',
+    );
+    await submit.click();
+    const firstResult = await firstList;
+    const firstBody = await firstResult.json();
+    expect(firstResult.status()).toBe(200);
+    expect(firstBody.total).toBe(21);
+    await expect(
+      page.getByRole('heading', {
+        name: 'Solicitações encontradas: 21',
+        exact: true,
+      }),
+    ).toBeVisible();
+    const rows = page
+      .locator('li')
+      .filter({ hasText: 'Pedido antigo recebido' });
+    await expect(rows).toHaveCount(20);
+    const next = page.getByRole('button', {
+      name: 'Próxima',
       exact: true,
     });
-    const requests = page.locator('#staff-request-list');
-    await expect(integrated).toHaveAttribute('aria-pressed', 'true');
-    await expect(requests.locator('.request-row')).toHaveCount(20);
-    await expect(requests).not.toContainText('Aluna fictícia subsequente');
-    const pagination = page.getByRole('navigation', {
-      name: 'Páginas das solicitações',
-    });
-    await pagination.getByRole('button', { name: 'Próxima' }).click();
-    await expect(requests.locator('.request-row')).toHaveCount(1);
-    await expect(pagination).toContainText('2 / 2');
-
+    await next.click();
+    await expect(rows).toHaveCount(1);
     const blocked = new Promise<void>((resolve) => {
       unblock = resolve;
     });
     let failOnce = true;
-    await page.route('**/api/secretaria/solicitacoes?**', async (route) => {
-      if (
-        failOnce &&
-        new URL(route.request().url()).searchParams.get('mode') ===
-          'SUBSEQUENTE'
-      ) {
+    await page.route('**/api/secretaria/documentos/busca', async (route) => {
+      if (route.request().postDataJSON().mode === 'SUBSEQUENTE' && failOnce) {
         failOnce = false;
         await blocked;
-        await route.fulfill({
+        return route.fulfill({
           status: 503,
           contentType: 'application/json',
           body: JSON.stringify({
             error: 'Consulta temporariamente indisponível no ensaio.',
           }),
         });
-      } else await route.continue();
+      }
+      await route.continue();
     });
-    await subsequent.click();
-    await expect(
-      page.getByText('Consultando solicitações…', { exact: true }),
-    ).toBeVisible();
-    await expect(requests.locator('.request-row')).toHaveCount(0);
+    await page
+      .getByLabel('Modalidade', { exact: true })
+      .selectOption('SUBSEQUENTE');
+    await submit.click();
+    await expect(rows).toHaveCount(0);
     unblock();
     await expect(
-      page.getByRole('status').filter({
-        hasText: 'Consulta temporariamente indisponível no ensaio.',
-      }),
-    ).toBeVisible();
+      page
+        .getByRole('alert')
+        .filter({ hasText: 'Consulta temporariamente indisponível' }),
+    ).toContainText('Consulta temporariamente indisponível');
     await page
       .getByRole('button', { name: 'Tentar novamente', exact: true })
       .click();
-    await expect(requests.locator('.request-row')).toHaveCount(2);
-    await expect(requests).not.toContainText('Aluno fictício integrado');
-    await expect(pagination).toHaveCount(0);
-    await page.getByLabel('Situação do pedido').selectOption('IN_PREPARATION');
     await expect(
-      page.getByText('Nenhum pedido do Subsequente nesta situação', {
+      page.getByRole('heading', {
+        name: 'Solicitações encontradas: 2',
         exact: true,
       }),
     ).toBeVisible();
-    await page.getByLabel('Situação do pedido').selectOption('OPEN');
-    await expect(requests.locator('.request-row')).toHaveCount(2);
+    await expect(rows).toHaveCount(2);
+    await expect(page.locator('main')).not.toContainText(
+      'Aluno fictício integrado',
+    );
+    await expect(
+      page.getByRole('button', {
+        name: /Preparar declaração|Liberar retirada/,
+      }),
+    ).toHaveCount(0);
+    await page
+      .getByLabel('Nome exato da turma (opcional)')
+      .fill('SUBSEQUENTE fictício 1');
+    await submit.click();
+    await expect(rows).toHaveCount(1);
+    await page.getByLabel('Nome exato da turma (opcional)').fill('');
+    await page
+      .getByLabel('Situação', { exact: true })
+      .selectOption('IN_PREPARATION');
+    await submit.click();
+    await expect(
+      page.getByText(
+        'Nenhum documento encontrado com esses filtros. Confira a busca ou procure outra turma e data.',
+      ),
+    ).toBeVisible();
+    await page.getByLabel('Situação', { exact: true }).selectOption('');
+    await submit.click();
+    await expect(rows).toHaveCount(2);
     for (const width of [320, 1440]) {
       await page.setViewportSize({ width, height: 900 });
-      await integrated.focus();
-      await page.keyboard.press('Space');
-      await expect(requests.locator('.request-row')).toHaveCount(20);
-      await expect(pagination).toContainText('1 / 2');
       await expect
         .poll(() =>
           page.evaluate(
@@ -162,32 +198,18 @@ test('secretaria separa modalidades, reinicia páginas e recupera falha sem most
         )
         .toBe(true);
       await page.screenshot({
-        path: test.info().outputPath('modalidades-' + width + '.png'),
+        path: test.info().outputPath('solicitacoes-painel-' + width + '.png'),
         fullPage: true,
       });
-      await subsequent.click();
-      await expect(requests.locator('.request-row')).toHaveCount(2);
     }
-    await integrated.click();
-    await requests
-      .getByRole('button', { name: 'Preparar declaração', exact: true })
-      .first()
-      .click();
-    await expect(page.getByLabel('Nome do pai ou da mãe')).toHaveValue(
-      'MARIA DA CONCEIÇÃO',
-    );
-    const otherParent = page.getByLabel(
-      'Nome do outro pai ou da outra mãe (se houver)',
-    );
-    await expect(otherParent).toHaveValue('JOSÉ D’ÁVILA');
-    await otherParent.fill('João de Araújo');
-    await otherParent.press('Tab');
-    await expect(otherParent).toHaveValue('JOÃO DE ARAÚJO');
-    const details = await db.studentDetails.findUniqueOrThrow({
-      where: { studentId: ids[1] },
-    });
-    expect(details.parentOne).toBe('Maria da Conceição');
-    expect(details.parentTwo).toBe('José d’Ávila');
+    expect(
+      await db.declarationRequest.count({
+        where: { studentId: { in: ids }, status: 'REQUESTED' },
+      }),
+    ).toBe(23);
+    expect(
+      await db.declarationDocument.count({ where: { studentId: { in: ids } } }),
+    ).toBe(0);
     expect(errors).toEqual([]);
   } finally {
     unblock();
@@ -195,6 +217,9 @@ test('secretaria separa modalidades, reinicia páginas e recupera falha sem most
       await db.student.deleteMany({ where: { id: { in: ids } } });
     } finally {
       await environment.close();
+      if (previous === undefined)
+        delete process.env.DECLARATION_REGISTRY_PREVIEW;
+      else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
     }
   }
 });

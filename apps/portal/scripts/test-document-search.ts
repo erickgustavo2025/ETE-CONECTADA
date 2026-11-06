@@ -106,9 +106,53 @@ async function main() {
       { mode: 'ADMIN' },
     ])
       assert.equal((await post(body)).status, 422, JSON.stringify(body));
+    const html = await (
+      await fetch(base + '/secretaria/declaracoes', {
+        headers: { Cookie: staff.cookie },
+      })
+    ).text();
+    for (const name of [
+      'records',
+      'query',
+      'mode',
+      'status',
+      'className',
+      'from',
+      'to',
+    ]) {
+      const control = html.match(
+        new RegExp('<(?:select|input)[^>]*name="' + name + '"[^>]*>'),
+      )?.[0];
+      assert.ok(
+        control?.includes('disabled=""'),
+        'Filtro aguarda hidratação antes de aceitar edição: ' + name,
+      );
+    }
     const empty = await post({});
     assert.equal(empty.status, 200);
-    assert.deepEqual((await empty.json()).students, []);
+    assert.equal((await empty.json()).students.length, 1);
+    const request = await db.declarationRequest.create({
+      data: { studentId: ids[1], enrollmentId: e.id },
+    });
+    const requests = await (await post({ records: 'requests' })).json();
+    assert.equal(requests.total, 1);
+    assert.equal(requests.requests[0].id, request.id);
+    assert.equal(requests.requests[0].name, 'Aluno ' + tag);
+    assert.equal(requests.requests[0].status, 'REQUESTED');
+    assert.equal(requests.requests[0].document, null);
+    assert(!JSON.stringify(requests).includes('Texto privado'));
+    assert(!JSON.stringify(requests).includes('parentOne'));
+    assert.equal(
+      (await (await post({ records: 'requests', mode: 'SUBSEQUENTE' })).json())
+        .total,
+      0,
+    );
+    for (const body of [
+      { records: 'OTHER' },
+      { records: 'requests', status: 'ISSUED' },
+      { query: tag, role: 'secretary' },
+    ])
+      assert.equal((await post(body)).status, 422);
     const response = await post({ query: tag, mode: 'INTEGRADO' });
     assert.equal(response.status, 200);
     assert.match(response.headers.get('cache-control')!, /no-store/);

@@ -319,7 +319,7 @@ async function main() {
       assert.ok(!publicHtml.includes(privateValue));
     const administration = await request('/secretaria/alunos');
     assert.equal(administration.status, 404);
-    const registry = await request('/secretaria/documentos');
+    const registry = await request('/secretaria/declaracoes');
     assert.equal(
       registry.status,
       404,
@@ -339,7 +339,6 @@ async function main() {
     for (const path of [
       '/',
       '/declaracao',
-      '/secretaria/declaracoes',
       '/secretaria/importacao/integrado',
     ]) {
       const response = await request(path);

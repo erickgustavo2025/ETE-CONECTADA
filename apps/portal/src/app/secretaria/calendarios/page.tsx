@@ -1,21 +1,8 @@
-import { redirect } from 'next/navigation';
-import PortalHome from '@/components/portal-home';
-import CourseCalendars from '@/components/course-calendars';
+import { notFound, redirect } from 'next/navigation';
 import { currentSession } from '@/lib/session';
-export const metadata = { title: 'Calendário do subsequente | ETE CONECTADA' };
-export default async function CalendarPage() {
+export default async function PreviousCalendarPage() {
   const session = await currentSession();
   if (!session) redirect('/login');
-  return (
-    <PortalHome studentName={session.fullName} role={session.role} internalPage>
-      {session.role === 'secretary' ? (
-        <CourseCalendars />
-      ) : (
-        <section className="document-page">
-          <h1>Acesso restrito à secretaria</h1>
-          <p>Somente a secretaria pode administrar calendários escolares.</p>
-        </section>
-      )}
-    </PortalHome>
-  );
+  if (session.role !== 'secretary') notFound();
+  redirect('/secretaria/importacao/subsequente');
 }

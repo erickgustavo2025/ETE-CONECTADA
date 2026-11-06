@@ -80,12 +80,12 @@ async function main() {
     );
     assert.equal(
       (await post({ action: 'list', now: '2030-01-01' }, cookie)).status,
-      400,
+      410,
     );
     assert.equal(
       (await post({ action: 'list', padding: 'x'.repeat(5000) }, cookie))
         .status,
-      413,
+      410,
     );
     await assert.rejects(
       saveCourseCalendar(db, student.id, randomUUID(), 0, {}, true),
@@ -118,12 +118,29 @@ async function main() {
     const draft = make('DS'),
       offeringId = randomUUID();
     offerIds.push(offeringId);
-    const save = await post(
-      { action: 'save', offeringId, revision: 0, draft, confirmed: true },
-      cookie,
+    assert.equal(
+      (
+        await post(
+          { action: 'save', offeringId, revision: 0, draft, confirmed: true },
+          cookie,
+        )
+      ).status,
+      410,
     );
-    assert.equal(save.status, 200);
-    assert.equal((await save.json()).revision, 1);
+    assert.equal(
+      await db.courseOffering.count({ where: { id: offeringId } }),
+      0,
+    );
+    // Serviço interno preserva dados e correções versionadas; o endpoint manual foi encerrado.
+    const save = await saveCourseCalendar(
+      db,
+      staff.id,
+      offeringId,
+      0,
+      draft,
+      true,
+    );
+    assert.equal(save.revision, 1);
     assert.deepEqual(
       await saveCourseCalendar(db, staff.id, offeringId, 0, draft, true),
       { id: offeringId, revision: 1 },
@@ -668,9 +685,8 @@ async function main() {
       ).grade,
       1,
     );
-    const listed = await post({ action: 'list' }, cookie);
-    assert.equal(listed.status, 200);
-    const publicText = JSON.stringify(await listed.json());
+    assert.equal((await post({ action: 'list' }, cookie)).status, 410);
+    const publicText = JSON.stringify(await listCourseOfferings(db, staff.id));
     for (const privateValue of [staff.email!, password, student.email!])
       assert.ok(!publicText.includes(privateValue));
     console.log(
