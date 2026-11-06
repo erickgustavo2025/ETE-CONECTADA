@@ -235,6 +235,7 @@ async function main() {
         { code: 'A'.repeat(43), fullName: 'Pessoa fictícia' },
       ],
       ['/api/secretaria/documentos/busca', 404, {}],
+      ['/api/secretaria/alunos/administracao', 404, { operation: 'search' }],
       ['/api/secretaria/documentos/arquivo', 404, {}],
       ['/api/declaracao/arquivo', 404, {}],
       ['/api/secretaria/documentos/alteracoes', 404, {}],
@@ -316,6 +317,8 @@ async function main() {
       student.fullName!,
     ])
       assert.ok(!publicHtml.includes(privateValue));
+    const administration = await request('/secretaria/alunos');
+    assert.equal(administration.status, 404);
     const registry = await request('/secretaria/documentos');
     assert.equal(
       registry.status,

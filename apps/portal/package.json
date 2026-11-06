@@ -60,7 +60,8 @@
     "test:issuance": "node --import tsx scripts/test-declaration-issuance.ts",
     "test:pdf-qr": "node --import tsx scripts/test-declaration-qr.ts",
     "test:public-verification": "node --import tsx scripts/test-public-verification.ts",
-    "test:automatic-declaration": "node --import tsx scripts/test-automatic-declaration.ts"
+    "test:automatic-declaration": "node --import tsx scripts/test-automatic-declaration.ts",
+    "test:student-admin": "node --import tsx scripts/test-student-administration.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

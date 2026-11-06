@@ -18,11 +18,19 @@ export async function createVerifiedSession(
 ) {
   return db.$transaction(
     async (tx) => {
-      const current = await tx.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM accounts WHERE id = ${accountId}::uuid
+      const current = await tx.$queryRaw<
+        Array<{ id: string; studentId: string; role: string }>
+      >`
+      SELECT id, student_id AS "studentId", role FROM accounts WHERE id = ${accountId}::uuid
       AND status = 'active' AND password_hash = ${passwordHash} FOR UPDATE
     `;
       if (!current.length) return false;
+      if (current[0].role === 'student') {
+        const allowed = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT id FROM students WHERE id=${current[0].studentId}::uuid AND NOT login_blocked FOR SHARE
+        `;
+        if (!allowed.length) return false;
+      }
       await tx.session.create({ data: { accountId, tokenHash, expiresAt } });
       return true;
     },
@@ -44,6 +52,7 @@ export async function findSessionRecord(
     WHERE se.token_hash = ${tokenHash}
       AND se.expires_at > ${new Date()}
       AND a.status = 'active'
+      AND (a.role <> 'student' OR NOT s.login_blocked)
       AND a.email IS NOT NULL AND a.email <> ''
     LIMIT 1
   `;

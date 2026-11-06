@@ -2,6 +2,8 @@ import { createHmac } from 'node:crypto';
 import type { Prisma, PrismaClient } from '../generated/prisma/client';
 
 export const accessPolicies = {
+  'student-admin-search': { limit: 60, windowMs: 5 * 60_000 },
+  'student-admin-change': { limit: 20, windowMs: 5 * 60_000 },
   login: { limit: 10, windowMs: 5 * 60_000 },
   registration: { limit: 20, windowMs: 15 * 60_000 },
   'email-verification': { limit: 10, windowMs: 5 * 60_000 },
@@ -15,6 +17,7 @@ export const accessPolicies = {
 } as const;
 const globalPolicy = { limit: 600, windowMs: 60_000 };
 const documentGlobalPolicy = { limit: 300, windowMs: 60_000 };
+const adminPolicy = { limit: 120, windowMs: 60_000 };
 const privateDocumentPolicy = { limit: 120, windowMs: 60_000 };
 export const accessBucketCapacity = 20_000;
 export type AccessAction = keyof typeof accessPolicies;
@@ -104,18 +107,22 @@ export async function consumeAccessAttempt(
           // Consultas públicas têm orçamento separado: não gastam admissões de login.
           fingerprint(
             state,
-            privateDocument
-              ? 'global-private-document'
-              : action.startsWith('document-')
-                ? 'global-public-document'
-                : 'global',
+            action.startsWith('student-admin-')
+              ? 'global-student-admin'
+              : privateDocument
+                ? 'global-private-document'
+                : action.startsWith('document-')
+                  ? 'global-public-document'
+                  : 'global',
             '',
           ),
-          privateDocument
-            ? privateDocumentPolicy
-            : action.startsWith('document-')
-              ? documentGlobalPolicy
-              : globalPolicy,
+          action.startsWith('student-admin-')
+            ? adminPolicy
+            : privateDocument
+              ? privateDocumentPolicy
+              : action.startsWith('document-')
+                ? documentGlobalPolicy
+                : globalPolicy,
           nowMs,
         );
         if (!global.allowed) return global;

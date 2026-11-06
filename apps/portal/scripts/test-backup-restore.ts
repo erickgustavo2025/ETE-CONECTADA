@@ -500,6 +500,18 @@ async function main() {
         [automaticRequest, otherStudent, otherEnrollment, issuedDocument],
       );
       await source.query(
+        'UPDATE students SET login_blocked=true,issuance_blocked=true,access_revision=2 WHERE id=$1',
+        [student],
+      );
+      await source.query(
+        "INSERT INTO student_access_changes(student_id,created_by_id,request_key,kind,blocked,reason,revision) VALUES($1,$2,$3,'LOGIN',true,'Bloqueio fictício do ensaio',1)",
+        [student, account, randomUUID()],
+      );
+      await source.query(
+        "INSERT INTO student_access_changes(student_id,created_by_id,request_key,kind,blocked,reason,revision) VALUES($1,$2,$3,'ISSUANCE',true,'Emissão fictícia bloqueada',2)",
+        [student, account, randomUUID()],
+      );
+      await source.query(
         "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",
         [digest('sessao-ficticia-' + randomUUID()), account],
       );
@@ -684,6 +696,10 @@ async function main() {
         await source.query(
           'DELETE FROM declaration_pdf_archives WHERE sha256=ANY($1::text[])',
           [[archiveHash, qrArchiveHash]],
+        );
+        await source.query(
+          'DELETE FROM student_access_changes WHERE student_id=ANY($1::uuid[])',
+          [[student, otherStudent]],
         );
         await source.query('DELETE FROM students WHERE id=ANY($1::uuid[])', [
           [student, otherStudent],

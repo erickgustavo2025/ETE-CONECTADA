@@ -16,6 +16,7 @@ type Props = {
   initialRequests: RequestSummary[];
   birthplace: BirthplaceSummary | null;
   automatic?: boolean;
+  issuanceBlocked?: boolean;
 };
 export default function StudentDeclarationRequests(props: Props) {
   return props.automatic ? (
@@ -28,6 +29,7 @@ function LegacyDeclarationRequests({
   enrollmentId,
   initialRequests,
   birthplace,
+  issuanceBlocked = false,
 }: Props) {
   const [requests, setRequests] = useState(initialRequests);
   const [busy, setBusy] = useState<'request' | 'refresh' | null>(null);
@@ -103,6 +105,12 @@ function LegacyDeclarationRequests({
   }
   return (
     <div className="student-requests">
+      {issuanceBlocked && (
+        <p className="document-notice">
+          A emissão de novas declarações está bloqueada. Procure a secretaria.
+          Seus pedidos anteriores foram preservados.
+        </p>
+      )}
       <div className="request-callout">
         <div>
           <h2>Precisa de uma declaração?</h2>
@@ -115,7 +123,7 @@ function LegacyDeclarationRequests({
         <button
           className="ete-button"
           type="button"
-          disabled={!!busy || !!active || !enrollmentId}
+          disabled={!!busy || !!active || !enrollmentId || issuanceBlocked}
           aria-busy={busy === 'request'}
           onClick={() => {
             setMessage('');
