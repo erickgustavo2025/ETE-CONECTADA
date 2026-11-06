@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { hashPassword } from '../../src/lib/password';
-import { sheetFixture } from '../../scripts/test-sheet-input';
-import { saveCourseCalendar } from '../../src/lib/course-calendars';
-import type { CalendarDraft } from '../../src/lib/course-calendar-input';
-test('secretaria importa subsequente com calendário, módulos e exceções sem alterar integrado', async ({
+import {
+  schoolHeaderFixture,
+  sheetFixture,
+} from '../../scripts/test-sheet-input';
+
+test('secretaria importa subsequente sem calendário prévio, confere estimativas e repete confirmação incerta', async ({
   page,
   context,
 }, testInfo) => {
@@ -13,24 +15,17 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
   const env = await openTestEnvironment({ http: true }),
     { db, base } = env;
   const students: string[] = [],
-    offers: string[] = [];
-  const errors: string[] = [],
-    modes: string[] = [];
-  page.on('pageerror', (e) => errors.push(e.name));
-  page.on('request', (r) => {
-    if (
-      r.url() === base + '/api/secretaria/importacao' &&
-      r.method() === 'POST'
-    )
-      modes.push(r.postDataJSON().mode);
-  });
+    scopes: string[] = [],
+    errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.name));
   try {
-    const email = `sub-ui-${randomUUID()}@eteconectada.invalid`,
-      password = 'SubsequenteUI#123';
+    expect(await db.student.count()).toBe(0);
+    const password = 'SubsequenteUI#123',
+      email = `sub-ui-${randomUUID()}@eteconectada.invalid`;
     const actor = await db.student.create({
       data: {
         fullName: 'Secretaria fictícia subsequente',
-        birthDate: new Date('2000-01-15'),
+        birthDate: new Date('2000-01-01'),
         account: {
           create: {
             email,
@@ -51,22 +46,13 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
         })
       ).status(),
     ).toBe(200);
-    await page.goto(base + '/');
-    await page
-      .getByRole('button', { name: 'Abrir menu de serviços', exact: true })
-      .click();
-    await page
-      .getByRole('link', {
-        name: 'Importar alunos do subsequente',
-        exact: true,
-      })
-      .click();
-    await expect(
-      page.getByRole('heading', {
-        name: 'Importar alunos do subsequente',
-        exact: true,
-      }),
-    ).toBeVisible();
+    await page.goto(base + '/secretaria/importacao/subsequente');
+    const responseFor = (action: string) =>
+      page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/api/secretaria/importacao' &&
+          response.request().postDataJSON()?.action === action,
+      );
     const upload = async (buffer: Buffer) => {
       await page
         .getByLabel('Planilha de alunos do subsequente', { exact: true })
@@ -75,11 +61,7 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
           mimeType: 'application/vnd.ms-excel',
           buffer,
         });
-      const response = page.waitForResponse(
-        (r) =>
-          r.url().endsWith('/api/secretaria/importacao') &&
-          r.request().postDataJSON().action === 'inspect',
-      );
+      const response = responseFor('inspect');
       await page
         .getByRole('button', { name: 'Ler arquivo', exact: true })
         .click();
@@ -89,297 +71,152 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
     await expect(page.locator('#conteudo').getByRole('alert')).toContainText(
       'Modalidade',
     );
-    const empty = sheetFixture('SUBSEQUENTE');
-    expect((await upload(empty.file())).status()).toBe(200);
-    await expect(
-      page.getByRole('link', { name: 'cadastre o calendário', exact: true }),
-    ).toBeVisible();
-    expect(
-      await page.getByLabel('Turma e ingresso').locator('option').count(),
-    ).toBe(1);
-    await page
-      .getByRole('button', { name: 'Gerar prévia', exact: true })
-      .click();
-    await expect(page.getByLabel('Turma e ingresso')).toBeFocused();
-    await page
-      .getByRole('button', { name: 'Trocar arquivo', exact: true })
-      .click();
-    await page
-      .getByRole('button', { name: 'Descartar conferência', exact: true })
-      .click();
-    const pupil = await db.student.create({
-      data: {
-        schoolRegistration: '00001001',
-        fullName: 'Pessoa Fictícia Um',
-        birthDate: new Date('2008-02-29'),
-        details: {
-          create: {
-            parentOne: 'Filiação Fictícia Um',
-            parentTwo: 'Filiação Fictícia Dois',
-            parentageSource: 'SCHOOL_RECORD',
-          },
-        },
-        account: {
-          create: {
-            email: `pupil-${randomUUID()}@eteconectada.invalid`,
-            passwordHash: await hashPassword(password),
-            status: 'active',
-            role: 'student',
-          },
-        },
-        enrollments: {
-          create: [
-            {
-              mode: 'INTEGRADO',
-              className: 'Integrado preservado',
-              courseLabel: 'ADM',
-              grade: 1,
-            },
-            {
-              mode: 'SUBSEQUENTE',
-              className: 'DS legado',
-              courseLabel: 'DS',
-              moduleNumber: 1,
-            },
-          ],
-        },
-      },
-      include: { enrollments: true, account: true },
-    });
-    students.push(pupil.id);
-    const integrated = pupil.enrollments.find((e) => e.mode === 'INTEGRADO')!,
-      legacy = pupil.enrollments.find((e) => e.mode === 'SUBSEQUENTE')!;
-    const integratedBefore = await db.enrollment.findUniqueOrThrow({
-        where: { id: integrated.id },
-      }),
-      accountBefore = pupil.account!;
-    const year = new Date().getUTCFullYear();
-    const courses = new Map<string, { id: string; draft: CalendarDraft }>();
-    for (const courseLabel of ['DS', 'ADM', 'ENF'] as const) {
-      const count = courseLabel === 'ENF' ? 4 : 3,
-        id = randomUUID();
-      offers.push(id);
-      const draft: CalendarDraft = {
-        label: `Turma fictícia UI ${courseLabel}`,
-        courseLabel,
-        startsOn: `${year}-01-01`,
-        endsOn: `${year + count - 1}-12-31`,
-        modules: Array.from({ length: count }, (_, i) => ({
-          number: i + 1,
-          startsOn: `${year + i}-01-01`,
-          endsOn: `${year + i}-12-31`,
-          periodLabel: `Período fictício ${i + 1}`,
-        })),
-      };
-      await saveCourseCalendar(db, actor.account!.id, id, 0, draft, true);
-      courses.set(courseLabel, { id, draft });
-    }
-    const second = randomUUID();
-    offers.push(second);
-    await saveCourseCalendar(
-      db,
-      actor.account!.id,
-      second,
-      0,
-      { ...courses.get('DS')!.draft, label: 'Outra entrada DS fictícia' },
-      true,
-    );
-    const configure = async (id: string, className: string) => {
-      await page.getByLabel('Turma e ingresso').selectOption(id);
-      await page.getByLabel('Nome da turma').fill(className);
-      await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
+    let lost = false;
+    for (const [index, course] of (['DS', 'ADM', 'ENF'] as const).entries()) {
+      const stage = course === 'DS' ? 1 : course === 'ADM' ? 3 : 4;
+      const fixture = schoolHeaderFixture('SUBSEQUENTE', course, stage);
+      const registration = String(1001 + index).padStart(8, '0');
+      fixture.wb.Sheets['Fictícia'].A7 = { t: 's', v: registration };
+      const inspection = await upload(fixture.file());
+      expect(inspection.status()).toBe(200);
+      const metadata = await inspection.json();
+      scopes.push(metadata.sheets[0].scopeId);
+      await expect(
+        page.getByRole('link', { name: 'cadastre o calendário', exact: true }),
+      ).toHaveCount(0);
+      await expect(page.getByLabel('Nome da turma')).toHaveValue(
+        `ST${course}N${stage}U`,
+      );
+      await expect(page.getByLabel('Nome da turma')).toHaveAttribute(
+        'readonly',
+        '',
+      );
+      await expect(page.getByLabel('Período letivo')).toHaveValue('2026.2');
+      await expect(page.getByText(/Ingresso estimado:/)).toContainText(
+        course === 'DS' ? '2026.2' : course === 'ADM' ? '2025.2' : '2025.1',
+      );
+      expect(
+        await db.courseOffering.count(),
+        'Inspeção não cria referências.',
+      ).toBe(index);
       await page
         .getByRole('button', { name: 'Gerar prévia', exact: true })
         .click();
       await expect(
+        page.getByRole('checkbox', { name: /Conferi turma/ }),
+      ).toBeFocused();
+      await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
+      let response = responseFor('preview');
+      await page
+        .getByRole('button', { name: 'Gerar prévia', exact: true })
+        .click();
+      expect((await response).status()).toBe(200);
+      await expect(
         page.getByRole('heading', { name: 'Confira a prévia', exact: true }),
       ).toBeVisible();
       await expect(
-        page.getByRole('table', {
-          name: 'Prévia de atualização — subsequente',
+        page.getByRole('region', {
+          name: 'Turmas e datas de referência',
           exact: true,
         }),
       ).toBeVisible();
-    };
-    const openConfirmation = async (differs: boolean) => {
+      expect(
+        await db.courseOffering.count(),
+        'Prévia não cria referências.',
+      ).toBe(index);
+      await page.setViewportSize({ width: 1440, height: 1000 });
+      await page.screenshot({
+        path: testInfo.outputPath(`turma-${course}-1440.png`),
+        fullPage: true,
+      });
+      await page.setViewportSize({ width: 320, height: 740 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await page.screenshot({
+        path: testInfo.outputPath(`turma-${course}-320.png`),
+        fullPage: true,
+      });
       await page
         .getByRole('button', { name: 'Aplicar importação', exact: true })
         .click();
-      const dialog = page.getByRole('dialog', {
-        name: 'Aplicar esta importação?',
-        exact: true,
-      });
       await expect(
-        dialog.getByRole('button', {
-          name: 'Continuar conferindo',
-          exact: true,
-        }),
+        page.getByRole('button', { name: 'Continuar conferindo', exact: true }),
       ).toBeFocused();
-      if (differs) {
-        await expect(
-          dialog.getByRole('button', {
-            name: 'Confirmar importação',
-            exact: true,
-          }),
-        ).toBeDisabled();
-        await dialog
-          .getByRole('checkbox', { name: /Conferi as diferenças/ })
-          .check();
-      }
-      return dialog;
-    };
-    let lost = false;
-    for (const courseLabel of ['DS', 'ADM', 'ENF'] as const) {
-      const course = courses.get(courseLabel)!,
-        stage = courseLabel === 'DS' ? 1 : courseLabel === 'ADM' ? 3 : 4;
-      const sheet = sheetFixture('SUBSEQUENTE');
-      sheet.wb.Sheets['Fictícia'].A3 = {
-        t: 's',
-        v: `Técnico em ${courseLabel} - Subsequente`,
-      };
-      sheet.wb.Sheets['Fictícia'].A4 = {
-        t: 's',
-        v: `${stage}MODULO - TURMA-FICTICIA`,
-      };
-      expect((await upload(sheet.file())).status()).toBe(200);
-      await expect(page.getByLabel('Turma e ingresso')).toHaveValue('');
-      if (courseLabel === 'DS')
-        expect(
-          await page.getByLabel('Turma e ingresso').locator('option').count(),
-        ).toBe(3);
-      await configure(course.id, `Turma fictícia ${courseLabel}`);
-      if (courseLabel === 'DS') {
-        const binding = page.getByLabel(
-          'Escolha a matrícula do aluno 00001001',
-        );
-        await expect(
-          binding.getByRole('option', { name: /1º módulo/ }),
-        ).toHaveCount(1);
-        await binding.selectOption(legacy.id);
-        await page
-          .getByRole('button', {
-            name: 'Conferir matrículas escolhidas',
-            exact: true,
-          })
-          .click();
-        await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
-        await page
-          .getByRole('button', { name: 'Gerar prévia', exact: true })
-          .click();
-        await expect(
-          page.getByRole('heading', { name: 'Confira a prévia', exact: true }),
-        ).toBeVisible();
-      }
+      await page.keyboard.press('Escape');
       await expect(
-        page.getByRole('region', {
-          name: 'Comparação com o calendário',
-          exact: true,
-        }),
-      ).toContainText(
-        stage === 1
-          ? 'De acordo com o calendário'
-          : 'Módulo ou período diferente',
-      );
-      const dialog = await openConfirmation(stage !== 1);
-      if (courseLabel === 'ADM') {
-        await saveCourseCalendar(
-          db,
-          actor.account!.id,
-          course.id,
-          1,
-          { ...course.draft, label: course.draft.label + ' revista' },
-          true,
-        );
-        await dialog
-          .getByRole('button', { name: 'Confirmar importação', exact: true })
-          .click();
-        await expect(
-          page.getByRole('heading', { name: 'Confira cada aba', exact: true }),
-        ).toBeVisible();
-        await page
-          .getByRole('button', { name: 'Gerar prévia', exact: true })
-          .click();
-        await expect(
-          page.getByRole('heading', { name: 'Confira a prévia', exact: true }),
-        ).toBeVisible();
-        await openConfirmation(true);
-      }
-      if (courseLabel === 'ENF')
+        page.getByRole('button', { name: 'Aplicar importação', exact: true }),
+      ).toBeFocused();
+      await page
+        .getByRole('button', { name: 'Aplicar importação', exact: true })
+        .click();
+      if (course === 'ENF')
         await page.route('**/api/secretaria/importacao', async (route) => {
           if (route.request().postDataJSON().action === 'confirm' && !lost) {
             lost = true;
-            const response = await route.fetch();
-            expect(response.status()).toBe(200);
+            const applied = await route.fetch();
+            expect(applied.status()).toBe(200);
             await route.abort('failed');
-            return;
-          }
-          await route.continue();
+          } else await route.continue();
         });
+      if (course !== 'ENF') response = responseFor('confirm');
       await page
-        .getByRole('dialog')
         .getByRole('button', { name: 'Confirmar importação', exact: true })
         .click();
-      if (courseLabel === 'ENF') {
+      if (course === 'ENF') {
         await expect(page.getByRole('dialog').getByRole('alert')).toContainText(
           'Resultado não confirmado',
         );
+        response = responseFor('confirm');
         await page
-          .getByRole('dialog')
           .getByRole('button', { name: 'Confirmar importação', exact: true })
           .click();
       }
+      expect((await response).status()).toBe(200);
       await expect(
         page.getByRole('heading', {
           name: 'Importação concluída',
           exact: true,
         }),
       ).toBeVisible();
-      const saved = await db.enrollment.findFirstOrThrow({
-        where: { studentId: pupil.id, mode: 'SUBSEQUENTE', courseLabel },
+      const saved = await db.student.findUniqueOrThrow({
+        where: { schoolRegistration: registration },
+        include: { enrollments: true },
       });
-      expect(saved.offeringId).toBe(course.id);
-      expect(saved.moduleNumber).toBe(stage);
-      expect(saved.progressionHeld).toBe(true);
-      expect(saved.grade).toBe(null);
-      expect(saved.periodLabel).toBe(
-        course.draft.modules[stage - 1].periodLabel,
+      students.push(saved.id);
+      expect(saved.registrationAllowed).toBe(false);
+      expect(saved.enrollments).toHaveLength(1);
+      expect(saved.enrollments[0].moduleNumber).toBe(stage);
+      expect(saved.enrollments[0].progressionHeld).toBe(true);
+      expect(saved.enrollments[0].status).toBe('UNCONFIRMED');
+      expect(saved.enrollments[0].periodLabel).toBe('2026.2');
+      expect(saved.enrollments[0].validFrom!.toISOString().slice(0, 10)).toBe(
+        '2026-08-01',
       );
-      expect(
-        await db.enrollment.findUniqueOrThrow({ where: { id: integrated.id } }),
-      ).toEqual(integratedBefore);
-      expect(
-        await db.account.findUniqueOrThrow({ where: { id: accountBefore.id } }),
-      ).toEqual(accountBefore);
+      expect(await db.courseOffering.count()).toBe(index + 1);
       await page
         .getByRole('button', { name: 'Importar outro arquivo', exact: true })
         .click();
-      expect((await upload(sheet.file())).status()).toBe(200);
-      await configure(course.id, `Turma fictícia ${courseLabel}`);
+      expect((await upload(fixture.file())).status()).toBe(200);
+      await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
+      response = responseFor('preview');
+      await page
+        .getByRole('button', { name: 'Gerar prévia', exact: true })
+        .click();
+      expect((await response).status()).toBe(200);
       await expect(
         page.getByRole('row').filter({ hasText: 'Pessoa Fictícia Um' }),
       ).toContainText('Sem alteração');
-      if (courseLabel === 'ENF') {
-        await page.setViewportSize({ width: 1440, height: 1000 });
-        await page.screenshot({
-          path: testInfo.outputPath('subsequente-1440.png'),
-          fullPage: true,
-        });
-        await page.setViewportSize({ width: 320, height: 740 });
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-        ).toBe(true);
-        await page.screenshot({
-          path: testInfo.outputPath('subsequente-320.png'),
-          fullPage: true,
-        });
-      }
-      await openConfirmation(stage !== 1);
       await page
-        .getByRole('dialog')
+        .getByRole('button', { name: 'Aplicar importação', exact: true })
+        .click();
+      response = responseFor('confirm');
+      await page
         .getByRole('button', { name: 'Confirmar importação', exact: true })
         .click();
+      expect((await response).status()).toBe(200);
       await expect(
         page.getByRole('heading', {
           name: 'Importação concluída',
@@ -387,8 +224,11 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
         }),
       ).toBeVisible();
       expect(
-        await db.enrollment.count({
-          where: { studentId: pupil.id, mode: 'SUBSEQUENTE', courseLabel },
+        await db.enrollment.count({ where: { studentId: saved.id } }),
+      ).toBe(1);
+      expect(
+        await db.courseCalendarVersion.count({
+          where: { offeringId: scopes[index] },
         }),
       ).toBe(1);
       await page
@@ -396,15 +236,25 @@ test('secretaria importa subsequente com calendário, módulos e exceções sem 
         .click();
     }
     expect(lost).toBe(true);
-    expect(modes.every((mode) => mode === 'SUBSEQUENTE')).toBe(true);
+    await db.account.update({
+      where: { id: actor.account!.id },
+      data: { role: 'student' },
+    });
+    await page.goto(base + '/secretaria/importacao/subsequente');
+    await expect(
+      page.getByRole('heading', {
+        name: 'Acesso restrito à secretaria',
+        exact: true,
+      }),
+    ).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
     try {
       await db.student.deleteMany({ where: { id: { in: students } } });
       await db.courseCalendarVersion.deleteMany({
-        where: { offeringId: { in: offers } },
+        where: { offeringId: { in: scopes } },
       });
-      await db.courseOffering.deleteMany({ where: { id: { in: offers } } });
+      await db.courseOffering.deleteMany({ where: { id: { in: scopes } } });
     } finally {
       await env.close();
     }

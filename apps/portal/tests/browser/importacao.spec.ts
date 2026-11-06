@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import * as XLSX from 'xlsx';
-import { sheetFixture } from '../../scripts/test-sheet-input';
+import {
+  sheetFixture,
+  schoolHeaderFixture,
+} from '../../scripts/test-sheet-input';
 import { hashPassword } from '../../src/lib/password';
 
 // Banco e XLS inteiramente sintéticos. Não usa planilhas ou portal da equipe.
@@ -59,7 +62,11 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
               courseLabel: 'ADM',
               grade: 1,
               className: 'Turma antiga sintética',
-              periodLabel: '2025',
+              periodLabel: '2026',
+              status: 'ACTIVE',
+              reviewedAt: new Date(),
+              validFrom: new Date('2026-01-01'),
+              validUntil: new Date('2026-12-31'),
             },
             {
               mode: 'SUBSEQUENTE',
@@ -77,7 +84,7 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
     const subsequent = student.enrollments.find(
       (e) => e.mode === 'SUBSEQUENTE',
     )!;
-    const fixture = sheetFixture();
+    const fixture = schoolHeaderFixture('INTEGRADO', 'ADM');
     XLSX.utils.sheet_add_aoa(
       fixture.wb.Sheets['Fictícia'],
       registrations
@@ -183,9 +190,12 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.getByLabel('Turma e ingresso').selectOption('new');
-    await page.getByLabel('Nome da turma').fill('Turma integrada sintética');
-    await page.getByLabel('Período letivo').fill('2026');
+    await expect(page.getByLabel('Nome da turma')).toHaveValue('ADM1IN-A');
+    await expect(page.getByLabel('Nome da turma')).toHaveAttribute(
+      'readonly',
+      '',
+    );
+    await expect(page.getByLabel('Período letivo')).toHaveValue('2026');
     await page.getByRole('button', { name: 'Gerar prévia' }).click();
     await expect(
       page.getByRole('checkbox', { name: /Conferi turma/ }),
@@ -298,10 +308,8 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
       where: { id: integrated.id },
     });
     const scopeId = imported.schoolImportKey!.split(':')[1];
-    await page.getByLabel('Turma e ingresso').selectOption(scopeId);
-    await expect(page.getByLabel('Nome da turma')).toHaveValue(
-      'Turma integrada sintética',
-    );
+    await page.getByLabel('Lista da turma').selectOption(scopeId);
+    await expect(page.getByLabel('Nome da turma')).toHaveValue('ADM1IN-A');
     await expect(page.getByLabel('Período letivo')).toHaveValue('2026');
     await page.getByRole('checkbox', { name: /Conferi turma/ }).check();
     await preview();

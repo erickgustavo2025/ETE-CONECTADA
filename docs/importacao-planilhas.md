@@ -1,5 +1,7 @@
 # Importação das planilhas da secretaria
 
+> Atualização EC125: a tela atual usa turma e período do cabeçalho e cria a referência semestral na confirmação, sem cadastro prévio de calendário. Consulte [Turmas e períodos a partir do XLS](importacao-automatica-turmas.md). As descrições de escolha manual abaixo registram o contrato anterior, mantido para compatibilidade.
+
 Este contrato descreve como receber as listas do integrado e do subsequente sem
 confundir alunos, turmas ou módulos. O importador de backup JSON continua separado. O [núcleo de XLS](importacao-nucleo.md)
 já oferece API de desenvolvimento para leitura, prévia e atualização confirmada.

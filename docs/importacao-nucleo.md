@@ -1,5 +1,7 @@
 # Núcleo de importação da secretaria
 
+> Atualização EC125: a tela atual usa turma e período do cabeçalho e cria a referência semestral na confirmação, sem cadastro prévio de calendário. Consulte [Turmas e períodos a partir do XLS](importacao-automatica-turmas.md). As descrições de escolha manual abaixo registram o contrato anterior, mantido para compatibilidade.
+
 A API de desenvolvimento `POST /api/secretaria/importacao` lê XLS e prepara uma prévia antes de alterar cadastros. É exclusiva de uma sessão ativa da secretaria, exige a mesma origem e responde com `private, no-store`. O acesso em produção continua bloqueado. A secretaria acessa a entrada do integrado em `/secretaria/importacao/integrado`, pelo menu do portal. A entrada do subsequente continua na EC-106, após a configuração acadêmica da EC-108.
 
 ## Leitura

@@ -1,4 +1,5 @@
 import { calendarImportState } from './course-calendars';
+import { schoolClassSchedule } from './school-class-input';
 import { moduleOnDate, calendarDay } from './course-calendar-input';
 import { randomBytes } from 'node:crypto';
 import { Prisma, type PrismaClient } from '../generated/prisma/client';
@@ -31,6 +32,9 @@ async function state(tx: Tx, input: SheetInput) {
       schoolRegistration: true,
       fullName: true,
       birthDate: true,
+      loginBlocked: true,
+      issuanceBlocked: true,
+      accessRevision: true,
       details: {
         select: {
           parentOne: true,
@@ -73,10 +77,64 @@ async function state(tx: Tx, input: SheetInput) {
           ...new Set(input.contexts.map((c) => c.scopeId)),
         ])
       : [];
+  if (
+    input.mode === 'INTEGRADO' &&
+    input.contexts.some(
+      (context) =>
+        context.header?.useExisting &&
+        !enrollments.some((enrollment) =>
+          enrollment.schoolImportKey?.startsWith(`school:${context.scopeId}:`),
+        ),
+    )
+  )
+    throw new SheetImportError(
+      'A lista anterior não está mais disponível. Leia o arquivo novamente.',
+      409,
+    );
+  const generatedReferences: Array<{
+    id: string;
+    courseLabel: string;
+    draft: ReturnType<typeof schoolClassSchedule>;
+    version: { revision: number };
+  }> = [];
+  for (const context of input.contexts) {
+    if (!context.header || input.mode !== 'SUBSEQUENTE') continue;
+    const existing = calendars.find((c) => c.id === context.scopeId);
+    if (context.header.useExisting && !existing)
+      throw new SheetImportError(
+        'A turma antiga não está mais disponível. Leia o arquivo novamente.',
+        409,
+      );
+    if (!existing)
+      generatedReferences.push({
+        id: context.scopeId,
+        courseLabel: context.courseLabel,
+        draft: schoolClassSchedule(
+          context.courseLabel,
+          context.stage,
+          context.periodLabel,
+          context.header.classCode,
+        ),
+        version: { revision: 1 },
+      });
+  }
+  const referenceCount = generatedReferences.length
+    ? await tx.courseOffering.count()
+    : null;
+  if (
+    referenceCount !== null &&
+    referenceCount + generatedReferences.length > 200
+  )
+    throw new SheetImportError(
+      'Esta importação ultrapassa o limite de turmas. Procure o suporte antes de continuar.',
+      409,
+    );
   return {
+    referenceCount,
     students,
     enrollments,
-    calendars,
+    calendars: [...calendars, ...generatedReferences],
+    generatedReferences,
     calendarDay: input.mode === 'SUBSEQUENTE' ? calendarDay(new Date()) : null,
   };
 }
@@ -89,12 +147,17 @@ function plan(input: SheetInput, current: State) {
           const calendar = current.calendars.find(
             (c) => c.id === context.scopeId,
           );
-          const expected = calendar
-            ? (moduleOnDate(
-                calendar.draft,
-                new Date(current.calendarDay + 'T12:00:00Z'),
-              ) ?? calendar.draft.modules[0])
-            : null;
+          const expected =
+            calendar && context.header
+              ? (calendar.draft.modules.find(
+                  (m) => m.number === context.stage,
+                ) ?? null)
+              : calendar
+                ? (moduleOnDate(
+                    calendar.draft,
+                    new Date(current.calendarDay + 'T12:00:00Z'),
+                  ) ?? calendar.draft.modules[0])
+                : null;
           return {
             scopeId: context.scopeId,
             sheetName: context.sheetName,
@@ -206,7 +269,10 @@ function plan(input: SheetInput, current: State) {
         (c) => c.scopeId === row.context.scopeId && c.differs,
       );
     const metadata = {
-      className: row.context.className,
+      className:
+        row.context.header && enrollment
+          ? enrollment.className
+          : row.context.className,
       courseLabel: row.context.courseLabel,
       periodLabel: row.context.periodLabel,
       grade: input.mode === 'INTEGRADO' ? row.context.stage : null,
@@ -255,7 +321,17 @@ function plan(input: SheetInput, current: State) {
     const protectedParent =
       parentsChanged &&
       student?.details?.parentageSource === 'SECRETARY_CORRECTION';
+    const protectedPlacement = Boolean(
+      (row.context.header ||
+        enrollment?.schoolImportKey?.split(':')[1]?.[14] === '8') &&
+      enrollment &&
+      (enrollment.className !== metadata.className ||
+        enrollment.grade !== metadata.grade ||
+        enrollment.moduleNumber !== metadata.moduleNumber ||
+        enrollment.periodLabel !== metadata.periodLabel),
+    );
     const blocked =
+      protectedPlacement ||
       conflict ||
       protectedParent ||
       invalidScopes.has(row.context.scopeId) ||
@@ -454,6 +530,9 @@ export async function previewSheetImport(
           courseLabel: context.courseLabel,
           stage: context.stage,
           mode: input.mode,
+          reference:
+            current.calendars.find((c) => c.id === context.scopeId)?.draft ??
+            null,
         })),
         entries: prepared.entries.map((e) => ({
           sheet: e.row.sheet,
@@ -483,7 +562,7 @@ export async function previewSheetImport(
               : e.parentsChanged &&
                   e.student?.details?.parentageSource === 'SECRETARY_CORRECTION'
                 ? 'O nome do responsável nesta planilha é diferente do nome corrigido pela secretaria. Confira o registro escolar.'
-                : 'Confira a matrícula, a turma e se a lista é do integrado ou do subsequente.',
+                : 'Confira a matrícula e a turma. A importação não muda alunos de turma ou módulo; use a passagem ou transferência para isso.',
           needsBinding: e.needsBinding,
           candidates: !e.needsBinding
             ? []
@@ -566,6 +645,23 @@ export async function confirmSheetImport(
           'O módulo ou período da planilha é diferente do calendário. Confira os registros escolares e marque a confirmação para continuar.',
           409,
         );
+      // Somente a confirmação cria a referência; versões existentes/corrigidas são preservadas.
+      for (const reference of current.generatedReferences) {
+        await tx.courseOffering.create({
+          data: {
+            id: reference.id,
+            label: reference.draft.label,
+            courseLabel: reference.courseLabel,
+            calendars: {
+              create: {
+                revision: 1,
+                schedule: reference.draft,
+                createdById: actorId,
+              },
+            },
+          },
+        });
+      }
       const metadataChanges = new Set(
         prepared.entries
           .filter(
@@ -677,6 +773,17 @@ export async function confirmSheetImport(
               mode: input.mode,
               ...metadata,
               ...association,
+              ...(row.context.header
+                ? {
+                    schoolYear: row.context.header.schoolYear,
+                    validFrom: new Date(
+                      `${input.mode === 'SUBSEQUENTE' ? entry.calendar!.draft.modules[row.context.stage - 1].startsOn : `${row.context.header.schoolYear}-01-01`}T00:00:00Z`,
+                    ),
+                    validUntil: new Date(
+                      `${input.mode === 'SUBSEQUENTE' ? entry.calendar!.draft.modules[row.context.stage - 1].endsOn : `${row.context.header.schoolYear}-12-31`}T00:00:00Z`,
+                    ),
+                  }
+                : {}),
               schoolImportKey: row.key,
             },
           });

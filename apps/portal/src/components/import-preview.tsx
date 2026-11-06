@@ -89,48 +89,86 @@ export default function ImportPreview({
           </div>
         ))}
       </dl>
-      {!!preview.calendarComparisons?.length && (
-        <div
-          className={styles.tableWrap}
-          tabIndex={0}
-          role="region"
-          aria-label="Comparação com o calendário"
-        >
-          <table className={styles.table}>
-            <caption>Calendário e planilha</caption>
-            <thead>
-              <tr>
-                <th>Aba</th>
-                <th>Planilha recebida</th>
-                <th>Calendário previsto</th>
-                <th>Conferência</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.calendarComparisons.map((c) => (
-                <tr key={c.sheetName}>
-                  <td>{c.sheetName}</td>
-                  <td>
-                    Módulo {c.receivedModule} · {c.receivedPeriod}
-                  </td>
-                  <td>
-                    {c.configured
-                      ? `Módulo ${c.expectedModule} · ${c.expectedPeriod}`
-                      : 'Sem calendário configurado'}
-                  </td>
-                  <td>
-                    {c.differs
-                      ? 'Módulo ou período diferente: confira antes de importar'
-                      : c.configured
-                        ? 'De acordo com o calendário'
-                        : 'Sem mudança automática de módulo'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {!!preview.sheets?.some((sheet) => sheet.reference) && (
+        <section aria-label="Turmas e datas de referência">
+          <h3>Turmas e datas de referência</h3>
+          {preview.sheets
+            .filter((sheet) => sheet.reference)
+            .map((sheet) => (
+              <div className={styles.context} key={sheet.sheetName}>
+                <h4>{sheet.className}</h4>
+                <dl className={styles.referenceFields}>
+                  <div>
+                    <dt>Período da planilha</dt>
+                    <dd>{sheet.periodLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>Início do curso</dt>
+                    <dd>
+                      {sheet.reference!.startsOn.split('-').reverse().join('/')}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Conclusão prevista</dt>
+                    <dd>
+                      {sheet.reference!.endsOn.split('-').reverse().join('/')}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
+          <p>
+            Referências existentes são mantidas. Novas referências são estimadas
+            pela planilha. A importação não libera acesso nem promove alunos.
+          </p>
+        </section>
       )}
+      {!!preview.calendarComparisons?.length &&
+        (!preview.sheets?.some((sheet) => sheet.reference) ||
+          preview.calendarComparisons.some(
+            (comparison) => comparison.differs,
+          )) && (
+          <div
+            className={styles.tableWrap}
+            tabIndex={0}
+            role="region"
+            aria-label="Conferência de módulo e período"
+          >
+            <table className={styles.table}>
+              <caption>Módulo e período conferidos</caption>
+              <thead>
+                <tr>
+                  <th>Aba</th>
+                  <th>Planilha recebida</th>
+                  <th>Referência cadastrada</th>
+                  <th>Conferência</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.calendarComparisons.map((c) => (
+                  <tr key={c.sheetName}>
+                    <td>{c.sheetName}</td>
+                    <td>
+                      Módulo {c.receivedModule} · {c.receivedPeriod}
+                    </td>
+                    <td>
+                      {c.configured
+                        ? `Módulo ${c.expectedModule} · ${c.expectedPeriod}`
+                        : 'Sem referência cadastrada'}
+                    </td>
+                    <td>
+                      {c.differs
+                        ? 'Módulo ou período diferente: confira antes de importar'
+                        : c.configured
+                          ? 'De acordo com a referência'
+                          : 'Sem mudança automática de módulo'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       {counts.identityChanges > 0 && (
         <p className={styles.notice}>
           Há alterações de nome, nascimento ou filiação de{' '}
