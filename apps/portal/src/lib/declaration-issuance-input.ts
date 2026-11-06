@@ -6,6 +6,35 @@ import {
   DeclarationValidationError,
   type DeclarationStudent,
 } from './declarations';
+import { validateDeclaredBirthplace } from './birthplace-catalog';
+
+export function issuanceBirthplace(
+  student: DeclarationStudent,
+  value: unknown,
+) {
+  if (value === undefined) return student;
+  const place = validateDeclaredBirthplace(value);
+  const details = student.details;
+  if (!details)
+    throw new DeclarationValidationError(
+      'Procure a secretaria para completar seu cadastro.',
+    );
+  if (
+    details.birthplaceSource === 'SCHOOL_RECORD' ||
+    details.birthplaceSource === 'SECRETARY_CORRECTION'
+  ) {
+    if (
+      details.birthCity !== place.birthCity ||
+      details.birthState !== place.birthState ||
+      details.birthCountry !== place.birthCountry
+    )
+      throw new DeclarationValidationError(
+        'Seu local de nascimento já foi conferido pela escola. Procure a secretaria para corrigir.',
+      );
+    return student;
+  }
+  return { ...student, details: { ...details, ...place } };
+}
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function readIssuanceInput(value: unknown) {

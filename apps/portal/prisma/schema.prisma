@@ -159,6 +159,7 @@ enum DeclarationRequestStatus {
   REQUESTED
   IN_PREPARATION
   READY_FOR_PICKUP
+  AVAILABLE
 }
 
 model DeclarationRequest {
@@ -171,6 +172,8 @@ model DeclarationRequest {
   readyAt DateTime? @map("ready_at") @db.Timestamptz(6)
   preparedById String? @map("prepared_by_id") @db.Uuid
   readyById String? @map("ready_by_id") @db.Uuid
+  documentId String? @unique @map("document_id") @db.Uuid
+  document DeclarationDocument? @relation(fields: [documentId, studentId, enrollmentId], references: [id, studentId, enrollmentId], onDelete: Cascade, onUpdate: NoAction, map: "declaration_requests_document_fkey")
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   preparedBy Account? @relation("PreparedBy", fields: [preparedById], references: [id], onDelete: SetNull)
@@ -299,6 +302,7 @@ model DeclarationDocument {
   terminalActions DeclarationDocumentAction[] @relation("DocumentTerminalAction")
   predecessorActions DeclarationDocumentAction[] @relation("DocumentSuccessor")
   currentIssues DeclarationCurrentIssue[]
+  requests DeclarationRequest[]
   @@unique([createdById, requestKey])
   @@unique([id, studentId, enrollmentId])
   @@index([studentId, createdAt])

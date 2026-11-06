@@ -42,7 +42,7 @@ const columns: Record<string, string> = {
   declaration_documents:
     'id public_code student_id enrollment_id created_by_id created_at status snapshot_version snapshot source_pdf_sha256 source_pdf_page archive_sha256 origin request_key',
   declaration_requests:
-    'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id',
+    'id student_id enrollment_id status created_at generated_at ready_at prepared_by_id ready_by_id document_id',
   portal_schema_migrations: 'version applied_at',
   retired_profile_photos:
     'student_id photo_data mime_type updated_at object_key storage_bucket',
@@ -132,7 +132,12 @@ async function main() {
     assert.deepEqual(enums.rows, [
       {
         name: 'DeclarationRequestStatus',
-        values: ['REQUESTED', 'IN_PREPARATION', 'READY_FOR_PICKUP'],
+        values: [
+          'REQUESTED',
+          'IN_PREPARATION',
+          'READY_FOR_PICKUP',
+          'AVAILABLE',
+        ],
       },
       { name: 'EducationMode', values: ['INTEGRADO', 'SUBSEQUENTE'] },
       { name: 'EnrollmentStatus', values: ['UNCONFIRMED', 'ACTIVE', 'ENDED'] },
@@ -194,7 +199,7 @@ async function main() {
     );
     assert.match(
       constraint('declaration_requests_dates_check'),
-      /REQUESTED.*generated_at IS NULL.*IN_PREPARATION.*READY_FOR_PICKUP.*ready_at IS NOT NULL/,
+      /REQUESTED.*generated_at IS NULL.*IN_PREPARATION.*READY_FOR_PICKUP.*ready_at IS NOT NULL.*AVAILABLE.*document_id IS NOT NULL/,
     );
     assert.match(
       constraint('access_attempt_dates_check'),
@@ -373,9 +378,18 @@ async function main() {
     assert.ok(openRequest);
     assert.match(
       openRequest.indexdef,
-      /CREATE UNIQUE INDEX.*\(enrollment_id\) WHERE \(status <> 'READY_FOR_PICKUP'::"DeclarationRequestStatus"\)/,
+      /CREATE UNIQUE INDEX.*\(enrollment_id\) WHERE .*REQUESTED.*IN_PREPARATION/,
     );
 
+    assert.doesNotMatch(openRequest.indexdef, /AVAILABLE|READY_FOR_PICKUP/);
+    assert.match(
+      constraint('declaration_requests_document_fkey'),
+      /FOREIGN KEY \(document_id, student_id, enrollment_id\) REFERENCES declaration_documents\(id, student_id, enrollment_id\) ON DELETE CASCADE/,
+    );
+    const registered = await client.query(
+      "SELECT count(*)::int AS count FROM pg_trigger WHERE tgname='declaration_requests_registered' AND tgenabled='O' AND NOT tgisinternal",
+    );
+    assert.equal(registered.rows[0].count, 1);
     const migrations = new URL('../prisma/migrations/', import.meta.url);
     const directories = (await readdir(migrations, { withFileTypes: true }))
       .filter((entry) => entry.isDirectory())

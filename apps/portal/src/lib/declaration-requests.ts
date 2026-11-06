@@ -47,6 +47,13 @@ export const requestSummarySelect = {
   readyAt: true,
   enrollmentId: true,
   enrollment: { select: { className: true } },
+  document: {
+    select: {
+      id: true,
+      status: true,
+      terminalActions: { select: { action: true } },
+    },
+  },
 } satisfies Prisma.DeclarationRequestSelect;
 export function requestSummary(
   row: Prisma.DeclarationRequestGetPayload<{
@@ -61,6 +68,15 @@ export function requestSummary(
     readyAt: row.readyAt?.toISOString() ?? null,
     enrollmentId: row.enrollmentId,
     className: row.enrollment.className,
+    ...(row.document
+      ? {
+          document: {
+            id: row.document.id,
+            state:
+              row.document.terminalActions[0]?.action ?? row.document.status,
+          },
+        }
+      : {}),
   };
 }
 export async function studentRequests(studentId: string) {
@@ -118,7 +134,10 @@ export async function requestDeclaration(
           422,
         );
       const existing = await tx.declarationRequest.findFirst({
-        where: { enrollmentId, status: { not: 'READY_FOR_PICKUP' } },
+        where: {
+          enrollmentId,
+          status: { in: ['REQUESTED', 'IN_PREPARATION'] },
+        },
         select: requestSummarySelect,
       });
       if (existing)

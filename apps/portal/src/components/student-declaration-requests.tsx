@@ -1,5 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
+import AutomaticDeclarationRequests from './automatic-declaration-requests';
 import BirthplaceDialog, {
   type BirthplaceSummary,
   type DeclaredBirthplace,
@@ -14,8 +15,16 @@ type Props = {
   enrollmentId: string | null;
   initialRequests: RequestSummary[];
   birthplace: BirthplaceSummary | null;
+  automatic?: boolean;
 };
-export default function StudentDeclarationRequests({
+export default function StudentDeclarationRequests(props: Props) {
+  return props.automatic ? (
+    <AutomaticDeclarationRequests {...props} />
+  ) : (
+    <LegacyDeclarationRequests {...props} />
+  );
+}
+function LegacyDeclarationRequests({
   enrollmentId,
   initialRequests,
   birthplace,
@@ -28,7 +37,8 @@ export default function StudentDeclarationRequests({
   const lock = useRef(false);
   const active = requests.find(
     (row) =>
-      row.enrollmentId === enrollmentId && row.status !== 'READY_FOR_PICKUP',
+      row.enrollmentId === enrollmentId &&
+      ['REQUESTED', 'IN_PREPARATION'].includes(row.status),
   );
   async function perform(
     action: 'request' | 'refresh',
@@ -170,13 +180,20 @@ export default function StudentDeclarationRequests({
                   <span
                     className={`request-status request-status--${row.status.toLowerCase()}`}
                   >
-                    {requestStatusLabels[row.status]}
+                    {row.status === 'AVAILABLE'
+                      ? 'Documento gerado pelo portal'
+                      : requestStatusLabels[row.status]}
                   </span>
                   <h3>Declaração de vínculo</h3>
                   <p>
                     {row.className} · solicitada em {requestDate(row.createdAt)}
                   </p>
-                  {row.status === 'READY_FOR_PICKUP' ? (
+                  {row.status === 'AVAILABLE' ? (
+                    <p>
+                      Emissão registrada no histórico. A disponibilidade do
+                      arquivo depende do serviço de documentos da escola.
+                    </p>
+                  ) : row.status === 'READY_FOR_PICKUP' ? (
                     <p className="request-pickup">
                       <strong>
                         Você já pode buscar na secretaria da escola.

@@ -1,3 +1,4 @@
+import { isRequestSummary } from '../src/lib/declaration-request-types';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import {
@@ -73,3 +74,24 @@ assert.equal(sub.snapshot.moduleNumber, 1);
 console.log(
   'OK: emissão usa identidade, curso e filiação do registro escolar, com dados de teste explícitos.',
 );
+
+const summary = {
+  id: randomUUID(),
+  enrollmentId,
+  status: 'AVAILABLE',
+  createdAt: new Date().toISOString(),
+  generatedAt: new Date().toISOString(),
+  readyAt: null,
+  className: 'Turma fictícia',
+  document: { id: randomUUID(), state: 'ISSUED' },
+};
+assert.equal(isRequestSummary(summary), true);
+for (const value of [
+  null,
+  {},
+  { ...summary, createdAt: 'data desconhecida' },
+  { ...summary, document: null },
+  { ...summary, status: 'outra' },
+  { ...summary, document: { ...summary.document, state: 'DRAFT' } },
+])
+  assert.equal(isRequestSummary(value), false);

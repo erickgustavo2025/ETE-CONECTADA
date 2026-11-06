@@ -15,14 +15,19 @@ export default async function SecretaryDeclarationsPage() {
       {canManageDeclarations(session.role) ? (
         <>
           {declarationRegistryPreviewEnabled() && (
-            <p>
+            <div>
+              <p>
+                Novas declarações são geradas pelo próprio aluno. Consulte os
+                documentos emitidos no histórico; os pedidos antigos continuam
+                abaixo.
+              </p>
               <Link
                 href="/secretaria/documentos"
                 className="ete-button ete-button--secondary"
               >
                 Consultar histórico de documentos
               </Link>
-            </p>
+            </div>
           )}
           <SecretaryDeclarations />
         </>

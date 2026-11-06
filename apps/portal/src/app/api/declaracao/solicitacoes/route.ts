@@ -1,5 +1,13 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
 import { currentSession } from '@/lib/session';
+import { getDb } from '@/lib/db';
+import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { issueTestDeclaration } from '@/lib/declaration-issuance';
+import { readIssuanceInput } from '@/lib/declaration-issuance-input';
+import {
+  consumeAccessAttempt,
+  accessLimitResponse,
+} from '@/lib/access-throttle';
 import {
   privateHeaders,
   sameOriginRequest,
@@ -10,6 +18,8 @@ import {
   requestFailure,
   studentRequests,
   validRequestId,
+  requestSummary,
+  requestSummarySelect,
 } from '@/lib/declaration-requests';
 export const runtime = 'nodejs';
 async function handleGET() {
@@ -48,6 +58,38 @@ async function handlePOST(request: Request) {
     const input = await readPrivateBody(request, 1000);
     if ('response' in input) return input.response;
     const body = input.body;
+    if (declarationRegistryPreviewEnabled()) {
+      if (session.role !== 'student')
+        return Response.json(
+          { error: 'Entre com sua conta de aluno.' },
+          { status: 403, headers: privateHeaders },
+        );
+      // Nenhum campo de identidade, autorização ou conteúdo do PDF é aceito.
+      const { birthplace, ...intent } = body;
+      const value = readIssuanceInput(intent);
+      const db = getDb();
+      const limit = accessLimitResponse(
+        await consumeAccessAttempt(db, 'issuance', session.accountId),
+      );
+      if (limit) {
+        for (const [name, value] of Object.entries(privateHeaders))
+          limit.headers.set(name, value);
+        return limit;
+      }
+      const issued = await issueTestDeclaration(
+        session.accountId,
+        value,
+        birthplace,
+      );
+      const row = await db.declarationRequest.findUniqueOrThrow({
+        where: { documentId: issued.document.id },
+        select: requestSummarySelect,
+      });
+      return Response.json(
+        { request: requestSummary(row), created: issued.created },
+        { status: issued.created ? 201 : 200, headers: privateHeaders },
+      );
+    }
     if (!body || !validRequestId(body.enrollmentId))
       return Response.json(
         { error: 'Escolha sua matrícula.' },

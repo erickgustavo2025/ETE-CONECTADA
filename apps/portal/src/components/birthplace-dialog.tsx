@@ -17,6 +17,7 @@ type Props = {
   initial: BirthplaceSummary | null;
   onClose: () => void;
   onConfirm: (place?: DeclaredBirthplace) => Promise<boolean>;
+  automatic?: boolean;
 };
 const searchText = (value: string) =>
   value
@@ -31,6 +32,7 @@ export default function BirthplaceDialog({
   initial,
   onClose,
   onConfirm,
+  automatic = false,
 }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const first = useRef<HTMLSelectElement>(null);
@@ -140,6 +142,12 @@ export default function BirthplaceDialog({
           Confira o local de nascimento para preencher sua declaração. É o local
           onde você nasceu, mesmo que more em outra cidade.
         </p>
+        {automatic && (
+          <p>
+            Uma nova declaração substitui a anterior desta matrícula. Você
+            poderá abrir ou baixar o PDF aqui.
+          </p>
+        )}
         <form noValidate onSubmit={submit}>
           <fieldset disabled={busy}>
             {fixed ? (
@@ -294,7 +302,13 @@ export default function BirthplaceDialog({
               }
               aria-busy={busy}
             >
-              {busy ? 'Enviando solicitação…' : 'Enviar solicitação'}
+              {busy
+                ? automatic
+                  ? 'Gerando declaração…'
+                  : 'Enviando solicitação…'
+                : automatic
+                  ? 'Gerar declaração'
+                  : 'Enviar solicitação'}
             </button>
           </div>
         </form>
