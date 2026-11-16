@@ -1,3 +1,4 @@
+import { dayBeforePromotion } from './school-promotion-input';
 import type { PrismaClient } from '../generated/prisma/client';
 import {
   readCalendarDraft,
@@ -238,6 +239,12 @@ export function subsequentContext(
     throw fail();
   }
   const current = moduleOnDate(draft, now);
+  const next = current ? draft.modules[current.number] : undefined;
+  const until = enrollment.validUntil?.toISOString().slice(0, 10);
+  const matchesEnd =
+    current &&
+    (until === current.endsOn ||
+      (next && until === dayBeforePromotion(next.startsOn)));
   if (
     draft.courseLabel !== enrollment.courseLabel ||
     !current ||
@@ -245,7 +252,7 @@ export function subsequentContext(
     current.number !== enrollment.moduleNumber ||
     current.periodLabel !== enrollment.periodLabel ||
     enrollment.validFrom?.toISOString().slice(0, 10) !== current.startsOn ||
-    enrollment.validUntil?.toISOString().slice(0, 10) !== current.endsOn
+    !matchesEnd
   )
     throw fail();
   return {

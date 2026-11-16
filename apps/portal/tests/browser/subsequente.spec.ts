@@ -189,7 +189,7 @@ test('secretaria importa subsequente sem calendário prévio, confere estimativa
       expect(saved.registrationAllowed).toBe(false);
       expect(saved.enrollments).toHaveLength(1);
       expect(saved.enrollments[0].moduleNumber).toBe(stage);
-      expect(saved.enrollments[0].progressionHeld).toBe(true);
+      expect(saved.enrollments[0].progressionHeld).toBe(false);
       expect(saved.enrollments[0].status).toBe('UNCONFIRMED');
       expect(saved.enrollments[0].periodLabel).toBe('2026.2');
       expect(saved.enrollments[0].validFrom!.toISOString().slice(0, 10)).toBe(

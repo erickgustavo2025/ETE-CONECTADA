@@ -236,6 +236,12 @@ async function main() {
       ],
       ['/api/secretaria/documentos/busca', 404, {}],
       ['/api/secretaria/alunos/administracao', 404, { operation: 'search' }],
+      [
+        '/api/secretaria/alunos/administracao',
+        404,
+        { operation: 'classes', mode: 'INTEGRADO' },
+      ],
+      ['/api/secretaria/alunos/situacao-escolar', 404, { operation: 'detail' }],
       ['/api/secretaria/documentos/arquivo', 404, {}],
       ['/api/declaracao/arquivo', 404, {}],
       ['/api/secretaria/documentos/alteracoes', 404, {}],

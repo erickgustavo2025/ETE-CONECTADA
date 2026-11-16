@@ -10,6 +10,7 @@ async function main() {
         (SELECT count(*) FROM access_attempt_buckets) +
         (SELECT count(*) FROM students) +
         (SELECT count(*) FROM student_access_changes) +
+        (SELECT count(*) FROM school_academic_events) +
         (SELECT count(*) FROM course_calendar_versions) +
         (SELECT count(*) FROM course_offerings) +
         (SELECT count(*) FROM student_details) +

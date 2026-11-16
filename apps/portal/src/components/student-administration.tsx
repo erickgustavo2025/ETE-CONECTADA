@@ -1,6 +1,9 @@
 'use client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import SchoolClassList from './school-class-list';
+import type { AcademicDetail } from '@/lib/school-academic-types';
+import AcademicEnrollmentPanel from './academic-enrollment-panel';
 import { newRequestKey } from '@/lib/request-key';
 import { useFormValidation } from './use-form-validation';
 import type {
@@ -47,6 +50,7 @@ function isStudent(value: unknown): value is AdminStudent {
     typeof s.name === 'string' &&
     typeof s.loginBlocked === 'boolean' &&
     typeof s.issuanceBlocked === 'boolean' &&
+    typeof s.academicWaiting === 'boolean' &&
     Number.isSafeInteger(s.revision) &&
     Array.isArray(s.enrollments)
   );
@@ -122,6 +126,9 @@ export default function StudentAdministration() {
     [uncertain, setUncertain] = useState(false),
     [conflict, setConflict] = useState(false),
     [message, setMessage] = useState('');
+  const resultHeading = useRef<HTMLHeadingElement>(null);
+  const detailDialog = useRef<HTMLDialogElement>(null),
+    detailTrigger = useRef<HTMLElement | null>(null);
   const dialog = useRef<HTMLDialogElement>(null),
     safe = useRef<HTMLButtonElement>(null),
     trigger = useRef<HTMLElement | null>(null),
@@ -160,6 +167,9 @@ export default function StudentAdministration() {
       });
     return () => controller.abort();
   }, [applied, page, refresh]);
+  useEffect(() => {
+    if (results && !selected) resultHeading.current?.focus();
+  }, [results, selected]);
   useEffect(() => {
     if (!selected) return;
     const controller = new AbortController();
@@ -200,6 +210,48 @@ export default function StudentAdministration() {
       trigger.current?.focus();
     }
   }, [pending]);
+  useEffect(() => {
+    const d = detailDialog.current;
+    if (selected && d && !d.open) {
+      d.showModal();
+      heading.current?.focus();
+    } else if (!selected) detailTrigger.current?.focus();
+  }, [selected]);
+  function closeDetail() {
+    if (busy || pending) return;
+    setSelected('');
+    setAcademic('');
+    setDetail(null);
+  }
+  function academicChanged(value: AcademicDetail) {
+    const row = value.enrollment;
+    const update = (s: AdminStudent) => ({
+      ...s,
+      academicWaiting: s.enrollments.some((e) => e.id === row.id)
+        ? value.academicWaiting
+        : s.academicWaiting,
+      enrollments: s.enrollments.map((e) =>
+        e.id === row.id
+          ? {
+              ...e,
+              className: row.className,
+              periodLabel: row.periodLabel,
+              status: row.status,
+              repetitionPending: row.repetitionPending,
+              repetitionOverride: row.repetitionOverride,
+              grade: row.mode === 'INTEGRADO' ? row.stage : null,
+              moduleNumber: row.mode === 'SUBSEQUENTE' ? row.stage : null,
+            }
+          : e,
+      ),
+    });
+    setDetail((old) =>
+      old?.student ? { ...old, student: update(old.student) } : old,
+    );
+    setResults((old) =>
+      old ? { ...old, students: old.students.map(update) } : old,
+    );
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (
@@ -303,23 +355,43 @@ export default function StudentAdministration() {
       if (mounted.current) setBusy(false);
     }
   }
+  const [academic, setAcademic] = useState('');
   const student = detail?.student;
   return (
     <section className="document-page">
       <Link href="/secretaria/declaracoes">Voltar às declarações</Link>
       <h1>Alunos e acesso</h1>
       <p className="document-intro">
-        Encontre o aluno para consultar suas turmas e controlar o acesso ao
-        portal ou a emissão de novas declarações.
+        Abra uma turma para consultar seus alunos ou busque pelo nome ou
+        matrícula. Nos detalhes, consulte a situação escolar e os bloqueios.
       </p>
       <aside className="document-notice">
-        <strong>Área de testes</strong>
+        <strong>Como funcionam os bloqueios</strong>
         <p>
           Bloquear o acesso encerra as sessões do aluno. Bloquear novas
           declarações mantém o acesso e os downloads anteriores. Nenhuma dessas
           ações cancela um documento já emitido.
         </p>
       </aside>
+      <SchoolClassList
+        onSelect={(row) => {
+          const next = {
+            ...initial,
+            mode: row.mode,
+            className: row.className,
+            periodLabel: row.periodLabel,
+            courseLabel: row.courseLabel,
+          };
+          setFilters(next);
+          setApplied(next);
+          setPage(1);
+          setSelected('');
+          setAcademic('');
+          setMessage('');
+          setRefresh((n) => n + 1);
+        }}
+      />
+      <h2>Buscar alunos</h2>
       <form onSubmit={submit} noValidate aria-label="Buscar alunos">
         <div className={styles.filters}>
           <label className={'declaration-field ' + styles.wide}>
@@ -346,6 +418,8 @@ export default function StudentAdministration() {
                   ...filters,
                   mode: e.target.value as StudentSearch['mode'],
                   className: '',
+                  periodLabel: undefined,
+                  courseLabel: '',
                 })
               }
             >
@@ -360,7 +434,12 @@ export default function StudentAdministration() {
               maxLength={120}
               value={filters.className}
               onChange={(e) =>
-                setFilters({ ...filters, className: e.target.value })
+                setFilters({
+                  ...filters,
+                  className: e.target.value,
+                  periodLabel: undefined,
+                  courseLabel: '',
+                })
               }
               list="student-classes"
               placeholder="Todas as turmas"
@@ -436,6 +515,11 @@ export default function StudentAdministration() {
       )}
       {results && (
         <section aria-label="Resultado da busca de alunos">
+          <h2 ref={resultHeading} tabIndex={-1}>
+            {applied?.className
+              ? `Alunos de ${applied.className}${applied.periodLabel ? ` · ${applied.periodLabel}` : ''}`
+              : 'Alunos encontrados'}
+          </h2>
           <p>
             {results.total} aluno(s) encontrado(s). Página {results.page} de{' '}
             {Math.max(1, Math.ceil(results.total / results.pageSize))}.
@@ -456,7 +540,7 @@ export default function StudentAdministration() {
                       ? 'Acesso bloqueado'
                       : 'Acesso sem bloqueio'}{' '}
                     ·{' '}
-                    {s.issuanceBlocked
+                    {s.issuanceBlocked || s.academicWaiting
                       ? 'Novas declarações bloqueadas'
                       : 'Novas declarações sem bloqueio'}
                   </p>
@@ -464,14 +548,16 @@ export default function StudentAdministration() {
                     {s.enrollments
                       .map(
                         (e) =>
-                          `${e.className} · ${e.mode === 'INTEGRADO' ? 'Integrado' : 'Subsequente'}`,
+                          `${e.className} · ${e.mode === 'INTEGRADO' ? 'Integrado' : 'Subsequente'}${e.repetitionPending ? ' · Reprovado: aguardando nova turma' : ''}`,
                       )
                       .join(' / ') || 'Sem turma cadastrada'}
                   </p>
                   <button
                     type="button"
                     className="ete-button ete-button--secondary"
-                    onClick={() => {
+                    onClick={(event) => {
+                      detailTrigger.current = event.currentTarget;
+                      setAcademic('');
                       setSelected(s.id);
                       setHistoryPage(1);
                       setMessage('');
@@ -504,7 +590,24 @@ export default function StudentAdministration() {
         </section>
       )}
       {selected && (
-        <section aria-labelledby="student-detail-title">
+        <dialog
+          ref={detailDialog}
+          className={styles.dialog}
+          aria-labelledby="student-detail-title"
+          onCancel={(event) => {
+            if (event.target !== event.currentTarget) return;
+            event.preventDefault();
+            closeDetail();
+          }}
+        >
+          <button
+            type="button"
+            className={'ete-button ete-button--secondary ' + styles.closeDetail}
+            onClick={closeDetail}
+            disabled={busy || !!pending}
+          >
+            Voltar à lista de alunos
+          </button>
           <h2 ref={heading} id="student-detail-title" tabIndex={-1}>
             Dados e bloqueios do aluno
           </h2>
@@ -541,11 +644,36 @@ export default function StudentAdministration() {
                       ? `${e.grade ?? '—'}ª série`
                       : `${e.moduleNumber ?? '—'}º módulo`}{' '}
                     · {e.periodLabel ?? 'Período não informado'}
-                    <p>{schoolStatus[e.status] ?? 'Matrícula a conferir'}</p>
+                    <p>
+                      {e.repetitionPending
+                        ? 'Reprovado: aguardando nova turma'
+                        : (schoolStatus[e.status] ?? 'Matrícula a conferir')}
+                    </p>
+                    <button
+                      type="button"
+                      className="ete-button ete-button--secondary"
+                      onClick={() => setAcademic(e.id)}
+                    >
+                      Conferir situação escolar de {e.className}
+                    </button>
                   </li>
                 ))}
               </ul>
+              {student.enrollments.some((e) => e.id === academic) && (
+                <AcademicEnrollmentPanel
+                  key={academic}
+                  enrollmentId={academic}
+                  onChanged={academicChanged}
+                />
+              )}
               <h3>Bloqueios</h3>
+              {student.academicWaiting && (
+                <p className="document-notice">
+                  A reprovação está bloqueando novas solicitações enquanto o
+                  aluno aguarda outra turma. Alterar o bloqueio manual abaixo
+                  não muda a situação escolar.
+                </p>
+              )}
               <p>
                 Acesso ao portal:{' '}
                 <strong>
@@ -553,7 +681,7 @@ export default function StudentAdministration() {
                 </strong>
               </p>
               <p>
-                Novas declarações:{' '}
+                Bloqueio manual de novas declarações:{' '}
                 <strong>
                   {student.issuanceBlocked ? 'Bloqueadas' : 'Sem bloqueio'}
                 </strong>
@@ -631,7 +759,7 @@ export default function StudentAdministration() {
               )}
             </>
           )}
-        </section>
+        </dialog>
       )}
       <dialog
         className={styles.dialog}

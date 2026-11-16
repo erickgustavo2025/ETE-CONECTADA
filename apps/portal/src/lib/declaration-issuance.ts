@@ -1,3 +1,8 @@
+import {
+  synchronizeOwnAcademicState,
+  applyStudentAcademicProgression,
+  requireAcademicRequestAccess,
+} from './school-academic';
 import { lockStudentAccess, requireIssuanceAccess } from './student-access';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { getDb } from './db';
@@ -77,7 +82,11 @@ export async function issueTestDeclaration(
     where: key,
     select: issuedSelect,
   });
-  if (!replay) requireIssuanceAccess(actor.student);
+  if (!replay) {
+    requireIssuanceAccess(actor.student);
+    await requireAcademicRequestAccess(db, actor.studentId);
+    await synchronizeOwnAcademicState(accountId);
+  }
   // Repetição de chave não gera um novo PDF, mesmo se o cadastro mudou depois.
   const original = replay
     ? null
@@ -134,6 +143,8 @@ export async function issueTestDeclaration(
         return result(previousRequest, false);
       }
       requireIssuanceAccess(access);
+      await requireAcademicRequestAccess(tx, actor.studentId);
+      await applyStudentAcademicProgression(tx, actor.studentId);
       if (!content || !file)
         throw new RequestError('Atualize a página e tente novamente.', 409);
       await tx.$queryRaw`SELECT student_id FROM student_details WHERE student_id=${actor.studentId}::uuid FOR UPDATE`;

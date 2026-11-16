@@ -85,6 +85,12 @@ model Enrollment {
   calendarModule Int? @map("calendar_module")
   calendarRevision Int? @map("calendar_revision")
   progressionHeld Boolean @default(true) @map("progression_held")
+  repetitionPending Boolean @default(false) @map("repetition_pending")
+  repetitionOverride Boolean @default(false) @map("repetition_override")
+  academicRevision Int @default(0) @map("academic_revision")
+  entryStartedOn DateTime? @map("entry_started_on") @db.Date
+  nextClassName String? @map("next_class_name") @db.VarChar(100)
+  academicEvents SchoolAcademicEvent[]
   offering CourseOffering? @relation(fields: [offeringId], references: [id], onDelete: Restrict, onUpdate: NoAction)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -123,6 +129,7 @@ model Account {
   preparedDocuments DeclarationDocument[]
   declarationDocumentActions DeclarationDocumentAction[]
   studentAccessChanges StudentAccessChange[]
+  academicEvents SchoolAcademicEvent[]
   @@map("accounts")
 }
 
@@ -373,4 +380,25 @@ model DeclarationDocumentAction {
   createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
   @@index([createdById])
   @@map("declaration_document_actions")
+}
+
+// Eventos somente de acréscimo, separados da matrícula operacional.
+model SchoolAcademicEvent {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  enrollmentId String @map("enrollment_id") @db.Uuid
+  actorId String? @map("actor_id") @db.Uuid
+  operationKey String @unique @map("operation_key") @db.VarChar(160)
+  kind String @db.VarChar(24)
+  revision Int
+  beforeState Json @map("before_state") @db.JsonB
+  afterState Json @map("after_state") @db.JsonB
+  effectiveOn DateTime @map("effective_on") @db.Date
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  reason String @db.VarChar(500)
+  enrollment Enrollment @relation(fields:[enrollmentId],references:[id],onDelete:Restrict,onUpdate:NoAction)
+  actor Account? @relation(fields:[actorId],references:[id],onDelete:Restrict,onUpdate:NoAction)
+  @@unique([enrollmentId,revision])
+  @@index([createdAt,id])
+  @@index([actorId])
+  @@map("school_academic_events")
 }

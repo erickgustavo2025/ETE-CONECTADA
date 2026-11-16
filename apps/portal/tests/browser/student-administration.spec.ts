@@ -171,7 +171,7 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
       await result
         .getByRole('button', { name: 'Ver aluno e bloqueios' })
         .click();
-      const detail = page.getByRole('region', {
+      const detail = page.getByRole('dialog', {
         name: 'Dados e bloqueios do aluno',
       });
       const block = detail.getByRole('button', {

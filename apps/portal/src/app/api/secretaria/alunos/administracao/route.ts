@@ -1,5 +1,6 @@
 import { currentSession } from '@/lib/session';
 import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { listSchoolClasses } from '@/lib/school-class-catalogue';
 import { administerStudents } from '@/lib/student-administration';
 import { requestFailure } from '@/lib/declaration-requests';
 import {
@@ -54,7 +55,9 @@ async function handlePOST(request: Request) {
       return limit;
     }
     return Response.json(
-      await administerStudents(session.accountId, input.body),
+      input.body.operation === 'classes'
+        ? await listSchoolClasses(session.accountId, input.body)
+        : await administerStudents(session.accountId, input.body),
       { headers: privateHeaders },
     );
   } catch (error) {
