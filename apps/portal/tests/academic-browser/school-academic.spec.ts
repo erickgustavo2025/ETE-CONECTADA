@@ -545,6 +545,12 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
           .filter({ hasText: student.s.schoolRegistration! })
           .getByRole('button', { name: 'Ver aluno e bloqueios' }),
       ).toBeFocused();
+      await page.setViewportSize({ width: 320, height: 900 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
       await page.screenshot({
         path: info.outputPath(`turmas-${mode}-320.png`),
         fullPage: true,
