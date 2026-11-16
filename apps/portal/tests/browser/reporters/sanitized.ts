@@ -10,6 +10,12 @@ export default class SanitizedReporter implements Reporter {
     console.log(`EC-039: ${suite.allTests().length} testes de navegador.`);
   }
 
+  onStdErr(chunk: string | Buffer) {
+    const message =
+      'Laboratório interrompido: atualize o Next.js antes de repetir a validação.';
+    if (chunk.toString().includes(message)) console.error(message);
+  }
+
   onTestEnd(test: TestCase, result: TestResult) {
     console.log(
       `${result.status === 'passed' ? 'OK' : result.status.toUpperCase()}: ${test.title}`,
