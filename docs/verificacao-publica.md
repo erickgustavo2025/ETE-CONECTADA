@@ -103,3 +103,17 @@ bytes anteriores, downloads privados, cancelamento/substituição e bloqueios. O
 registros sintéticos ficam no banco até descartar a instância inteira, sem apagar
 histórico para facilitar o teste. O navegador executa também os dois modos escolares
 em `automatic-declaration.spec.ts`, incluindo naturalidade e leitura pública.
+
+## Navegação do portal
+
+Os atalhos do menu usam links HTML normais, como a volta para a página inicial.
+O acesso faz uma navegação completa e consulta novamente a sessão. A escolha
+remove a dependência de uma transição do cliente que pode ficar pendente ao
+fechar o menu; filtros e demais interações dentro das telas continuam sem recarga.
+O teste de acessibilidade preserva foco/teclado/contraste/reflow e mantém uma
+transição RSC interrompida na navegação da secretaria para verificar a recuperação.
+
+Referência: [comportamento do Link](https://nextjs.org/docs/app/api-reference/components/link).
+A documentação descreve transições no cliente e prefetch; isso não prova que
+uma ocorrência específica do fornecedor seja a causa exata da falha intermitente
+observada. O teste local reproduz a classe de falha de carregamento interrompido.

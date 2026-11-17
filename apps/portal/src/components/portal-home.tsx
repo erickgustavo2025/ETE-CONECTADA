@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import LogoutButton from './logout-button';
 import { useClientReady } from './use-client-ready';
@@ -169,7 +168,7 @@ export default function PortalHome({
                 <p>Bom ter você por aqui.</p>
                 <p className={styles.help}>
                   {role === 'secretary'
-                    ? 'Atenda os pedidos dos alunos e organize as turmas pelo menu de serviços.'
+                    ? 'Consulte os documentos dos alunos e organize as turmas pelo menu de serviços.'
                     : 'Solicite documentos e acompanhe o atendimento da escola pelo menu de serviços.'}
                 </p>
                 <button
@@ -205,8 +204,8 @@ export default function PortalHome({
                 <strong>Declaração de vínculo</strong>
                 <br />
                 {role === 'secretary'
-                  ? 'Abra o menu de serviços para conferir os pedidos e preparar as declarações dos alunos.'
-                  : 'Peça pelo portal e acompanhe quando estiver pronta para buscar na escola.'}
+                  ? 'As declarações são geradas pelos alunos. Consulte os documentos e suas situações pelo menu de serviços.'
+                  : 'Gere sua declaração pelo portal. Abra ou baixe o PDF na sua lista de solicitações.'}
               </span>
             </p>
           </>
@@ -244,7 +243,7 @@ export default function PortalHome({
           <div className={styles.menuServices}>
             {services.map((service, index) =>
               index === 0 ? (
-                <Link
+                <a
                   className={styles.menuService}
                   key={service.title}
                   href={
@@ -258,7 +257,7 @@ export default function PortalHome({
                     <ServiceIcon name={service.icon} />
                   </span>
                   <span>{service.title}</span>
-                </Link>
+                </a>
               ) : (
                 <button
                   className={styles.menuService}
@@ -281,7 +280,7 @@ export default function PortalHome({
               ),
             )}
             {role === 'secretary' && (
-              <Link
+              <a
                 className={styles.menuService}
                 href="/secretaria/alunos"
                 onClick={() => setMenuOpen(false)}
@@ -290,10 +289,10 @@ export default function PortalHome({
                   <ServiceIcon name="history" />
                 </span>
                 <span>Alunos e acesso</span>
-              </Link>
+              </a>
             )}
             {role === 'secretary' && (
-              <Link
+              <a
                 className={styles.menuService}
                 href="/secretaria/importacao/integrado"
                 onClick={() => setMenuOpen(false)}
@@ -302,10 +301,10 @@ export default function PortalHome({
                   <ServiceIcon name="history" />
                 </span>
                 <span>Importar alunos do integrado</span>
-              </Link>
+              </a>
             )}
             {role === 'secretary' && (
-              <Link
+              <a
                 className={styles.menuService}
                 href="/secretaria/importacao/subsequente"
                 onClick={() => setMenuOpen(false)}
@@ -314,7 +313,7 @@ export default function PortalHome({
                   <ServiceIcon name="history" />
                 </span>
                 <span>Importar alunos do subsequente</span>
-              </Link>
+              </a>
             )}
           </div>
           <div
