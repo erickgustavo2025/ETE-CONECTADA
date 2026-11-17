@@ -102,6 +102,10 @@ export default function AcademicEnrollmentPanel({
     [uncertain, setUncertain] = useState(false),
     [conflict, setConflict] = useState(false);
   const validation = useFormValidation('academic-action-error');
+  const changed = useRef(onChanged);
+  useEffect(() => {
+    changed.current = onChanged;
+  }, [onChanged]);
   const dialog = useRef<HTMLDialogElement>(null),
     safe = useRef<HTMLButtonElement>(null),
     trigger = useRef<HTMLElement | null>(null),
@@ -125,7 +129,10 @@ export default function AcademicEnrollmentPanel({
     const timer = setTimeout(() => controller.abort(), 20000);
     send({ operation: 'detail', enrollmentId, page }, controller.signal)
       .then((value) => {
-        if (active && !controller.signal.aborted) setData(value);
+        if (active && !controller.signal.aborted) {
+          setData(value);
+          changed.current?.(value);
+        }
       })
       .catch((e) => {
         if (active && mounted.current)

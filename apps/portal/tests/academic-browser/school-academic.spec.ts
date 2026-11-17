@@ -521,6 +521,7 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
       await expect(
         panel.getByText('Matrícula ativa', { exact: true }),
       ).toBeVisible();
+      await expect(selectedRow).toContainText('Novas declarações sem bloqueio');
       for (const width of [320, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         expect(
