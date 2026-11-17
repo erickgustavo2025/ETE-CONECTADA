@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { openTestEnvironment, reportTestFailure } from './test-environment';
 import { syntheticEnrollmentValidity } from './enrollment-fixture';
 import { subsequentFixture } from './subsequent-declaration-fixture';
-import { issueTestDeclaration } from '../src/lib/declaration-issuance';
+import { issueDeclaration } from '../src/lib/declaration-issuance';
 import { changeDeclarationDocument } from '../src/lib/declaration-document-actions';
 import { readArchivedDeclarationPdf } from '../src/lib/declaration-pdf-archive';
 import { searchDocuments } from '../src/lib/document-search';
@@ -79,7 +79,7 @@ async function main() {
     const key = randomUUID();
     const initialCalls = await Promise.all(
       Array.from({ length: 4 }, () =>
-        issueTestDeclaration(a.account.id, {
+        issueDeclaration(a.account.id, {
           enrollmentId: enrollment.id,
           requestKey: key,
         }),
@@ -103,7 +103,7 @@ async function main() {
     });
     const repeated = await Promise.all(
       Array.from({ length: 4 }, () =>
-        issueTestDeclaration(a.account.id, {
+        issueDeclaration(a.account.id, {
           enrollmentId: enrollment.id,
           requestKey: key,
         }),
@@ -125,24 +125,24 @@ async function main() {
       Buffer.from(original.bytes),
     );
     await assert.rejects(
-      issueTestDeclaration(a.account.id, {
+      issueDeclaration(a.account.id, {
         enrollmentId: other.id,
         requestKey: key,
       }),
     );
     await assert.rejects(
-      issueTestDeclaration(a.account.id, {
+      issueDeclaration(a.account.id, {
         enrollmentId: other.id,
         requestKey: randomUUID(),
       }),
     );
     await assert.rejects(
-      issueTestDeclaration(staff.account.id, {
+      issueDeclaration(staff.account.id, {
         enrollmentId: enrollment.id,
         requestKey: randomUUID(),
       }),
     );
-    const second = await issueTestDeclaration(a.account.id, {
+    const second = await issueDeclaration(a.account.id, {
       enrollmentId: enrollment.id,
       requestKey: randomUUID(),
     });
@@ -183,7 +183,7 @@ async function main() {
     await db.$executeRaw`CREATE TRIGGER ec095_failure BEFORE UPDATE ON declaration_current_issues FOR EACH ROW EXECUTE FUNCTION ec095_fail_current()`;
     try {
       await assert.rejects(
-        issueTestDeclaration(a.account.id, {
+        issueDeclaration(a.account.id, {
           enrollmentId: enrollment.id,
           requestKey: randomUUID(),
         }),
@@ -214,7 +214,7 @@ async function main() {
       },
       staff.account.id,
     );
-    const next = await issueTestDeclaration(a.account.id, {
+    const next = await issueDeclaration(a.account.id, {
       enrollmentId: enrollment.id,
       requestKey: randomUUID(),
     });
@@ -233,7 +233,7 @@ async function main() {
     );
     const concurrent = await Promise.all(
       Array.from({ length: 3 }, () =>
-        issueTestDeclaration(a.account.id, {
+        issueDeclaration(a.account.id, {
           enrollmentId: enrollment.id,
           requestKey: randomUUID(),
         }),
@@ -252,7 +252,7 @@ async function main() {
     );
 
     // O mesmo UUID de pedido de outra conta não reutiliza o documento do primeiro aluno.
-    const independent = await issueTestDeclaration(b.account.id, {
+    const independent = await issueDeclaration(b.account.id, {
       enrollmentId: other.id,
       requestKey: key,
     });
@@ -308,7 +308,7 @@ async function main() {
     await db.enrollment.create({
       data: { ...subFields, id: subId, studentId: b.student.id },
     });
-    const issuedSub = await issueTestDeclaration(b.account.id, {
+    const issuedSub = await issueDeclaration(b.account.id, {
       enrollmentId: subId,
       requestKey: randomUUID(),
     });
@@ -327,14 +327,14 @@ async function main() {
       data: { role: 'secretary' },
     });
     await assert.rejects(
-      issueTestDeclaration(a.account.id, {
+      issueDeclaration(a.account.id, {
         enrollmentId: enrollment.id,
         requestKey: key,
       }),
     );
     process.env.DECLARATION_REGISTRY_PREVIEW = 'false';
     await assert.rejects(
-      issueTestDeclaration(b.account.id, {
+      issueDeclaration(b.account.id, {
         enrollmentId: other.id,
         requestKey: randomUUID(),
       }),

@@ -8,10 +8,13 @@ export const PDF_ARCHIVE_MAX_BYTES = 16 * 1024 * 1024;
 export async function preparePdfArchive(
   pdf: Uint8Array,
   expectedPages: number,
-  templateVersion: 'minuta-a4-v1' | 'minuta-a4-qr-v1' = 'minuta-a4-v1',
+  templateVersion:
+    'minuta-a4-v1' | 'minuta-a4-qr-v1' | 'vinculo-a4-qr-v1' = 'minuta-a4-v1',
 ) {
   if (
-    !['minuta-a4-v1', 'minuta-a4-qr-v1'].includes(templateVersion) ||
+    !['minuta-a4-v1', 'minuta-a4-qr-v1', 'vinculo-a4-qr-v1'].includes(
+      templateVersion,
+    ) ||
     !Number.isInteger(expectedPages) ||
     expectedPages < 1 ||
     expectedPages > 100 ||

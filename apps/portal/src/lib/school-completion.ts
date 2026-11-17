@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from '../generated/prisma/client';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import { RequestError } from './request-error';
 import { digest, uuid } from './sheet-import-input';
 import { calendarDay, readCalendarDraft } from './course-calendar-input';
@@ -88,7 +88,7 @@ export async function completeSchoolEnrollments(
   value: unknown,
   now = new Date(),
 ): Promise<CompletionResult> {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     throw new RequestError('Página não disponível.', 404);
   const input = readCompletionInput(value);
   if (!uuid.test(actorId))

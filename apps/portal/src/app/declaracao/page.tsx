@@ -6,12 +6,12 @@ import { currentSession } from '@/lib/session';
 import { getDb } from '@/lib/db';
 import { declarationStudent } from '@/lib/declarations';
 import { studentRequests } from '@/lib/declaration-requests';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
 export const metadata = { title: 'Solicitar declaração | ETE CONECTADA' };
 export default async function DeclarationPage() {
   const session = await currentSession();
   if (!session) redirect('/login');
-  if (session.role === 'student' && declarationRegistryPreviewEnabled())
+  if (session.role === 'student' && declarationPortalEnabled())
     await synchronizeOwnAcademicState(session.accountId);
   const [student, requests, access] = await Promise.all([
     declarationStudent(getDb(), session.studentId),
@@ -36,8 +36,7 @@ export default async function DeclarationPage() {
     student?.enrollments.find((e) => e.status === 'ACTIVE') ??
     student?.enrollments.find((e) => e.status !== 'ENDED') ??
     student?.enrollments[0];
-  const automatic =
-    declarationRegistryPreviewEnabled() && session.role === 'student';
+  const automatic = declarationPortalEnabled() && session.role === 'student';
   return (
     <PortalHome studentName={session.fullName} role={session.role} internalPage>
       <section

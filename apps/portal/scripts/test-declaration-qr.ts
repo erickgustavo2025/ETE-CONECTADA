@@ -9,7 +9,7 @@ import { PDFDocument } from 'pdf-lib';
 import sharp from 'sharp';
 import jsQR from 'jsqr';
 import { createDeclarationPdf } from '../src/lib/declaration-pdf';
-import { testIssuanceContent } from '../src/lib/declaration-issuance-input';
+import { issuanceContent } from '../src/lib/declaration-issuance-input';
 import { verificationLink } from '../src/lib/public-verification-input';
 import { qrPattern } from '../src/lib/declaration-qr';
 import { subsequentFixture } from './subsequent-declaration-fixture';
@@ -57,7 +57,7 @@ async function main() {
         },
         enrollments: [e],
       };
-      const content = testIssuanceContent(student, e.id),
+      const content = issuanceContent(student, e.id),
         code = randomBytes(32).toString('base64url');
       const verification = {
         code,

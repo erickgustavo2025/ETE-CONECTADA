@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { PrismaClient } from '../generated/prisma/client';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import { PDF_ARCHIVE_MAX_BYTES } from './declaration-pdf-archive-input';
 
 export class PdfArchiveError extends Error {
@@ -18,7 +18,7 @@ export async function readArchivedDeclarationPdf(
   accountId: string,
   documentId: string,
 ) {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     throw new PdfArchiveError('Recurso indisponível.', 404);
   const uuid =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -61,7 +61,7 @@ export async function readStudentDeclarationPdf(
   accountId: string,
   documentId: string,
 ) {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     throw new PdfArchiveError('Recurso indisponível.', 404);
   const uuid =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -84,9 +84,10 @@ export async function readStudentDeclarationPdf(
         studentId: actor.studentId,
         status: 'ISSUED',
         origin: 'STUDENT_REQUEST',
-        snapshotVersion: 2,
+        snapshotVersion: { in: [2, 3] },
       },
       select: {
+        snapshotVersion: true,
         archiveSha256: true,
         sourcePdfSha256: true,
         sourcePdfPage: true,
@@ -105,7 +106,10 @@ export async function readStudentDeclarationPdf(
     if (
       !file ||
       file.pageCount !== 1 ||
-      file.templateVersion !== 'minuta-a4-qr-v1' ||
+      file.templateVersion !==
+        (document.snapshotVersion === 3
+          ? 'vinculo-a4-qr-v1'
+          : 'minuta-a4-qr-v1') ||
       file.sha256 !== document.sourcePdfSha256 ||
       !file.bytes.byteLength ||
       file.bytes.byteLength > PDF_ARCHIVE_MAX_BYTES ||

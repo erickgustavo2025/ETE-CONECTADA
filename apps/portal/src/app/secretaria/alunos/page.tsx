@@ -2,10 +2,10 @@ import { notFound, redirect } from 'next/navigation';
 import PortalHome from '@/components/portal-home';
 import StudentAdministration from '@/components/student-administration';
 import { currentSession } from '@/lib/session';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
 export const metadata = { title: 'Alunos e acesso | ETE CONECTADA' };
 export default async function StudentsPage() {
-  if (!declarationRegistryPreviewEnabled()) notFound();
+  if (!declarationPortalEnabled()) notFound();
   const session = await currentSession();
   if (!session) redirect('/login');
   if (session.role !== 'secretary') notFound();

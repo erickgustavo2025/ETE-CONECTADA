@@ -1,7 +1,7 @@
 import { synchronizeCatalogueBatch } from './school-academic-catalogue';
 import { Prisma } from '../generated/prisma/client';
 import { getDb } from './db';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import { RequestError, validRequestId } from './declaration-requests';
 import type { SchoolClassResult } from './student-administration-types';
 
@@ -37,7 +37,7 @@ export async function listSchoolClasses(
   actorId: string,
   value: unknown,
 ): Promise<SchoolClassResult> {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     throw new RequestError('Página não disponível.', 404);
   if (!validRequestId(actorId))
     throw new RequestError('Acesso não autorizado.', 403);

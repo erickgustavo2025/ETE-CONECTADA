@@ -1,6 +1,6 @@
 import { Prisma } from '@/generated/prisma/client';
 import { getDb } from './db';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import { DeclarationValidationError } from './declarations';
 import { RequestError, validRequestId } from './declaration-requests';
 
@@ -67,7 +67,7 @@ export async function changeDeclarationDocument(
   input: DocumentActionInput,
   accountId: string,
 ) {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     throw new RequestError('Página não disponível.', 404);
   if (!validRequestId(accountId))
     throw new RequestError('Acesso não autorizado.', 403);

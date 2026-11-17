@@ -1,5 +1,5 @@
 import { currentSession } from '@/lib/session';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
 import { administerAcademicEnrollment } from '@/lib/school-academic-administration';
 import { requestFailure } from '@/lib/declaration-requests';
 import {
@@ -15,7 +15,7 @@ import { getDb } from '@/lib/db';
 import { withApiCanonicalPath } from '@/lib/api-route';
 export const runtime = 'nodejs';
 async function handlePOST(request: Request) {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     return Response.json(
       { error: 'Página não disponível.' },
       { status: 404, headers: privateHeaders },

@@ -1,3 +1,4 @@
+import { declarationMode } from './declaration-configuration';
 import {
   synchronizeOwnAcademicState,
   applyStudentAcademicProgression,
@@ -7,10 +8,9 @@ import { lockStudentAccess, requireIssuanceAccess } from './student-access';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { getDb } from './db';
 import { studentDeclarationSelect } from './declarations';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
 import {
   readIssuanceInput,
-  testIssuanceContent,
+  issuanceContent,
   issuanceBirthplace,
 } from './declaration-issuance-input';
 import { createDeclarationPdf } from './declaration-pdf';
@@ -26,6 +26,7 @@ const issuedSelect = {
   createdAt: true,
   status: true,
   origin: true,
+  snapshotVersion: true,
   terminalActions: { select: { action: true } },
 } as const;
 const result = (
@@ -36,6 +37,7 @@ const result = (
     createdAt: Date;
     status: string;
     origin: string;
+    snapshotVersion: number;
     terminalActions: { action: string }[];
   },
   created: boolean,
@@ -47,18 +49,18 @@ const result = (
     enrollmentId: document.enrollmentId,
     createdAt: document.createdAt.toISOString(),
     state: document.terminalActions[0]?.action ?? document.status,
-    testOnly: true,
+    testOnly: document.snapshotVersion !== 3,
   },
 });
 
 // O ator vem da sessão; somente o local de nascimento pode ser declarado pelo aluno.
-export async function issueTestDeclaration(
+export async function issueDeclaration(
   accountId: string,
   value: unknown,
   birthplace?: unknown,
 ) {
-  if (!declarationRegistryPreviewEnabled())
-    throw new RequestError('Recurso indisponível.', 404);
+  const mode = declarationMode();
+  if (!mode) throw new RequestError('Recurso indisponível.', 404);
   if (!validRequestId(accountId))
     throw new RequestError('Acesso não autorizado.', 403);
   const input = readIssuanceInput(value);
@@ -95,16 +97,21 @@ export async function issueTestDeclaration(
         select: studentDeclarationSelect,
       });
   const content = original
-    ? testIssuanceContent(
+    ? issuanceContent(
         issuanceBirthplace(original, birthplace),
         input.enrollmentId,
+        mode,
       )
     : null;
   const createdAt = new Date();
   const id = randomUUID(),
     publicCode = randomBytes(32).toString('base64url');
   const verification = content
-    ? { code: publicCode, url: verificationLink(publicCode) }
+    ? {
+        code: publicCode,
+        url: verificationLink(publicCode),
+        ...(mode === 'SCHOOL' ? { purpose: 'SCHOOL' as const } : {}),
+      }
     : null;
   const file = content
     ? await preparePdfArchive(
@@ -114,7 +121,7 @@ export async function issueTestDeclaration(
           verification!,
         ),
         1,
-        'minuta-a4-qr-v1',
+        mode === 'SCHOOL' ? 'vinculo-a4-qr-v1' : 'minuta-a4-qr-v1',
       )
     : null;
   return db.$transaction(
@@ -142,6 +149,11 @@ export async function issueTestDeclaration(
           );
         return result(previousRequest, false);
       }
+      if (declarationMode() !== mode)
+        throw new RequestError(
+          'A configuração de emissão mudou. Tente novamente.',
+          409,
+        );
       requireIssuanceAccess(access);
       await requireAcademicRequestAccess(tx, actor.studentId);
       await applyStudentAcademicProgression(tx, actor.studentId);
@@ -154,9 +166,10 @@ export async function issueTestDeclaration(
         select: studentDeclarationSelect,
       });
       if (
-        testIssuanceContent(
+        issuanceContent(
           issuanceBirthplace(fresh, birthplace),
           input.enrollmentId,
+          mode,
         ).fingerprint !== content.fingerprint ||
         calendarDay(createdAt) !== calendarDay(new Date())
       )
@@ -195,7 +208,7 @@ export async function issueTestDeclaration(
           status: 'ISSUED',
           origin: 'STUDENT_REQUEST',
           requestKey: input.requestKey,
-          snapshotVersion: 2,
+          snapshotVersion: mode === 'SCHOOL' ? 3 : 2,
           snapshot: {
             ...content.snapshot,
             verificationVersion: 1,
@@ -228,7 +241,10 @@ export async function issueTestDeclaration(
             studentId: actor.studentId,
             enrollmentId: input.enrollmentId,
             action: 'SUPERSEDED',
-            reason: 'Substituída automaticamente por nova emissão de teste.',
+            reason:
+              mode === 'SCHOOL'
+                ? 'Substituída automaticamente por nova emissão.'
+                : 'Substituída automaticamente por nova emissão de teste.',
             successorId: document.id,
             createdById: accountId,
           },

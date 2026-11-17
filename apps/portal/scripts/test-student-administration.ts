@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { administerStudents } from '../src/lib/student-administration';
-import { issueTestDeclaration } from '../src/lib/declaration-issuance';
+import { issueDeclaration } from '../src/lib/declaration-issuance';
 import { readStudentDeclarationPdf } from '../src/lib/declaration-pdf-archive';
 import {
   createVerifiedSession,
@@ -98,7 +98,7 @@ async function main() {
       },
     });
     const key = randomUUID();
-    const issued = await issueTestDeclaration(student.account.id, {
+    const issued = await issueDeclaration(student.account.id, {
       enrollmentId: enrollment.id,
       requestKey: key,
     });
@@ -134,13 +134,13 @@ async function main() {
       'Repetição não duplica auditoria.',
     );
     await assert.rejects(
-      issueTestDeclaration(student.account.id, {
+      issueDeclaration(student.account.id, {
         enrollmentId: enrollment.id,
         requestKey: randomUUID(),
       }),
       /bloqueada/,
     );
-    const replay = await issueTestDeclaration(student.account.id, {
+    const replay = await issueDeclaration(student.account.id, {
       enrollmentId: enrollment.id,
       requestKey: key,
     });
@@ -226,7 +226,7 @@ async function main() {
       /autorizado/,
     );
     await assert.rejects(
-      issueTestDeclaration(student.account.id, {
+      issueDeclaration(student.account.id, {
         enrollmentId: enrollment.id,
         requestKey: key,
       }),

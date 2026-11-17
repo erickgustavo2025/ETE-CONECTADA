@@ -1,8 +1,8 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
 import { currentSession } from '@/lib/session';
 import { getDb } from '@/lib/db';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
-import { issueTestDeclaration } from '@/lib/declaration-issuance';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
+import { issueDeclaration } from '@/lib/declaration-issuance';
 import { readIssuanceInput } from '@/lib/declaration-issuance-input';
 import {
   consumeAccessAttempt,
@@ -43,6 +43,14 @@ async function handleGET() {
   }
 }
 async function handlePOST(request: Request) {
+  if (
+    process.env.DECLARATION_ISSUANCE_MODE !== undefined &&
+    !declarationPortalEnabled()
+  )
+    return Response.json(
+      { error: 'A emissão está indisponível. Procure a secretaria.' },
+      { status: 503, headers: privateHeaders },
+    );
   if (!sameOriginRequest(request))
     return Response.json(
       { error: 'Origem não autorizada.' },
@@ -58,7 +66,7 @@ async function handlePOST(request: Request) {
     const input = await readPrivateBody(request, 1000);
     if ('response' in input) return input.response;
     const body = input.body;
-    if (declarationRegistryPreviewEnabled()) {
+    if (declarationPortalEnabled()) {
       if (session.role !== 'student')
         return Response.json(
           { error: 'Entre com sua conta de aluno.' },
@@ -76,7 +84,7 @@ async function handlePOST(request: Request) {
           limit.headers.set(name, value);
         return limit;
       }
-      const issued = await issueTestDeclaration(
+      const issued = await issueDeclaration(
         session.accountId,
         value,
         birthplace,

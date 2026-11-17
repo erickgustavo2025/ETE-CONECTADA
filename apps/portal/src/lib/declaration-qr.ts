@@ -4,7 +4,7 @@ import {
   verificationLink,
   validDocumentCode,
 } from './public-verification-input';
-export type PdfVerification = { code: string; url: string };
+export type PdfVerification = { code: string; url: string; purpose?: 'SCHOOL' };
 export function qrPattern(value: PdfVerification) {
   let url: URL;
   try {

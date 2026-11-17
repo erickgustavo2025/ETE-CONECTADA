@@ -77,7 +77,8 @@
     "test:completion-input": "node --import tsx scripts/test-school-completion-input.ts",
     "test:completion-storage": "node --import tsx scripts/test-school-completion.ts",
     "test:completion-browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/completion-browser/playwright.config.ts",
-    "test:declaration-configuration": "node --import tsx scripts/test-declaration-configuration.ts"
+    "test:declaration-configuration": "node --import tsx scripts/test-declaration-configuration.ts",
+    "test:school-issuance": "node --import tsx scripts/test-school-issuance.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
