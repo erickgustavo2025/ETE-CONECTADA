@@ -1,12 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { openTestEnvironment, reportTestFailure } from './test-environment';
+import { verifyTestDatabase, reportTestFailure } from './test-environment';
 
 async function main() {
   if (process.argv.length > 2) throw new Error('Use db:demo sem argumentos.');
   // Confere banco loopback e marcador ANTES de qualquer migração ou seed.
-  const environment = await openTestEnvironment();
-  await environment.close();
+  await verifyTestDatabase();
   const require = createRequire(import.meta.url);
   for (const args of [
     [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],

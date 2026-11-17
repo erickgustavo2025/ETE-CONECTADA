@@ -66,6 +66,34 @@ export function assertDatabaseIdentity(
   }
 }
 
+export async function verifyTestDatabase(
+  expected = parseTestEnvironment(process.env),
+) {
+  const { Client } = await import('pg');
+  const client = new Client({
+    connectionString: expected.url,
+    connectionTimeoutMillis: 5000,
+    query_timeout: 5000,
+  });
+  try {
+    await client.connect();
+    const result = await client.query<{
+      database: string;
+      marker: string | null;
+    }>(
+      "SELECT current_database() AS database, shobj_description(oid, 'pg_database') AS marker FROM pg_database WHERE datname = current_database()",
+    );
+    assertDatabaseIdentity(result.rows[0], expected);
+  } catch (error) {
+    if (error instanceof TestEnvironmentError) throw error;
+    fail('Não foi possível conferir a identidade do banco de teste.');
+  } finally {
+    await client.end();
+  }
+}
+
+let activeScenario = false;
+
 async function stopPortal(child: ChildProcess) {
   if (!child.pid || child.exitCode !== null || child.signalCode !== null)
     return;
@@ -231,54 +259,80 @@ export async function openTestEnvironment({
     )
       fail('Origem de laboratório exige HTTPS loopback e portal próprio.');
   }
-  const expected = parseTestEnvironment(process.env);
-  const { Client } = await import('pg');
-  const client = new Client({
-    connectionString: expected.url,
-    connectionTimeoutMillis: 5000,
-    query_timeout: 5000,
-  });
+  if (activeScenario)
+    fail('Já existe um cenário de teste aberto neste processo.');
+  activeScenario = true;
+  const keys = [
+    'DATABASE_URL',
+    'DIRECT_URL',
+    'TEST_DATABASE_URL',
+    'TEST_DATABASE_NAME',
+    'TEST_DATABASE_ID',
+    'RESEND_API_KEY',
+    'EMAIL_FROM',
+  ] as const;
+  const previous = Object.fromEntries(
+    keys.map((key) => [key, process.env[key]]),
+  );
+  const restore = () => {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+    activeScenario = false;
+  };
+  let scenario: Awaited<
+    ReturnType<
+      typeof import('./test-database-scenario').createTestDatabaseScenario
+    >
+  >;
+  let databaseModule: typeof import('../src/lib/db');
   try {
-    await client.connect();
-    const result = await client.query<{
-      database: string;
-      marker: string | null;
-    }>(
-      "SELECT current_database() AS database, shobj_description(oid, 'pg_database') AS marker FROM pg_database WHERE datname = current_database()",
-    );
-    assertDatabaseIdentity(result.rows[0], expected);
+    databaseModule = await import('../src/lib/db');
+    scenario = await (
+      await import('./test-database-scenario')
+    ).createTestDatabaseScenario();
   } catch (error) {
-    if (error instanceof TestEnvironmentError) throw error;
-    fail('Não foi possível conferir a identidade do banco de teste.');
-  } finally {
-    await client.end();
+    restore();
+    throw error;
   }
-
-  process.env.DATABASE_URL = expected.url;
-  process.env.DIRECT_URL = expected.url;
+  process.env.DATABASE_URL = scenario.config.url;
+  process.env.DIRECT_URL = scenario.config.url;
+  process.env.TEST_DATABASE_URL = scenario.config.url;
+  process.env.TEST_DATABASE_NAME = scenario.config.database;
+  process.env.TEST_DATABASE_ID = scenario.config.identity;
   process.env.RESEND_API_KEY = '';
   process.env.EMAIL_FROM = '';
-  const { getDb } = await import('../src/lib/db');
-  const db = getDb();
   let portal: Awaited<ReturnType<typeof startPortal>> | undefined;
   const controller = new AbortController();
   let closing: Promise<void> | undefined;
-  const close = async () => {
+  const close = () => {
     closing ??= (async () => {
       controller.abort();
       process.off('SIGINT', interrupted);
       process.off('SIGTERM', interrupted);
-      if (portal) await stopPortal(portal.child);
-      // Apenas contadores técnicos gerados por este portal sintético, após encerrar HTTP.
-      // A identidade do banco já foi conferida; test:cleanup continua somente leitura.
-      if (portal) await db.accessAttemptBucket.deleteMany();
+      let failure: unknown;
+      for (const action of [
+        async () => {
+          if (portal) await stopPortal(portal.child);
+        },
+        async () => {
+          await databaseModule.disconnectDb();
+        },
+        async () => {
+          await scenario.close();
+        },
+      ]) {
+        try {
+          await action();
+        } catch (error) {
+          failure ??= error;
+        }
+      }
+      restore();
+      if (failure) throw failure;
     })();
-    // A limpeza de fixtures após um sinal pode reabrir Prisma; desconecta em toda chamada.
-    try {
-      await closing;
-    } finally {
-      await db.$disconnect();
-    }
+    return closing;
   };
   const interrupted = () => {
     void close().finally(() => {
@@ -288,11 +342,9 @@ export async function openTestEnvironment({
   process.once('SIGINT', interrupted);
   process.once('SIGTERM', interrupted);
   try {
+    const db = databaseModule.getDb();
     if (http) portal = await startPortal(controller.signal, publicOrigin);
-    if (controller.signal.aborted) {
-      if (portal) await stopPortal(portal.child);
-      fail('Execução sintética cancelada.');
-    }
+    if (controller.signal.aborted) fail('Execução sintética cancelada.');
     return { db, base: portal?.base ?? '', close };
   } catch (error) {
     await close();

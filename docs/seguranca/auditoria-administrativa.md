@@ -32,7 +32,9 @@ EC067 permanece pendente. Antes de concluir sua entrega, rever todos os históri
 
 `npm run test:database-scenarios` verifica a criação de bancos separados a partir de uma fonte local, migrada, vazia e identificada. A fonte não recebe os registros do cenário. O histórico permanece no banco do cenário até seu descarte integral; não é necessário desabilitar gatilhos ou apagar os eventos para limpá-lo.
 
-O descarte confere nome, identificador interno, proprietário e marcador antes de remover somente o banco criado pelo harness. Recusa marcador divergente e conexões ainda abertas; não usa `FORCE` nem encerra sessões desconhecidas. Este módulo é exclusivo do harness e não inicia um servidor HTTP. Essa preparação de testes, isoladamente, não entrega a separação de privilégios do portal nem as demais proteções da EC067; a integração do harness existente e os testes com credencial limitada continuam necessários.
+O descarte confere nome, identificador interno, proprietário e marcador antes de remover somente o banco criado pelo harness. Recusa marcador divergente e conexões ainda abertas; não usa `FORCE` nem encerra sessões desconhecidas. Este módulo é exclusivo do harness e não inicia um servidor HTTP. Essa preparação de testes, isoladamente, não entrega a separação de privilégios do portal nem as demais proteções da EC067; os testes com credencial limitada e as proteções do serviço continuam necessários.
+
+O harness das jornadas agora deriva um banco por cenário, fecha seu portal e suas conexões antes de descartá-lo e restaura a configuração da fonte para a próxima execução. `db:demo` e o seed continuam persistentes no banco explicitamente identificado; não recebem essa semântica de descarte. `test:cleanup` consulta a fonte original e o catálogo de bancos em modo somente leitura, recusando resíduos sem removê-los. A integração desse isolamento não equivale à proteção completa de auditoria.
 
 ## Evidência necessária para concluir EC067
 

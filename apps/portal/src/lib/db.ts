@@ -21,3 +21,10 @@ export function getDb(): PrismaClient {
   globalForPrisma.portalPrisma = client;
   return client;
 }
+
+// Fecha também a referência compartilhada para o próximo ciclo de execução.
+export async function disconnectDb() {
+  const client = globalForPrisma.portalPrisma;
+  delete globalForPrisma.portalPrisma;
+  await client?.$disconnect();
+}
