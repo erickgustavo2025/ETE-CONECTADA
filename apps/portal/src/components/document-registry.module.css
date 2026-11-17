@@ -65,7 +65,7 @@
 }
 .dialog textarea {
   min-height: 110px;
-  resize: none;
+  resize: vertical;
 }
 .checkbox {
   display: flex;

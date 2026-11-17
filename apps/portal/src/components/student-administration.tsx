@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import SchoolClassList from './school-class-list';
+import SchoolCompletionPanel from './school-completion-panel';
 import type { AcademicDetail } from '@/lib/school-academic-types';
 import AcademicEnrollmentPanel from './academic-enrollment-panel';
 import { newRequestKey } from '@/lib/request-key';
@@ -357,6 +358,18 @@ export default function StudentAdministration() {
   }
   const [academic, setAcademic] = useState('');
   const student = detail?.student;
+  const hasFinalStage = results?.students.some((s) =>
+    s.enrollments.some(
+      (e) =>
+        e.mode === applied?.mode &&
+        e.courseLabel === applied.courseLabel &&
+        e.className === applied.className &&
+        e.periodLabel === applied.periodLabel &&
+        (e.mode === 'INTEGRADO'
+          ? e.grade === 3
+          : e.moduleNumber === (e.courseLabel === 'ENF' ? 4 : 3)),
+    ),
+  );
   return (
     <section className="document-page">
       <Link href="/secretaria/declaracoes">Voltar às declarações</Link>
@@ -524,6 +537,30 @@ export default function StudentAdministration() {
             {results.total} aluno(s) encontrado(s). Página {results.page} de{' '}
             {Math.max(1, Math.ceil(results.total / results.pageSize))}.
           </p>
+          {hasFinalStage &&
+            applied?.mode &&
+            applied.className &&
+            applied.periodLabel &&
+            ['ADM', 'DS', 'ENF'].includes(applied.courseLabel ?? '') && (
+              <SchoolCompletionPanel
+                key={JSON.stringify([
+                  applied.mode,
+                  applied.courseLabel,
+                  applied.className,
+                  applied.periodLabel,
+                ])}
+                context={{
+                  mode: applied.mode,
+                  courseLabel: applied.courseLabel as 'ADM' | 'DS' | 'ENF',
+                  className: applied.className,
+                  periodLabel: applied.periodLabel,
+                }}
+                onChanged={(value) => {
+                  setMessage(value);
+                  setRefresh((n) => n + 1);
+                }}
+              />
+            )}
           {!results.students.length ? (
             <p>
               Nenhum aluno encontrado. Confira o nome, a matrícula ou os
@@ -548,7 +585,7 @@ export default function StudentAdministration() {
                     {s.enrollments
                       .map(
                         (e) =>
-                          `${e.className} · ${e.mode === 'INTEGRADO' ? 'Integrado' : 'Subsequente'}${e.repetitionPending ? ' · Reprovado: aguardando nova turma' : ''}`,
+                          `${e.className} · ${e.mode === 'INTEGRADO' ? 'Integrado' : 'Subsequente'}${e.repetitionPending ? ' · Reprovado: aguardando nova turma' : e.status === 'ENDED' ? ' · Matrícula encerrada' : ''}`,
                       )
                       .join(' / ') || 'Sem turma cadastrada'}
                   </p>

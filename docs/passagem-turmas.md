@@ -105,3 +105,46 @@ e `npm run test:repeater-browser --workspace @ete-conectada/portal`, cada grupo 
 banco sintético novo, vazio e identificado. Os testes deixam eventos imutáveis
 nessa instância descartável; o responsável pelo ensaio deve encerrá-la e removê-la
 integralmente ao final. Nunca usar demonstração ou banco real.
+
+## Encerramento confirmado de concluintes — EC130
+
+Em **Alunos e acesso**, escolha a modalidade e a turma da última etapa. Use
+**Encerrar vínculos de concluintes desta turma**, consulte a lista paginada e
+marque apenas quem realmente concluiu. São 20 nomes por página e até 100
+seleções; mudar de página mantém as escolhas, uma nova consulta limpa a seleção
+para nova conferência. Informe o motivo, veja a prévia e confirme.
+
+Só entram vínculos da turma, modalidade, curso e período escolhidos, ativos e
+conferidos, na última série/módulo e sem repetência pendente. O início precisa
+ter ocorrido; no subsequente, a referência e a vigência precisam corresponder.
+A data genérica de fim não substitui a confirmação escolar: é possível registrar
+conclusão real antes de31/12 ou31/07 ou regularizar conclusão já ocorrida.
+Chegar à última etapa, passar a data ou não aparecer na planilha nunca conclui
+ninguém automaticamente.
+
+O encerramento conserva cadastro, conta, matrícula, datas, arquivos e outras
+matrículas. O vínculo encerrado não emite nova declaração de vínculo; PDFs
+anteriores mantêm os bytes e o estado, sem cancelamento automático. Reimportar
+a lista não reativa o vínculo. O aluno pode continuar acessando sua conta,
+respeitados os bloqueios manuais já existentes.
+
+A confirmação reconfere versões, referência e permissões na transação acadêmica.
+Se algum aluno mudou, é necessário consultar novamente. Todos os encerramentos
+e eventos do lote são atômicos; falha desfaz o lote inteiro. Resposta perdida
+permite repetir exatamente a mesma intenção, sem duplicação.
+
+No detalhe escolar, **Corrigir encerramento por engano** só aparece para um
+encerramento por conclusão compatível. Exige motivo e confirmação, acrescenta
+um evento relacionado e volta a matrícula para conferência. Não apaga o
+encerramento, não promove e não libera declarações automaticamente. Cadastros
+encerrados antigos sem registro de conclusão não são convertidos silenciosamente.
+
+Esta entrega não cria declaração de conclusão, histórico escolar ou certificado.
+Esses documentos futuros terão requisitos próprios de elegibilidade e acesso.
+Emissão/configuração para uso real segue a EC131; auditoria transversal segue a
+EC067. Sem dependência ou migração nova nesta entrega.
+
+Validação dedicada: `test:completion-input`, `test:completion-storage` e
+`test:completion-browser` no workspace do portal. Banco e navegador dedicados
+usam instâncias sintéticas novas, identificadas e descartadas integralmente,
+sem tocar os dados da demonstração.
