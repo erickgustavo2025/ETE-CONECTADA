@@ -28,6 +28,12 @@ Na base da EC125/PR76, `student_access_changes` já possui gatilho que recusa UP
 
 EC067 permanece pendente. Antes de concluir sua entrega, rever todos os históricos existentes e as credenciais efetivamente usadas; não basta esconder botões nem proteger apenas a tabela nova. Testes e limpeza devem usar banco descartável próprio. Não criar senha especial, parâmetro de requisição ou variável do portal que permita contornar as proteções para facilitar testes.
 
+## Isolamento dos cenários de verificação
+
+`npm run test:database-scenarios` verifica a criação de bancos separados a partir de uma fonte local, migrada, vazia e identificada. A fonte não recebe os registros do cenário. O histórico permanece no banco do cenário até seu descarte integral; não é necessário desabilitar gatilhos ou apagar os eventos para limpá-lo.
+
+O descarte confere nome, identificador interno, proprietário e marcador antes de remover somente o banco criado pelo harness. Recusa marcador divergente e conexões ainda abertas; não usa `FORCE` nem encerra sessões desconhecidas. Este módulo é exclusivo do harness e não inicia um servidor HTTP. Essa preparação de testes, isoladamente, não entrega a separação de privilégios do portal nem as demais proteções da EC067; a integração do harness existente e os testes com credencial limitada continuam necessários.
+
 ## Evidência necessária para concluir EC067
 
 1. Tentativas de editar, excluir, truncar e apagar o registro por cascata falham com a credencial real da aplicação; o evento e a contagem permanecem iguais. Operações de manutenção usam acesso separado, fora do portal.
