@@ -26,6 +26,7 @@ export const enrollmentDeclarationSelect = {
   offeringId: true,
   calendarModule: true,
   calendarRevision: true,
+  entryStartedOn: true,
   offering: {
     select: {
       courseLabel: true,
@@ -257,7 +258,8 @@ export function subsequentContext(
     throw fail();
   return {
     moduleNumber: current.number,
-    startsOn: draft.startsOn,
+    startsOn:
+      enrollment.entryStartedOn?.toISOString().slice(0, 10) ?? draft.startsOn,
     endsOn: draft.endsOn,
     courseName: courseNames[draft.courseLabel],
   };

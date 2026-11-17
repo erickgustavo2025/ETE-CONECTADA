@@ -1,3 +1,9 @@
+import { withRepeaterSelections } from '@/lib/school-repeater-input';
+import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import {
+  consumeAccessAttempt,
+  accessLimitResponse,
+} from '@/lib/access-throttle';
 import { withApiCanonicalPath } from '@/lib/api-route';
 import { currentSession } from '@/lib/session';
 import { getDb } from '@/lib/db';
@@ -12,6 +18,7 @@ import {
   previewSheetImport,
   confirmSheetImport,
   schoolImportSources,
+  suggestRepeaterPlacements,
 } from '@/lib/sheet-import';
 export const runtime = 'nodejs';
 const json = (body: unknown, status = 200) =>
@@ -78,10 +85,14 @@ async function handlePOST(request: Request) {
             'confirmed',
             'acceptIdentityChanges',
             'acceptCalendarDifferences',
+            'acceptRepeaterPlacements',
+            'repeaters',
+            'sheetName',
+            'page',
           ].includes(k),
       ) ||
       typeof body.action !== 'string' ||
-      !['inspect', 'preview', 'confirm'].includes(body.action) ||
+      !['inspect', 'preview', 'confirm', 'repeaters'].includes(body.action) ||
       typeof body.fileBase64 !== 'string' ||
       !body.fileBase64.length ||
       body.fileBase64.length % 4 !== 0 ||
@@ -122,17 +133,54 @@ async function handlePOST(request: Request) {
       body.contexts,
       automatic,
     );
+    if (
+      (body.action === 'repeaters' || body.repeaters !== undefined) &&
+      !declarationRegistryPreviewEnabled()
+    )
+      return json({ error: 'Página não disponível.' }, 404);
+    if (body.action === 'repeaters') {
+      if (body.repeaters !== undefined)
+        throw new SheetImportError(
+          'Consulte os repetentes antes de escolher.',
+          400,
+        );
+      const limited = accessLimitResponse(
+        await consumeAccessAttempt(
+          getDb(),
+          'student-admin-search',
+          session.accountId,
+        ),
+      );
+      if (limited) {
+        for (const [k, v] of Object.entries(privateHeaders))
+          limited.headers.set(k, v);
+        return limited;
+      }
+      return json(
+        await suggestRepeaterPlacements(
+          getDb(),
+          session.accountId,
+          input,
+          body.sheetName,
+          body.page,
+        ),
+      );
+    }
+    if (body.sheetName !== undefined || body.page !== undefined)
+      throw new SheetImportError('Confira os campos da importação.', 400);
+    const selectedInput = withRepeaterSelections(input, body.repeaters);
     const result =
       body.action === 'preview'
-        ? await previewSheetImport(getDb(), session.accountId, input)
+        ? await previewSheetImport(getDb(), session.accountId, selectedInput)
         : await confirmSheetImport(
             getDb(),
             session.accountId,
-            input,
+            selectedInput,
             body.token,
             body.confirmed,
             body.acceptIdentityChanges,
             body.acceptCalendarDifferences,
+            body.acceptRepeaterPlacements,
           );
     return json(result);
   } catch (error) {

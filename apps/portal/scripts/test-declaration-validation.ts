@@ -43,6 +43,7 @@ const student: DeclarationStudent = {
       offeringId: null,
       calendarModule: null,
       calendarRevision: null,
+      entryStartedOn: null,
       offering: null,
       className: 'Turma fictícia',
       grade: 2,

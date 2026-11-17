@@ -39,6 +39,7 @@ export type AcademicPatch = Partial<
     | 'repetitionPending'
     | 'repetitionOverride'
     | 'entryStartedOn'
+    | 'schoolImportKey'
     | 'nextClassName'
     | 'offeringId'
     | 'calendarModule'
@@ -65,6 +66,7 @@ export function academicSnapshot(row: Enrollment) {
     repetitionOverride: row.repetitionOverride,
     entryStartedOn: day(row.entryStartedOn),
     nextClassName: row.nextClassName,
+    schoolImportKey: row.schoolImportKey,
     offeringId: row.offeringId,
     calendarModule: row.calendarModule,
     calendarRevision: row.calendarRevision,
