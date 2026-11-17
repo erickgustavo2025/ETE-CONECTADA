@@ -72,7 +72,8 @@
     "test:academic-browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/academic-browser/playwright.config.ts",
     "test:academic-catalogue": "node --import tsx scripts/test-school-academic-catalogue.ts",
     "test:repeater-input": "node --import tsx scripts/test-school-repeater-input.ts",
-    "test:repeater-placement": "node --import tsx scripts/test-school-repeater-placement.ts"
+    "test:repeater-placement": "node --import tsx scripts/test-school-repeater-placement.ts",
+    "test:repeater-browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/repeater-browser/playwright.config.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

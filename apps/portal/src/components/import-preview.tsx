@@ -73,6 +73,37 @@ export default function ImportPreview({
         }).format(new Date(preview.expiresAt))}{' '}
         (horário de Recife).
       </p>
+      {!!preview.placements?.length && (
+        <section aria-label="Prévia da enturmação dos repetentes">
+          <h3>Repetentes a incluir nas turmas</h3>
+          <p>
+            Estes alunos serão enturmados somente ao confirmar. A etapa, o
+            ingresso e os bloqueios manuais serão preservados.
+          </p>
+          <ul>
+            {preview.placements.map((p) => (
+              <li key={p.enrollmentId}>
+                <strong>{p.fullName}</strong> · Matrícula {p.schoolRegistration}
+                <br />
+                {p.fromClass} · {p.fromPeriod} → {p.toClass} · {p.toPeriod} ·{' '}
+                {p.stage}º {mode === 'INTEGRADO' ? 'ano' : 'módulo'}
+                <br />
+                Ingresso original:{' '}
+                {p.originalStartsOn
+                  ? p.originalStartsOn.split('-').reverse().join('/')
+                  : 'não informado no cadastro'}{' '}
+                · Nova turma a partir de{' '}
+                {p.startsOn.split('-').reverse().join('/')} · Conclusão
+                prevista: {p.endsOn.split('-').reverse().join('/')}
+                <br />
+                {p.inFile
+                  ? 'Também consta na planilha.'
+                  : 'Selecionado fora da planilha.'}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <dl className={styles.counts}>
         {[
           ['Alunos novos', counts.createdStudents],
