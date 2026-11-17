@@ -17,6 +17,7 @@ export type AcademicDetail = {
     version: string;
     nextDate: string | null;
     previousStage: number | null;
+    canReopen?: boolean;
   };
   history: {
     kind: string;

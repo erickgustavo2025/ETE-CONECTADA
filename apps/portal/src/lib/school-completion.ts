@@ -131,12 +131,10 @@ export async function completeSchoolEnrollments(
           skip: (input.page - 1) * 20,
         });
         return {
-          students: rows
-            .slice(0, 20)
-            .map((r) => ({
-              ...studentView(r),
-              selectable: eligible(r, context, now),
-            })),
+          students: rows.slice(0, 20).map((r) => ({
+            ...studentView(r),
+            selectable: eligible(r, context, now),
+          })),
           page: input.page,
           hasNext: rows.length > 20,
         };
