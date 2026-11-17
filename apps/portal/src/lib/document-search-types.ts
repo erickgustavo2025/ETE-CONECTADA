@@ -1,7 +1,7 @@
 export type DocumentState = 'DRAFT' | 'ISSUED' | 'CANCELLED' | 'SUPERSEDED';
 export const documentStateLabels: Record<DocumentState, string> = {
-  DRAFT: 'Minuta para conferência',
-  ISSUED: 'Emitida para teste',
+  DRAFT: 'Não emitida',
+  ISSUED: 'Emitida',
   CANCELLED: 'Cancelada',
   SUPERSEDED: 'Substituída',
 };
@@ -13,6 +13,7 @@ export type DocumentListItem = {
   mode: string;
   period: string;
   page: number;
+  testOnly: boolean;
 };
 export type DocumentStudent = {
   id: string;

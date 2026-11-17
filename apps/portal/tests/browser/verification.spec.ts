@@ -93,7 +93,7 @@ test('QR consulta registro sem login, confere nome/PDF local e acompanha substit
     });
     await expect(
       page.getByRole('heading', {
-        name: 'Registro válido para teste',
+        name: 'Arquivo de demonstração registrado',
         exact: true,
       }),
     ).toBeVisible();
@@ -217,14 +217,14 @@ test('QR consulta registro sem login, confere nome/PDF local e acompanha substit
     ).toBeVisible();
     await expect(
       page.getByRole('heading', {
-        name: 'Registro válido para teste',
+        name: 'Arquivo de demonstração registrado',
         exact: true,
       }),
     ).toHaveCount(0);
     await page.goto(base + '/validar/' + second.document.publicCode);
     await expect(
       page.getByRole('heading', {
-        name: 'Registro válido para teste',
+        name: 'Arquivo de demonstração registrado',
         exact: true,
       }),
     ).toBeVisible();
@@ -284,7 +284,7 @@ test('QR consulta registro sem login, confere nome/PDF local e acompanha substit
     ).toBeVisible();
     await expect(
       page.getByRole('heading', {
-        name: 'Registro válido para teste',
+        name: 'Arquivo de demonstração registrado',
         exact: true,
       }),
     ).toHaveCount(0);

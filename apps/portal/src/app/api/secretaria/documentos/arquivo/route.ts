@@ -55,7 +55,7 @@ async function handlePOST(request: Request) {
       headers: {
         ...privateHeaders,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `${input.body.download ? 'attachment' : 'inline'}; filename="declaracao-original-minuta.pdf"`,
+        'Content-Disposition': `${input.body.download ? 'attachment' : 'inline'}; filename="declaracao-original.pdf"`,
       },
     });
   } catch (error) {

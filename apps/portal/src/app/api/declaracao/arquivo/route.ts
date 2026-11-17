@@ -68,7 +68,7 @@ async function handlePOST(request: Request) {
       headers: {
         ...privateHeaders,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `${input.body.download ? 'attachment' : 'inline'}; filename="declaracao-vinculo-teste.pdf"`,
+        'Content-Disposition': `${input.body.download ? 'attachment' : 'inline'}; filename="declaracao-vinculo.pdf"`,
       },
     });
   } catch (error) {

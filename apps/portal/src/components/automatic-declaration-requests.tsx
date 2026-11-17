@@ -183,7 +183,7 @@ export default function AutomaticDeclarationRequests({
           'Arquivo indisponível. Atualize a lista e tente novamente.',
         );
       if (download)
-        await downloadDeclaration(response, 'declaracao-vinculo-teste.pdf');
+        await downloadDeclaration(response, 'declaracao-vinculo.pdf');
       else {
         const url = URL.createObjectURL(await response.blob());
         if (!popup || popup.closed) {

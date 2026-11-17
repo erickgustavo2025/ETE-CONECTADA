@@ -408,6 +408,71 @@ async function main() {
       1,
       'Logout de produção não deve modificar sessão de desenvolvimento.',
     );
+    await stop(server);
+    env.DECLARATION_ISSUANCE_MODE = 'school';
+    const schoolServer = launch(
+      [
+        require.resolve('next/dist/bin/next'),
+        'start',
+        '--hostname',
+        '127.0.0.1',
+        '--port',
+        String(port),
+      ],
+      portal,
+    );
+    const schoolDeadline = Date.now() + 60000;
+    while (true) {
+      if (
+        controller.signal.aborted ||
+        schoolServer.exitCode !== null ||
+        schoolServer.signalCode !== null
+      )
+        throw new TestEnvironmentError(
+          'Servidor escolar de produção interrompido.',
+        );
+      try {
+        if ((await request('/login')).status === 200) break;
+      } catch {
+        /* somente servidor próprio */
+      }
+      if (Date.now() > schoolDeadline)
+        throw new TestEnvironmentError(
+          'Servidor escolar não iniciou em um minuto.',
+        );
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    const schoolPage = await request('/validar/' + 'A'.repeat(43));
+    assert.equal(schoolPage.status, 200);
+    assert.match(schoolPage.headers.get('x-robots-tag') ?? '', /noindex/);
+    assert.equal(
+      (await request('/api/documentos/verificacao', { code: 'invalid' }))
+        .status,
+      400,
+    );
+    assert.equal((await request('/secretaria/declaracoes')).status, 307);
+    assert.equal(
+      (await request('/api/secretaria/documentos/busca', {})).status,
+      401,
+    );
+    assert.equal((await request('/api/secretaria/declaracao', {})).status, 410);
+    assert.equal(
+      (
+        await request('/api/login', {
+          identifier: account.email,
+          password: 'synthetic-password',
+        })
+      ).status,
+      404,
+    );
+    assert.equal(
+      connections,
+      0,
+      'Ativar documentos não permite autenticação experimental ou consulta privada.',
+    );
+    console.log(
+      'Produção: configuração escolar explícita habilita somente a consulta; origem, autenticação e dados privados continuam protegidos.',
+    );
     console.log(
       'Produção: build sem banco; cadastro/login bloqueados; sessão válida recusada; logout sem consulta; nenhum link/token de teste retornado.',
     );

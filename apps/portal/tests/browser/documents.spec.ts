@@ -265,7 +265,7 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
         .getByRole('region', { name: 'Detalhes da declaração', exact: true })
         .locator('p')
         .first()
-        .getByText('Emitida para teste', { exact: true }),
+        .getByText('Emitida', { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Substituir documento', exact: true }),

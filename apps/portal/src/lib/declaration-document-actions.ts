@@ -15,12 +15,12 @@ export function readDocumentAction(value: unknown): DocumentActionInput {
     throw new DeclarationValidationError('Confira os dados da ação.');
   const body = value as Record<string, unknown>;
   if (!validRequestId(body.documentId))
-    throw new DeclarationValidationError('Escolha uma minuta válida.');
+    throw new DeclarationValidationError('Escolha um documento válido.');
   if (body.action !== 'CANCELLED' && body.action !== 'SUPERSEDED')
     throw new DeclarationValidationError('Escolha cancelar ou substituir.');
   if (body.confirmed !== true)
     throw new DeclarationValidationError(
-      'Confirme a ação após conferir a minuta.',
+      'Confirme a ação após conferir a declaração.',
       'confirmed',
     );
   const reason =
@@ -45,12 +45,12 @@ export function readDocumentAction(value: unknown): DocumentActionInput {
       body.successorId.toLowerCase() === body.documentId.toLowerCase())
   )
     throw new DeclarationValidationError(
-      'Escolha outra minuta para substituir esta.',
+      'Escolha outro documento para substituir esta.',
       'successorId',
     );
   if (body.action === 'CANCELLED' && body.successorId != null)
     throw new DeclarationValidationError(
-      'O cancelamento não usa uma minuta substituta.',
+      'O cancelamento não usa um documento substituto.',
     );
   return {
     documentId: body.documentId.toLowerCase(),
@@ -97,7 +97,10 @@ export async function changeDeclarationDocument(
     });
     const original = rows.find((row) => row.id === input.documentId);
     if (!original)
-      throw new RequestError('Minuta não encontrada. Atualize a lista.', 404);
+      throw new RequestError(
+        'Declaração não encontrada. Atualize a lista.',
+        404,
+      );
     const previous = original.terminalActions[0];
     if (previous) {
       if (
@@ -107,7 +110,7 @@ export async function changeDeclarationDocument(
       )
         return { created: false, action: previous };
       throw new RequestError(
-        'Esta minuta já foi cancelada ou substituída. Atualize a lista.',
+        'Esta declaração já foi cancelada ou substituída. Atualize a lista.',
         409,
       );
     }
@@ -162,7 +165,7 @@ export async function changeDeclarationDocument(
         successor.predecessorActions.length
       )
         throw new RequestError(
-          'A minuta substituta já foi utilizada ou não está mais disponível.',
+          'O documento substituto já foi utilizada ou não está mais disponível.',
           409,
         );
     }

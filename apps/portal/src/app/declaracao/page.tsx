@@ -113,9 +113,8 @@ export default async function DeclarationPage() {
           }
         />
         <p className="document-footnote">
-          {automatic
-            ? 'Ambiente de teste. Os documentos gerados ainda não têm validade oficial.'
-            : 'Fluxo em desenvolvimento. O modelo de impressão ainda precisa ser validado pela escola.'}
+          Você pode abrir ou baixar os documentos disponíveis nesta página.
+          Procure a secretaria se precisar corrigir seus dados.
         </p>
       </section>
     </PortalHome>

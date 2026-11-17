@@ -36,7 +36,8 @@ async function handlePOST(request: Request) {
     if (!canManageDeclarations(session.role))
       return Response.json(
         {
-          error: 'Somente a secretaria pode alterar a situação de uma minuta.',
+          error:
+            'Somente a secretaria pode alterar a situação de uma declaração.',
         },
         { status: 403, headers: privateHeaders },
       );

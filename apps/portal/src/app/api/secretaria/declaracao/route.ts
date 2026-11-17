@@ -88,7 +88,7 @@ async function handlePOST(request: Request) {
         ...privateHeaders,
         'Content-Type': 'application/pdf',
         'Content-Disposition':
-          'attachment; filename="declaracao-vinculo-minuta.pdf"',
+          'attachment; filename="declaracao-para-conferencia.pdf"',
       },
     });
   } catch (error) {

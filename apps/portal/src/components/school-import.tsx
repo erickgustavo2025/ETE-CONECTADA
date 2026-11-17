@@ -684,8 +684,8 @@ export default function SchoolImport({
         </div>
       )}
       <p className={styles.note}>
-        Ambiente de teste. As senhas e os acessos existentes são mantidos. A
-        importação não cria contas nem autoriza a emissão oficial.
+        As senhas e os acessos existentes são mantidos. A importação não cria
+        contas. Confira as matrículas alteradas antes de emitir declarações.
       </p>
       <dialog
         ref={dialog}
