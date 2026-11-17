@@ -50,3 +50,9 @@ for (const bad of [
   { operation: 'classes', mode: 'SUBSEQUENTE', page: 10001 },
 ])
   assert.throws(() => readClassCatalogueInput(bad));
+
+for (const action of ['ALLOW_REQUESTS', 'WAIT_REQUESTS'])
+  assert.equal(
+    readAcademicAdminInput({ ...change, action }).operation,
+    'change',
+  );

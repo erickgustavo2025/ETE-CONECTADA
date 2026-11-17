@@ -49,6 +49,7 @@ export function subsequentFixture(
     moduleNumber,
     calendarModule: moduleNumber,
     calendarRevision: 1,
+    entryStartedOn: null,
     offeringId,
     offering: { courseLabel, calendars: [{ revision: 1, schedule }] },
   };

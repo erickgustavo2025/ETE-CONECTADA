@@ -1,6 +1,12 @@
 import { RequestError } from './request-error';
 import { uuid } from './sheet-import-input';
-export type AcademicAction = 'ENABLE' | 'REPEAT' | 'REPEAT_PREVIOUS' | 'RESUME';
+export type AcademicAction =
+  | 'ENABLE'
+  | 'REPEAT'
+  | 'REPEAT_PREVIOUS'
+  | 'RESUME'
+  | 'ALLOW_REQUESTS'
+  | 'WAIT_REQUESTS';
 export type AcademicAdminInput =
   | { operation: 'detail'; enrollmentId: string; page: number }
   | {
@@ -49,7 +55,14 @@ export function readAcademicAdminInput(value: unknown): AcademicAdminInput {
     return { operation: 'detail', enrollmentId: b.enrollmentId, page };
   }
   const action = (
-    ['ENABLE', 'REPEAT', 'REPEAT_PREVIOUS', 'RESUME'] as const
+    [
+      'ENABLE',
+      'REPEAT',
+      'REPEAT_PREVIOUS',
+      'RESUME',
+      'ALLOW_REQUESTS',
+      'WAIT_REQUESTS',
+    ] as const
   ).find((a) => a === b.action);
   if (
     !action ||

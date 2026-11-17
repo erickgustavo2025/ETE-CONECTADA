@@ -50,6 +50,7 @@ const student = {
       offeringId: null,
       calendarModule: null,
       calendarRevision: null,
+      entryStartedOn: null,
       offering: null,
       ...syntheticEnrollmentValidity(),
     },

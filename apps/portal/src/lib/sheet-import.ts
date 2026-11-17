@@ -1,3 +1,10 @@
+import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import {
+  prepareRepeaterPlacements,
+  applyRepeaterPlacement,
+  repeaterPlacementView,
+  repeaterCandidates,
+} from './school-repeater-placement';
 import { calendarImportState } from './course-calendars';
 import { schoolClassSchedule } from './school-class-input';
 import { moduleOnDate, calendarDay } from './course-calendar-input';
@@ -16,7 +23,7 @@ async function authorize(tx: Tx, actorId: string) {
     throw new SheetImportError('Acesso não autorizado.', 403);
   const allowed = await tx.$queryRaw<
     Array<{ id: string }>
-  >`SELECT id FROM accounts WHERE id=${actorId}::uuid AND role='secretary' AND status='active' FOR UPDATE`;
+  >`SELECT a.id FROM accounts a JOIN students s ON s.id=a.student_id WHERE a.id=${actorId}::uuid AND a.role='secretary' AND a.status='active' AND NOT s.login_blocked FOR UPDATE OF a`;
   if (!allowed.length)
     throw new SheetImportError('Acesso não autorizado.', 403);
   // Importações de operadores distintos não disputam ofertas/cadastros simultaneamente.
@@ -131,6 +138,7 @@ async function state(tx: Tx, input: SheetInput) {
     );
   return {
     referenceCount,
+    repeaterPlacements: await prepareRepeaterPlacements(tx, input),
     students,
     enrollments,
     calendars: [...calendars, ...generatedReferences],
@@ -236,19 +244,29 @@ function plan(input: SheetInput, current: State) {
     const bound = row.enrollmentId
       ? enrollmentsById.get(row.enrollmentId)
       : undefined;
-    const enrollment = keyed || bound;
+    const placement = current.repeaterPlacements.find(
+      (p) =>
+        p.row.studentId === student?.id &&
+        p.target.sheetName === row.context.sheetName,
+    );
+    const enrollment = placement?.row || keyed || bound;
     const conflict = Boolean(
       (row.enrollmentId &&
         row.enrollmentId !== 'new' &&
         (!bound || bound.studentId !== student?.id)) ||
       (keyed && bound && keyed.id !== bound.id) ||
+      (placement &&
+        ((keyed && keyed.id !== placement.row.id) ||
+          (bound && bound.id !== placement.row.id))) ||
       (enrollment &&
         (enrollment.studentId !== student?.id ||
           enrollment.mode !== input.mode ||
           enrollment.courseLabel !== row.context.courseLabel ||
-          (enrollment.offeringId &&
+          (!placement &&
+            enrollment.offeringId &&
             enrollment.offeringId !== row.context.scopeId) ||
-          (enrollment.schoolImportKey &&
+          (!placement &&
+            enrollment.schoolImportKey &&
             enrollment.schoolImportKey !== row.key))) ||
       (!enrollment &&
         row.enrollmentId !== 'new' &&
@@ -270,7 +288,7 @@ function plan(input: SheetInput, current: State) {
       );
     const metadata = {
       className:
-        row.context.header && enrollment
+        row.context.header && enrollment && !placement
           ? enrollment.className
           : row.context.className,
       courseLabel: row.context.courseLabel,
@@ -325,6 +343,7 @@ function plan(input: SheetInput, current: State) {
       (row.context.header ||
         enrollment?.schoolImportKey?.split(':')[1]?.[14] === '8') &&
       enrollment &&
+      !placement &&
       (enrollment.className !== metadata.className ||
         enrollment.grade !== metadata.grade ||
         enrollment.moduleNumber !== metadata.moduleNumber ||
@@ -349,6 +368,7 @@ function plan(input: SheetInput, current: State) {
     }
     return {
       row,
+      placement,
       student,
       enrollment,
       metadata,
@@ -379,7 +399,16 @@ function plan(input: SheetInput, current: State) {
       scopes.has(enrollment.schoolImportKey.split(':')[1]) &&
       !presentKeys.has(enrollment.schoolImportKey),
   ).length;
-  return { counts, entries, calendarComparisons };
+  return {
+    counts: {
+      ...counts,
+      ...(current.repeaterPlacements.length
+        ? { placedRepeaters: current.repeaterPlacements.length }
+        : {}),
+    },
+    entries,
+    calendarComparisons,
+  };
 }
 // Catálogo por fontes aplicadas no integrado e calendários no subsequente, sem identidades.
 export async function schoolImportSources(
@@ -492,6 +521,8 @@ export async function previewSheetImport(
   actorId: string,
   input: SheetInput,
 ) {
+  if (input.repeaters?.length && !declarationRegistryPreviewEnabled())
+    throw new SheetImportError('Página não disponível.', 404);
   return db.$transaction(
     async (tx) => {
       await authorize(tx, actorId);
@@ -519,6 +550,13 @@ export async function previewSheetImport(
         token,
         expiresAt: expiresAt.toISOString(),
         counts: prepared.counts,
+        placements: current.repeaterPlacements.map((p) =>
+          repeaterPlacementView(
+            p,
+            input,
+            current.calendars.find((c) => c.id === p.target.scopeId),
+          ),
+        ),
         ...(input.mode === 'SUBSEQUENTE'
           ? { calendarComparisons: prepared.calendarComparisons }
           : {}),
@@ -596,7 +634,10 @@ export async function confirmSheetImport(
   confirmed: unknown,
   acceptIdentityChanges: unknown = false,
   acceptCalendarDifferences: unknown = false,
+  acceptRepeaterPlacements: unknown = false,
 ) {
+  if (input.repeaters?.length && !declarationRegistryPreviewEnabled())
+    throw new SheetImportError('Página não disponível.', 404);
   if (
     confirmed !== true ||
     typeof token !== 'string' ||
@@ -627,6 +668,14 @@ export async function confirmSheetImport(
           409,
         );
       const prepared = plan(input, current);
+      if (
+        current.repeaterPlacements.length &&
+        acceptRepeaterPlacements !== true
+      )
+        throw new SheetImportError(
+          'Confirme a enturmação dos repetentes selecionados.',
+          409,
+        );
       if (prepared.counts.conflicts)
         throw new SheetImportError(
           'Resolva as pendências da prévia antes de confirmar.',
@@ -788,7 +837,7 @@ export async function confirmSheetImport(
               schoolImportKey: row.key,
             },
           });
-        else if (entry.enrollmentChanged)
+        else if (entry.enrollmentChanged && !entry.placement)
           await tx.enrollment.update({
             where: { id: entry.enrollment.id },
             data: {
@@ -806,6 +855,15 @@ export async function confirmSheetImport(
                 : {}),
             },
           });
+      }
+      for (const placement of current.repeaterPlacements) {
+        await applyRepeaterPlacement(
+          tx,
+          placement,
+          current.calendars.find((c) => c.id === placement.target.scopeId),
+          actorId,
+          `placement:${preview.tokenHash}:${placement.row.id}`,
+        );
       }
       for (const calendar of current.calendars) {
         const context = input.contexts.find((c) => c.scopeId === calendar.id);
@@ -826,5 +884,23 @@ export async function confirmSheetImport(
       return prepared.counts;
     },
     { isolationLevel: 'Serializable', timeout: 120000 },
+  );
+}
+
+export async function suggestRepeaterPlacements(
+  db: PrismaClient,
+  actorId: string,
+  input: SheetInput,
+  sheetName: unknown,
+  page: unknown,
+) {
+  if (!declarationRegistryPreviewEnabled())
+    throw new SheetImportError('Página não disponível.', 404);
+  return db.$transaction(
+    async (tx) => {
+      await authorize(tx, actorId);
+      return repeaterCandidates(tx, input, sheetName, page);
+    },
+    { timeout: 15000 },
   );
 }

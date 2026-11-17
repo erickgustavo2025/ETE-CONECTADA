@@ -18,7 +18,7 @@
     "test:schema": "node --import tsx scripts/test-schema.ts",
     "test:cleanup": "node --import tsx scripts/test-cleanup.ts",
     "test:guards": "node --import tsx scripts/test-test-environment.ts",
-    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts && node --import tsx scripts/test-student-details-validation.ts && node --import tsx scripts/test-enrollment-validation.ts && node --import tsx scripts/test-password-reset-validation.ts && npm run test:sheet-input && npm run test:course-calendar-input && node --import tsx scripts/test-database-config.ts && node --import tsx scripts/test-request-origin.ts && node --import tsx scripts/test-session-cookie.ts && node --import tsx scripts/test-security-policy.ts && node --import tsx scripts/test-email-delivery.ts && node --import tsx scripts/test-backup-catalog.ts && node --import tsx scripts/test-birthplace-catalog.ts && node --import tsx scripts/test-declaration-pdf-archive-input.ts && node --import tsx scripts/test-issuance-input.ts && node --import tsx scripts/test-declaration-document-input.ts && node --import tsx scripts/test-document-action-input.ts && node --import tsx scripts/test-declaration-pdf.ts && node --import tsx scripts/test-subsequent-declaration.ts && node --import tsx scripts/test-public-verification-input.ts && npm run test:school-class-input && npm run test:school-promotion-input && npm run test:academic-input",
+    "test:unit": "node --import tsx scripts/test-registration-validation.ts && node --import tsx scripts/test-password.ts && node --import tsx scripts/test-declaration-validation.ts && node --import tsx scripts/test-access-input.ts && node --import tsx scripts/test-student-details-validation.ts && node --import tsx scripts/test-enrollment-validation.ts && node --import tsx scripts/test-password-reset-validation.ts && npm run test:sheet-input && npm run test:course-calendar-input && node --import tsx scripts/test-database-config.ts && node --import tsx scripts/test-request-origin.ts && node --import tsx scripts/test-session-cookie.ts && node --import tsx scripts/test-security-policy.ts && node --import tsx scripts/test-email-delivery.ts && node --import tsx scripts/test-backup-catalog.ts && node --import tsx scripts/test-birthplace-catalog.ts && node --import tsx scripts/test-declaration-pdf-archive-input.ts && node --import tsx scripts/test-issuance-input.ts && node --import tsx scripts/test-declaration-document-input.ts && node --import tsx scripts/test-document-action-input.ts && node --import tsx scripts/test-declaration-pdf.ts && node --import tsx scripts/test-subsequent-declaration.ts && node --import tsx scripts/test-public-verification-input.ts && npm run test:school-class-input && npm run test:school-promotion-input && npm run test:academic-input && npm run test:repeater-input",
     "test:student-details": "node --import tsx scripts/test-student-details.ts",
     "test:registration": "tsx scripts/test-registration.ts",
     "diagnose:login": "node --import tsx scripts/diagnose-login.ts",
@@ -70,7 +70,10 @@
     "test:academic-input": "node --import tsx scripts/test-school-academic-input.ts",
     "test:academic-admin": "node --import tsx scripts/test-school-academic-administration.ts",
     "test:academic-browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/academic-browser/playwright.config.ts",
-    "test:academic-catalogue": "node --import tsx scripts/test-school-academic-catalogue.ts"
+    "test:academic-catalogue": "node --import tsx scripts/test-school-academic-catalogue.ts",
+    "test:repeater-input": "node --import tsx scripts/test-school-repeater-input.ts",
+    "test:repeater-placement": "node --import tsx scripts/test-school-repeater-placement.ts",
+    "test:repeater-browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/repeater-browser/playwright.config.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

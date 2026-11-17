@@ -41,6 +41,7 @@ export type ImportInspection = {
   }>;
 };
 export type ImportCounts = {
+  placedRepeaters?: number;
   createdStudents: number;
   createdEnrollments: number;
   updatedStudents: number;
@@ -51,6 +52,21 @@ export type ImportCounts = {
   identityChanges: number;
 };
 export type ImportPreviewView = {
+  placements?: Array<{
+    enrollmentId: string;
+    fullName: string;
+    schoolRegistration: string;
+    originalStartsOn: string | null;
+    startsOn: string;
+    endsOn: string;
+    fromClass: string;
+    fromPeriod: string | null;
+    toClass: string;
+    toPeriod: string;
+    stage: number;
+    inFile: boolean;
+  }>;
+
   sheets?: Array<{
     sheetName: string;
     className: string;
@@ -117,3 +133,13 @@ export const IMPORT_FIELD_LABELS: Record<string, string> = {
   grade: 'Série',
   moduleNumber: 'Módulo',
 };
+
+export type RepeaterCandidate = {
+  enrollmentId: string;
+  version: string;
+  fullName: string;
+  schoolRegistration: string;
+  className: string;
+  periodLabel: string | null;
+};
+export type RepeaterChoice = RepeaterCandidate & { sheetName: string };

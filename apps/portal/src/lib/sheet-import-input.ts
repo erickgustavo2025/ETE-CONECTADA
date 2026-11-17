@@ -1,3 +1,4 @@
+import type { RepeaterSelection } from './school-repeater-input';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { Worker } from 'node:worker_threads';
@@ -53,6 +54,7 @@ export type SheetInput = {
   rows: ImportRow[];
   contexts: SheetContext[];
   inputHash: string;
+  repeaters?: RepeaterSelection[];
 };
 const text = (value: unknown, max: number) => {
   if (

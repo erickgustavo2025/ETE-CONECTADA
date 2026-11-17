@@ -5,9 +5,11 @@ import type {
   ImportCounts,
   ImportInspection,
   ImportPreviewView,
+  RepeaterChoice,
 } from '@/lib/sheet-import-view';
 import { useFormValidation } from './use-form-validation';
 import ImportPreview from './import-preview';
+import ImportRepeaters from './import-repeaters';
 import styles from './integrated-import.module.css';
 
 class ImportRequestError extends Error {}
@@ -52,6 +54,8 @@ export default function SchoolImport({
   const [action, setAction] = useState<DialogAction | null>(null);
   const [identityAccepted, setIdentityAccepted] = useState(false);
   const [calendarAccepted, setCalendarAccepted] = useState(false);
+  const [repeaters, setRepeaters] = useState<RepeaterChoice[]>([]);
+  const [repeatersAccepted, setRepeatersAccepted] = useState(false);
   const calendarDiffers = !!preview?.calendarComparisons?.some(
     (c) => c.differs,
   );
@@ -137,6 +141,7 @@ export default function SchoolImport({
         : null;
     setIdentityAccepted(false);
     setCalendarAccepted(false);
+    setRepeatersAccepted(false);
     setAction(value);
   }
   function reset() {
@@ -144,6 +149,7 @@ export default function SchoolImport({
     setFile(null);
     setInspection(null);
     setContexts([]);
+    setRepeaters([]);
     setPreview(null);
     setResult(null);
     setError('');
@@ -241,6 +247,7 @@ export default function SchoolImport({
     }
   }
   function updateContext(index: number, patch: Partial<ImportContextView>) {
+    setRepeaters([]);
     setContexts((previous) =>
       previous.map((context, i) =>
         i === index ? { ...context, ...patch, confirmed: false } : context,
@@ -263,6 +270,17 @@ export default function SchoolImport({
       const value = await send<ImportPreviewView>(
         {
           action: 'preview',
+          ...(repeaters.length
+            ? {
+                repeaters: repeaters.map(
+                  ({ enrollmentId, sheetName, version }) => ({
+                    enrollmentId,
+                    sheetName,
+                    version,
+                  }),
+                ),
+              }
+            : {}),
           mode,
           fileBase64: file.base64,
           contexts,
@@ -291,7 +309,8 @@ export default function SchoolImport({
       !file ||
       preview.counts.conflicts ||
       (preview.counts.identityChanges && !identityAccepted) ||
-      (calendarDiffers && !calendarAccepted)
+      (calendarDiffers && !calendarAccepted) ||
+      (!!preview?.placements?.length && !repeatersAccepted)
     )
       return;
     busyRef.current = true;
@@ -304,6 +323,18 @@ export default function SchoolImport({
       const value = await send<ImportCounts>(
         {
           action: 'confirm',
+          ...(repeaters.length
+            ? {
+                repeaters: repeaters.map(
+                  ({ enrollmentId, sheetName, version }) => ({
+                    enrollmentId,
+                    sheetName,
+                    version,
+                  }),
+                ),
+              }
+            : {}),
+          acceptRepeaterPlacements: repeatersAccepted,
           mode,
           contexts,
           fileBase64: file.base64,
@@ -320,6 +351,7 @@ export default function SchoolImport({
       setFile(null);
       setInspection(null);
       setContexts([]);
+      setRepeaters([]);
       if (fileRef.current) fileRef.current.value = '';
     } catch (e) {
       setError(
@@ -486,8 +518,8 @@ export default function SchoolImport({
                     </select>
                     <p>
                       Use uma lista anterior somente se estes alunos já foram
-                      importados nela. A importação não promove nem transfere
-                      alunos.
+                      importados nela. A importação não promove alunos. Só
+                      enturma os repetentes que você selecionar e confirmar.
                     </p>
                   </div>
                   <div>
@@ -552,6 +584,17 @@ export default function SchoolImport({
               </fieldset>
             ))}
           </fieldset>
+          <ImportRepeaters
+            key={contexts
+              .map((c) => `${c.scopeId}:${c.sourceChoice}`)
+              .join('|')}
+            mode={mode}
+            fileBase64={file!.base64}
+            contexts={contexts}
+            choices={repeaters}
+            disabled={!!busy || sessionExpired}
+            onChange={setRepeaters}
+          />
           <p>
             Confira a prévia antes de confirmar. Importar a lista não libera o
             acesso ao portal nem autoriza a emissão de declarações. Quem não
@@ -583,6 +626,7 @@ export default function SchoolImport({
             setError('');
           }}
           onBindMany={(choices) => {
+            setRepeaters([]);
             setContexts((previous) =>
               previous.map((context, index) => {
                 const selected = choices.filter(
@@ -616,6 +660,12 @@ export default function SchoolImport({
       {result && (
         <div role="status" className={styles.result}>
           <h2>Importação concluída</h2>
+          {!!result.placedRepeaters && (
+            <p>
+              {result.placedRepeaters} repetente(s) enturmado(s). Ingresso,
+              histórico e bloqueios manuais preservados.
+            </p>
+          )}
           <p>
             {result.createdStudents} alunos incluídos ·{' '}
             {result.createdEnrollments} matrículas incluídas ·{' '}
@@ -693,6 +743,19 @@ export default function SchoolImport({
                 {error}
               </p>
             )}
+            {!!preview?.placements?.length && action === 'confirm' && (
+              <label className={styles.check}>
+                <input
+                  type="checkbox"
+                  checked={repeatersAccepted}
+                  disabled={!!busy}
+                  onChange={(e) => setRepeatersAccepted(e.target.checked)}
+                />
+                Conferi os {preview.placements.length} repetente(s) e suas
+                turmas de destino. A etapa e os bloqueios manuais serão
+                preservados.
+              </label>
+            )}
             <div className={styles.actions}>
               <button
                 ref={cancelButton}
@@ -710,7 +773,8 @@ export default function SchoolImport({
                   !!busy ||
                   sessionExpired ||
                   (!!preview?.counts.identityChanges && !identityAccepted) ||
-                  (calendarDiffers && !calendarAccepted)
+                  (calendarDiffers && !calendarAccepted) ||
+                  (!!preview?.placements?.length && !repeatersAccepted)
                 }
                 onClick={apply}
               >

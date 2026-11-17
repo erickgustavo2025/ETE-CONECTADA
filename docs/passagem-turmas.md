@@ -45,8 +45,8 @@ próxima data e histórico. As ações exigem motivo, confirmação e uma versã
 - **Corrigir marcação de reprovação**: desfaz somente uma marcação indevida,
   preservando suspensões anteriores e registrando outro evento.
 
-Enturmação de quem realmente precisa refazer a etapa, exceção de atendimento e
-encerramento de concluintes são entregas próprias. Não usar a correção de uma
+Enturmação e exceção de atendimento de repetentes estão descritas abaixo.
+Encerramento confirmado de concluintes segue uma entrega própria (EC130). Não usar a correção de uma
 marcação indevida como substituto da enturmação. Não apagar ausentes de planilhas.
 
 ## Consistência e proteção
@@ -68,3 +68,40 @@ As rotas privadas conferem sessão, papel real no banco, origem, corpo limitado 
 limites de uso. Estas funcionalidades continuam sob a configuração de avaliação
 existente, recusadas em produção. Preparar emissão autorizada e linguagem de uso
 real pertence à EC131, sem transformar documentos antigos em oficiais.
+
+## Enturmação de repetentes — EC127
+
+Na importação, confira as abas e abra **Repetentes aguardando nova turma**. Escolha
+a turma de destino e consulte os nomes compatíveis. A consulta é explícita, com
+20 nomes por página; nada é pesquisado a cada letra. Só aparecem matrículas ativas
+e conferidas, aguardando a mesma modalidade, curso e etapa em período posterior.
+Turmas A/B ou turnos diferentes exigem escolha; não há destino automático.
+
+A secretaria pode selecionar até100 matrículas por arquivo, incluindo quem não
+aparece noXLS. Confira a lista separada na prévia e marque a confirmação da
+enturmação. Seleções e versões fazem parte da prévia de15minutos, vinculada ao
+operador. A confirmação reconfere fonte, referência, identidade e permissões sob
+a trava comum da importação; alterações concorrentes exigem outra prévia. Importação,
+enturmação e evento são uma transação: uma falha desfaz todo o lote.
+
+A matrícula conserva seu ID, conta, documentos e ingresso conhecido. A nova
+referência altera a previsão de conclusão do subsequente, mantendo o ingresso
+original no PDF. No integrado, uma data de ingresso ausente não é inventada a
+partir do início de uma série avançada. A etapa não sobe; a marca de espera sai
+só após confirmar. Vigência futura continua impedindo emissão antes do início.
+Bloqueios manuais são preservados, assim como uma suspensão anterior à repetência.
+Mudança de identidade noXLS exige nova conferência; a enturmação não ativa uma
+matrícula não conferida. Reimportar o arquivo antigo não desfaz a transferência.
+
+No detalhe escolar, **Liberar solicitações enquanto aguarda turma** registra uma
+exceção com motivo e confirmação. Só funciona para matrícula conferida, vigente e
+com referência escolar compatível. Não muda datas, não promove, não transfere e
+não remove bloqueios manuais. Para revogar, use **Voltar a aguardar turma sem novas
+solicitações**; o histórico mostra liberação e revogação separadas. Correção de
+reprovação indevida continua sendo uma ação diferente.
+
+Validação dedicada: `npm run test:repeater-placement --workspace @ete-conectada/portal`
+e `npm run test:repeater-browser --workspace @ete-conectada/portal`, cada grupo em
+banco sintético novo, vazio e identificado. Os testes deixam eventos imutáveis
+nessa instância descartável; o responsável pelo ensaio deve encerrá-la e removê-la
+integralmente ao final. Nunca usar demonstração ou banco real.
