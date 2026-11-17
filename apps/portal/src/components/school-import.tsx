@@ -186,7 +186,7 @@ export default function SchoolImport({
   }
   async function inspectFile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busyRef.current) return;
+    if (!validation.ready || busyRef.current) return;
     const form = event.currentTarget;
     if (!validation.validate(form)) return;
     const selected = fileRef.current?.files?.[0];
@@ -258,7 +258,7 @@ export default function SchoolImport({
   }
   async function createPreview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busyRef.current || !file) return;
+    if (!validation.ready || busyRef.current || !file) return;
     if (!validation.validate(event.currentTarget)) return;
     busyRef.current = true;
     setBusy('preview');
@@ -376,6 +376,11 @@ export default function SchoolImport({
       <h1 id="import-title" ref={heading} tabIndex={-1}>
         Importar alunos do {modeLabel}
       </h1>
+      <noscript>
+        <p className="document-notice">
+          Para continuar, ative o JavaScript ou procure a secretaria.
+        </p>
+      </noscript>
       <p className="document-intro">
         Confira as turmas e as diferenças antes de atualizar os cadastros.
       </p>
@@ -439,11 +444,16 @@ export default function SchoolImport({
             accept=".xls"
             required
             ref={fileRef}
-            disabled={!!busy}
+            disabled={!validation.ready || !!busy}
             {...validation.field('file')}
           />
-          <button className={button} disabled={!!busy}>
-            Ler arquivo
+          <button
+            type="submit"
+            className={button}
+            disabled={!validation.ready || !!busy}
+            aria-busy={!validation.ready || !!busy}
+          >
+            {validation.ready ? 'Ler arquivo' : 'Carregando…'}
           </button>
         </form>
       )}
@@ -465,7 +475,10 @@ export default function SchoolImport({
               estimativa. Não é preciso cadastrar calendário antes de importar.
             </p>
           )}
-          <fieldset disabled={!!busy} className={styles.contexts}>
+          <fieldset
+            disabled={!validation.ready || !!busy}
+            className={styles.contexts}
+          >
             <legend className={styles.srOnly}>Dados das turmas</legend>
             {contexts.map((context, index) => (
               <fieldset className={styles.context} key={context.sheetName}>
@@ -592,7 +605,7 @@ export default function SchoolImport({
             fileBase64={file!.base64}
             contexts={contexts}
             choices={repeaters}
-            disabled={!!busy || sessionExpired}
+            disabled={!validation.ready || !!busy || sessionExpired}
             onChange={setRepeaters}
           />
           <p>
@@ -601,13 +614,16 @@ export default function SchoolImport({
             aparecer na planilha não será excluído.
           </p>
           <div className={styles.actions}>
-            <button className={button} disabled={!!busy || sessionExpired}>
+            <button
+              className={button}
+              disabled={!validation.ready || !!busy || sessionExpired}
+            >
               Gerar prévia
             </button>
             <button
               className={secondary}
               type="button"
-              disabled={!!busy}
+              disabled={!validation.ready || !!busy}
               onClick={() => openDialog('discard')}
             >
               Trocar arquivo
@@ -620,7 +636,7 @@ export default function SchoolImport({
           mode={mode}
           preview={preview}
           contexts={contexts}
-          disabled={!!busy || sessionExpired}
+          disabled={!validation.ready || !!busy || sessionExpired}
           onBack={() => {
             setPreview(null);
             setError('');
@@ -713,7 +729,7 @@ export default function SchoolImport({
                 <input
                   type="checkbox"
                   checked={identityAccepted}
-                  disabled={!!busy}
+                  disabled={!validation.ready || !!busy}
                   onChange={(e) => setIdentityAccepted(e.target.checked)}
                 />
                 Conferi as alterações de nome, nascimento ou filiação de{' '}
@@ -730,7 +746,7 @@ export default function SchoolImport({
                 <input
                   type="checkbox"
                   checked={calendarAccepted}
-                  disabled={!!busy}
+                  disabled={!validation.ready || !!busy}
                   onChange={(e) => setCalendarAccepted(e.target.checked)}
                 />
                 Conferi as diferenças de módulo e período nos registros
@@ -748,7 +764,7 @@ export default function SchoolImport({
                 <input
                   type="checkbox"
                   checked={repeatersAccepted}
-                  disabled={!!busy}
+                  disabled={!validation.ready || !!busy}
                   onChange={(e) => setRepeatersAccepted(e.target.checked)}
                 />
                 Conferi os {preview.placements.length} repetente(s) e suas
@@ -761,7 +777,7 @@ export default function SchoolImport({
                 ref={cancelButton}
                 className={secondary}
                 type="button"
-                disabled={!!busy}
+                disabled={!validation.ready || !!busy}
                 onClick={() => setAction(null)}
               >
                 Continuar conferindo
