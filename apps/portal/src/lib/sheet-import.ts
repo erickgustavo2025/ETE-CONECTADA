@@ -775,6 +775,7 @@ export async function confirmSheetImport(
               ...association,
               ...(row.context.header
                 ? {
+                    progressionHeld: false,
                     schoolYear: row.context.header.schoolYear,
                     validFrom: new Date(
                       `${input.mode === 'SUBSEQUENTE' ? entry.calendar!.draft.modules[row.context.stage - 1].startsOn : `${row.context.header.schoolYear}-01-01`}T00:00:00Z`,

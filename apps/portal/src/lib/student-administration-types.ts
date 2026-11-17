@@ -4,6 +4,7 @@ export type AdminStudent = {
   registration: string | null;
   loginBlocked: boolean;
   issuanceBlocked: boolean;
+  academicWaiting: boolean;
   revision: number;
   accountStatus: string | null;
   enrollments: {
@@ -15,6 +16,8 @@ export type AdminStudent = {
     moduleNumber: number | null;
     periodLabel: string | null;
     status: string;
+    repetitionPending: boolean;
+    repetitionOverride: boolean;
   }[];
 };
 export type AccessHistory = {
@@ -34,4 +37,18 @@ export type StudentAdminResult = {
   page: number;
   pageSize: number;
   created?: boolean;
+};
+export type SchoolClassSummary = {
+  mode: 'INTEGRADO' | 'SUBSEQUENTE';
+  className: string;
+  periodLabel: string | null;
+  courseLabel: string;
+  students: number;
+};
+export type SchoolClassResult = {
+  classes: SchoolClassSummary[];
+  page: number;
+  hasNext: boolean;
+  updating: boolean;
+  nextCursor: string | null;
 };

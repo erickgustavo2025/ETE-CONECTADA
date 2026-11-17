@@ -91,6 +91,16 @@ test('subsequente gera com UF e município e secretaria consulta o PDF preenchid
         page.getByRole('button', { name: 'Abrir menu de serviços' }),
       ).toBeEnabled();
     }
+    // A compilação fria de páginas/API no Next dev pode recarregar a aba.
+    // Prepare os módulos antes do fluxo que troca aluno e secretaria.
+    expect(
+      (await page.request.get(base + '/secretaria/declaracoes')).status(),
+    ).toBe(200);
+    expect(
+      (
+        await page.request.get(base + '/api/secretaria/documentos/busca')
+      ).status(),
+    ).toBe(405);
     await login(studentAccount.email!);
     await page.goto(base + '/declaracao');
     await page

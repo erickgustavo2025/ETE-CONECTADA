@@ -1,3 +1,4 @@
+import { synchronizeOwnAcademicState } from '@/lib/school-academic';
 import { redirect } from 'next/navigation';
 import PortalHome from '@/components/portal-home';
 import StudentDeclarationRequests from '@/components/student-declaration-requests';
@@ -10,12 +11,25 @@ export const metadata = { title: 'Solicitar declaração | ETE CONECTADA' };
 export default async function DeclarationPage() {
   const session = await currentSession();
   if (!session) redirect('/login');
+  if (session.role === 'student' && declarationRegistryPreviewEnabled())
+    await synchronizeOwnAcademicState(session.accountId);
   const [student, requests, access] = await Promise.all([
     declarationStudent(getDb(), session.studentId),
     studentRequests(session.studentId),
     getDb().student.findUnique({
       where: { id: session.studentId },
-      select: { issuanceBlocked: true },
+      select: {
+        issuanceBlocked: true,
+        enrollments: {
+          where: {
+            status: { not: 'ENDED' },
+            repetitionPending: true,
+            repetitionOverride: false,
+          },
+          select: { id: true },
+          take: 1,
+        },
+      },
     }),
   ]);
   const enrollment = student?.enrollments[0];
@@ -68,7 +82,10 @@ export default async function DeclarationPage() {
         )}
         <StudentDeclarationRequests
           automatic={automatic}
-          issuanceBlocked={access?.issuanceBlocked ?? true}
+          issuanceBlocked={
+            (access?.issuanceBlocked ?? true) ||
+            Boolean(access?.enrollments.length)
+          }
           enrollmentId={enrollment?.id ?? null}
           initialRequests={requests}
           birthplace={

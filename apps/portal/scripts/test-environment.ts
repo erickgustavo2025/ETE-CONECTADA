@@ -132,6 +132,24 @@ async function startPortal(signal: AbortSignal, publicOrigin?: string) {
     },
   );
   // Não encaminha logs do servidor: podem conter configurações locais ou dados da requisição.
+  const securityWarning =
+    'Laboratório interrompido: atualize o Next.js antes de repetir a validação.';
+  let warned = false;
+  const observeSecurityWarning = (chunk: Buffer) => {
+    if (
+      !warned &&
+      chunk
+        .toString()
+        .includes(
+          'Your version of Next.js is affected by a known security vulnerability.',
+        )
+    ) {
+      warned = true;
+      console.error(securityWarning);
+    }
+  };
+  child.stdout?.on('data', observeSecurityWarning);
+  child.stderr?.on('data', observeSecurityWarning);
   child.stderr?.resume();
   try {
     await new Promise<void>((resolve, reject) => {

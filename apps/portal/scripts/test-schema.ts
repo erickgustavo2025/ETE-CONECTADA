@@ -10,6 +10,8 @@ import {
 
 // Contrato do banco migrado, incluindo arquivo histórico e regras fora do Prisma.
 const columns: Record<string, string> = {
+  school_academic_events:
+    'id enrollment_id actor_id operation_key kind revision before_state after_state effective_on created_at reason',
   student_access_changes:
     'id student_id created_by_id request_key kind blocked reason revision created_at',
   declaration_document_actions:
@@ -28,7 +30,7 @@ const columns: Record<string, string> = {
     'token_hash account_id expires_at consumed_at created_at claim_data_hash',
   sessions: 'token_hash account_id expires_at created_at',
   enrollments:
-    'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id school_import_key module_number offering_id calendar_module calendar_revision progression_held',
+    'id student_id mode class_name grade course_label school_year import_source_id created_at status period_label valid_from valid_until reviewed_at reviewed_by_id school_import_key module_number offering_id calendar_module calendar_revision progression_held repetition_pending repetition_override academic_revision entry_started_on next_class_name',
   enrollment_import_history:
     'id enrollment_id recorded_at recorded_by_id reason mode class_name grade module_number course_label school_year period_label valid_from valid_until status reviewed_at offering_id calendar_revision progression_held',
   course_offerings:
@@ -397,6 +399,35 @@ async function main() {
       constraint('declaration_requests_document_fkey'),
       /FOREIGN KEY \(document_id, student_id, enrollment_id\) REFERENCES declaration_documents\(id, student_id, enrollment_id\) ON DELETE CASCADE/,
     );
+    assert.match(
+      constraint('school_academic_events_enrollment_id_fkey'),
+      /ON DELETE RESTRICT/,
+    );
+    assert.match(
+      constraint('school_academic_events_actor_id_fkey'),
+      /ON DELETE RESTRICT/,
+    );
+    assert.match(
+      constraint('enrollments_repetition_override_check'),
+      /repetition_pending/,
+    );
+    for (const name of [
+      'school_academic_events_immutable',
+      'school_academic_events_no_truncate',
+      'school_academic_events_revision',
+      'enrollment_academic_revision',
+    ]) {
+      const trigger = await client.query(
+        "SELECT pg_get_triggerdef(oid) AS definition FROM pg_trigger WHERE tgname=$1 AND tgenabled='O' AND NOT tgisinternal",
+        [name],
+      );
+      assert.equal(trigger.rowCount, 1, `Proteção acadêmica ativa: ${name}`);
+      if (name.endsWith('_revision'))
+        assert.match(
+          trigger.rows[0].definition,
+          /DEFERRABLE INITIALLY DEFERRED/,
+        );
+    }
     const registered = await client.query(
       "SELECT count(*)::int AS count FROM pg_trigger WHERE tgname='declaration_requests_registered' AND tgenabled='O' AND NOT tgisinternal",
     );

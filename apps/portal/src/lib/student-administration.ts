@@ -14,6 +14,17 @@ const select = {
   issuanceBlocked: true,
   accessRevision: true,
   account: { select: { status: true, role: true } },
+  _count: {
+    select: {
+      enrollments: {
+        where: {
+          status: { not: 'ENDED' as const },
+          repetitionPending: true,
+          repetitionOverride: false,
+        },
+      },
+    },
+  },
   enrollments: {
     select: {
       id: true,
@@ -24,6 +35,8 @@ const select = {
       moduleNumber: true,
       periodLabel: true,
       status: true,
+      repetitionPending: true,
+      repetitionOverride: true,
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     take: 10,
@@ -36,6 +49,7 @@ const summary = (s: StudentRow) => ({
   registration: s.schoolRegistration,
   loginBlocked: s.loginBlocked,
   issuanceBlocked: s.issuanceBlocked,
+  academicWaiting: s._count.enrollments > 0,
   revision: s.accessRevision,
   accountStatus: s.account?.status ?? null,
   enrollments: s.enrollments,
@@ -192,6 +206,10 @@ export async function administerStudents(
       const enrollment: Prisma.EnrollmentWhereInput = {
         ...(input.mode ? { mode: input.mode } : {}),
         ...(input.className ? { className: input.className } : {}),
+        ...(input.periodLabel !== undefined
+          ? { periodLabel: input.periodLabel }
+          : {}),
+        ...(input.courseLabel ? { courseLabel: input.courseLabel } : {}),
       };
       const where: Prisma.StudentWhereInput = {
         AND: [
@@ -211,15 +229,45 @@ export async function administerStudents(
                 },
               ]
             : []),
-          ...(input.mode || input.className
+          ...(input.mode ||
+          input.className ||
+          input.periodLabel !== undefined ||
+          input.courseLabel
             ? [{ enrollments: { some: enrollment } }]
             : []),
           ...(input.status === 'LOGIN_BLOCKED'
             ? [{ loginBlocked: true }]
             : input.status === 'ISSUANCE_BLOCKED'
-              ? [{ issuanceBlocked: true }]
+              ? [
+                  {
+                    OR: [
+                      { issuanceBlocked: true },
+                      {
+                        enrollments: {
+                          some: {
+                            status: { not: 'ENDED' as const },
+                            repetitionPending: true,
+                            repetitionOverride: false,
+                          },
+                        },
+                      },
+                    ],
+                  },
+                ]
               : input.status === 'UNBLOCKED'
-                ? [{ loginBlocked: false, issuanceBlocked: false }]
+                ? [
+                    {
+                      loginBlocked: false,
+                      issuanceBlocked: false,
+                      enrollments: {
+                        none: {
+                          status: { not: 'ENDED' as const },
+                          repetitionPending: true,
+                          repetitionOverride: false,
+                        },
+                      },
+                    },
+                  ]
                 : []),
         ],
       };

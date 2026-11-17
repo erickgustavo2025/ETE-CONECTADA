@@ -5,6 +5,8 @@ export type StudentSearch = {
   query: string;
   mode: '' | 'INTEGRADO' | 'SUBSEQUENTE';
   className: string;
+  periodLabel?: string | null;
+  courseLabel?: string;
   status: '' | 'LOGIN_BLOCKED' | 'ISSUANCE_BLOCKED' | 'UNBLOCKED';
   page: number;
 };
@@ -29,7 +31,16 @@ export function readStudentAdminInput(value: unknown): StudentAdminInput {
   const b = value as Record<string, unknown>;
   const keys =
     b.operation === 'search'
-      ? ['operation', 'query', 'mode', 'className', 'status', 'page']
+      ? [
+          'operation',
+          'query',
+          'mode',
+          'className',
+          'periodLabel',
+          'courseLabel',
+          'status',
+          'page',
+        ]
       : b.operation === 'detail'
         ? ['operation', 'studentId', 'page']
         : b.operation === 'change'
@@ -87,6 +98,15 @@ export function readStudentAdminInput(value: unknown): StudentAdminInput {
       query,
       mode: mode as StudentSearch['mode'],
       className,
+      ...(b.periodLabel === undefined
+        ? {}
+        : {
+            periodLabel:
+              b.periodLabel === null ? null : text('periodLabel', 60),
+          }),
+      ...(b.courseLabel === undefined
+        ? {}
+        : { courseLabel: text('courseLabel', 120) }),
       status: status as StudentSearch['status'],
       page,
     };
