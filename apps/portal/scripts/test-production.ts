@@ -448,7 +448,7 @@ async function main() {
     assert.equal(
       (await request('/api/documentos/verificacao', { code: 'invalid' }))
         .status,
-      400,
+      422,
     );
     assert.equal((await request('/secretaria/declaracoes')).status, 307);
     assert.equal(
