@@ -1,4 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { declarationMode } from './declaration-configuration';
+export { declarationPortalEnabled } from './declaration-configuration';
 import type { Prisma } from '../generated/prisma/client';
 import {
   declarationBody,
@@ -10,10 +12,7 @@ import {
 export function declarationRegistryPreviewEnabled(
   env: Record<string, string | undefined> = process.env,
 ) {
-  return (
-    ['development', 'test'].includes(env.NODE_ENV ?? '') &&
-    env.DECLARATION_REGISTRY_PREVIEW === 'true'
-  );
+  return declarationMode(env) === 'PREVIEW';
 }
 export type PreparedDeclarationDocument = {
   id: string;
