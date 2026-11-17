@@ -14,12 +14,18 @@ class AcademicHttpError extends Error {
   }
 }
 const labels: Record<AcademicAction, string> = {
+  ALLOW_REQUESTS: 'Liberar solicitações enquanto aguarda turma',
+  WAIT_REQUESTS: 'Voltar a aguardar turma sem novas solicitações',
   ENABLE: 'Confirmar matrícula e passagem automática',
   REPEAT: 'Marcar reprovação desta etapa',
   REPEAT_PREVIOUS: 'Corrigir reprovação da etapa anterior',
   RESUME: 'Corrigir marcação de reprovação',
 };
 const descriptions: Record<AcademicAction, string> = {
+  ALLOW_REQUESTS:
+    'Use somente após conferir uma matrícula ainda vigente. A liberação é uma exceção registrada no histórico: não promove, não transfere, não muda datas e não remove bloqueios manuais.',
+  WAIT_REQUESTS:
+    'O aluno volta a aguardar a enturmação sem abrir novas demandas acadêmicas. O acesso à conta e os documentos anteriores permanecem preservados.',
   ENABLE:
     'Confirme os dados escolares desta matrícula. As próximas passagens ocorrerão automaticamente na data de início, respeitando os bloqueios existentes.',
   REPEAT:
@@ -318,6 +324,25 @@ export default function AcademicEnrollmentPanel({
               )}
               {row.repetitionPending && (
                 <button
+                  className="ete-button ete-button--secondary"
+                  type="button"
+                  disabled={busy}
+                  onClick={(e) =>
+                    open(
+                      row.repetitionOverride
+                        ? 'WAIT_REQUESTS'
+                        : 'ALLOW_REQUESTS',
+                      e.currentTarget,
+                    )
+                  }
+                >
+                  {row.repetitionOverride
+                    ? labels.WAIT_REQUESTS
+                    : labels.ALLOW_REQUESTS}
+                </button>
+              )}
+              {row.repetitionPending && (
+                <button
                   type="button"
                   className="ete-button ete-button--secondary"
                   onClick={(e) => open('RESUME', e.currentTarget)}
@@ -335,7 +360,11 @@ export default function AcademicEnrollmentPanel({
               {data.history.map((h, index) => (
                 <li key={`${data.page}-${index}`}>
                   <strong>
-                    {eventNames[h.kind] ?? 'Alteração da situação escolar'}
+                    {h.kind === 'OVERRIDE'
+                      ? h.requestsAllowed
+                        ? 'Solicitações liberadas por exceção'
+                        : 'Espera por turma restabelecida'
+                      : (eventNames[h.kind] ?? 'Alteração da situação escolar')}
                   </strong>
                   <p>
                     {time(h.date)} · {h.actor}

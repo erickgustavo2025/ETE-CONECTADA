@@ -551,7 +551,11 @@ export async function previewSheetImport(
         expiresAt: expiresAt.toISOString(),
         counts: prepared.counts,
         placements: current.repeaterPlacements.map((p) =>
-          repeaterPlacementView(p, input),
+          repeaterPlacementView(
+            p,
+            input,
+            current.calendars.find((c) => c.id === p.target.scopeId),
+          ),
         ),
         ...(input.mode === 'SUBSEQUENTE'
           ? { calendarComparisons: prepared.calendarComparisons }

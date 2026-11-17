@@ -89,8 +89,15 @@ export async function prepareRepeaterPlacements(tx: Tx, input: SheetInput) {
         ? sourceCalendar
           ? readCalendarDraft(sourceCalendar.schedule).startsOn
           : null
-        : row.validFrom?.toISOString().slice(0, 10));
-    if (!originalStart || !row.validFrom) throw invalid();
+        : null);
+    if (
+      (row.mode === 'SUBSEQUENTE' && !originalStart) ||
+      !row.validFrom ||
+      (originalStart !== null &&
+        originalStart !== undefined &&
+        originalStart > row.validFrom.toISOString().slice(0, 10))
+    )
+      throw invalid();
     result.push({ row, target, previous, originalStart });
   }
   return result;
@@ -98,16 +105,52 @@ export async function prepareRepeaterPlacements(tx: Tx, input: SheetInput) {
 export type RepeaterPlacement = Awaited<
   ReturnType<typeof prepareRepeaterPlacements>
 >[number];
-export function repeaterPlacementView(p: RepeaterPlacement, input: SheetInput) {
+type PlacementTarget = {
+  id: string;
+  version: { revision: number };
+  draft: ReturnType<typeof readCalendarDraft>;
+};
+function targetDates(
+  p: RepeaterPlacement,
+  target: PlacementTarget | undefined,
+) {
+  if (p.row.mode === 'INTEGRADO')
+    return {
+      startsOn: `${p.target.header!.schoolYear}-02-01`,
+      endsOn: `${p.target.header!.schoolYear}-12-31`,
+    };
+  const module = target?.draft.modules[p.target.stage - 1];
+  if (
+    !target ||
+    target.draft.courseLabel !== p.row.courseLabel ||
+    !module ||
+    module.number !== p.row.moduleNumber ||
+    module.periodLabel !== p.target.periodLabel
+  )
+    throw invalid();
+  return module;
+}
+export function repeaterPlacementView(
+  p: RepeaterPlacement,
+  input: SheetInput,
+  target: PlacementTarget | undefined,
+) {
+  const dates = targetDates(p, target);
   return {
     enrollmentId: p.row.id,
-    fullName: p.row.student.fullName,
+    fullName: p.row.student.fullName ?? 'Nome não informado',
     schoolRegistration: p.row.student.schoolRegistration!,
     fromClass: p.row.className,
     fromPeriod: p.row.periodLabel,
     toClass: p.target.className,
     toPeriod: p.target.periodLabel,
     stage: p.target.stage,
+    originalStartsOn: p.originalStart,
+    startsOn: dates.startsOn,
+    endsOn:
+      p.row.mode === 'SUBSEQUENTE'
+        ? target!.draft.endsOn
+        : `${p.target.header!.schoolYear + 3 - p.target.stage}-12-31`,
     inFile: input.rows.some(
       (r) => r.schoolRegistration === p.row.student.schoolRegistration,
     ),
@@ -142,7 +185,7 @@ export async function applyRepeaterPlacement(
       row.status !== 'ACTIVE' ||
       !row.reviewedAt ||
       before.progressionHeld !== false,
-    entryStartedOn: new Date(p.originalStart),
+    entryStartedOn: p.originalStart ? new Date(p.originalStart) : null,
   };
   if (row.mode === 'SUBSEQUENTE') {
     const module = target?.draft.modules[p.target.stage - 1];
@@ -231,7 +274,7 @@ export async function repeaterCandidates(
     candidates: rows.slice(0, 20).map((r) => ({
       enrollmentId: r.id,
       version: academicVersion(r),
-      fullName: r.student.fullName,
+      fullName: r.student.fullName ?? 'Nome não informado',
       schoolRegistration: r.student.schoolRegistration!,
       className: r.className,
       periodLabel: r.periodLabel,

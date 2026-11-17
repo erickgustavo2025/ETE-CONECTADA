@@ -20,6 +20,7 @@ export type AcademicDetail = {
   };
   history: {
     kind: string;
+    requestsAllowed?: boolean;
     reason: string;
     date: string;
     effectiveOn: string;

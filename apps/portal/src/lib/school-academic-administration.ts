@@ -1,3 +1,8 @@
+import {
+  requireCurrentEnrollment,
+  EnrollmentValidityError,
+} from './enrollment-validity';
+import { subsequentContext, DeclarationValidationError } from './declarations';
 import { createHash } from 'node:crypto';
 import type { Prisma } from '../generated/prisma/client';
 import { getDb } from './db';
@@ -191,6 +196,35 @@ export async function manageAcademicEnrollment(
             validUntil: parse('validUntil'),
           };
         }
+      } else if (
+        input.action === 'ALLOW_REQUESTS' ||
+        input.action === 'WAIT_REQUESTS'
+      ) {
+        if (
+          !row.repetitionPending ||
+          row.repetitionOverride === (input.action === 'ALLOW_REQUESTS')
+        )
+          throw new RequestError(
+            'Consulte a situação atual antes de alterar a exceção de atendimento.',
+            409,
+          );
+        if (input.action === 'ALLOW_REQUESTS') {
+          try {
+            requireCurrentEnrollment(row, undefined, now);
+            if (row.mode === 'SUBSEQUENTE') subsequentContext(row, now);
+          } catch (error) {
+            if (
+              !(error instanceof EnrollmentValidityError) &&
+              !(error instanceof DeclarationValidationError)
+            )
+              throw error;
+            throw new RequestError(
+              'A matrícula precisa estar conferida e vigente. Enturme o aluno ou confira os dados escolares antes de liberar solicitações. A exceção não altera datas nem etapa.',
+              422,
+            );
+          }
+        }
+        patch = { repetitionOverride: input.action === 'ALLOW_REQUESTS' };
       } else {
         if (!row.repetitionPending)
           throw new RequestError(
@@ -209,7 +243,13 @@ export async function manageAcademicEnrollment(
         };
       }
       await recordAcademicChange(tx, row, patch, {
-        kind: input.action === 'REPEAT_PREVIOUS' ? 'REPEAT' : input.action,
+        kind:
+          input.action === 'REPEAT_PREVIOUS'
+            ? 'REPEAT'
+            : input.action === 'ALLOW_REQUESTS' ||
+                input.action === 'WAIT_REQUESTS'
+              ? 'OVERRIDE'
+              : input.action,
         actorId,
         operationKey,
         requestHash,
@@ -297,6 +337,9 @@ export async function manageAcademicEnrollment(
     },
     history: history.map((e) => ({
       kind: e.kind,
+      ...(e.kind === 'OVERRIDE'
+        ? { requestsAllowed: object(e.afterState).repetitionOverride === true }
+        : {}),
       reason: e.reason,
       date: e.createdAt.toISOString(),
       effectiveOn: date(e.effectiveOn)!,
