@@ -253,10 +253,13 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
       await page.keyboard.press('Escape');
       await expect(menu).toBeFocused();
       await menu.press('Enter');
-      await page.getByRole('link', { name: 'Declaração de vínculo' }).click();
-      await expect(page).toHaveURL(
-        role === 'student' ? /\/declaracao$/ : /\/secretaria\/declaracoes$/,
-      );
+      const destination =
+        role === 'student' ? /\/declaracao$/ : /\/secretaria\/declaracoes$/;
+      await Promise.all([
+        page.waitForURL(destination),
+        page.getByRole('link', { name: 'Declaração de vínculo' }).click(),
+      ]);
+      await expect(page).toHaveURL(destination);
       await expect(
         page.getByRole('heading', {
           name:

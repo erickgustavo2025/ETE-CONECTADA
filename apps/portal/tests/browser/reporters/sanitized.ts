@@ -28,7 +28,7 @@ export default class SanitizedReporter implements Reporter {
     if (result.status === 'failed' || result.status === 'timedOut') {
       const stack = result.errors.map((error) => error.stack ?? '').join('\n');
       const location = stack.match(
-        /apps\/portal\/tests\/(?:academic-browser|browser)\/[^\s():]+:\d+:\d+/,
+        /apps\/portal\/tests\/(?:academic-browser|repeater-browser|browser)\/[^\s():]+:\d+:\d+/,
       )?.[0];
       console.error(
         `Falha em ${location ?? 'local não identificado'} (detalhes omitidos para não expor dados do teste).`,
@@ -38,7 +38,7 @@ export default class SanitizedReporter implements Reporter {
 
   onError(error: TestError) {
     const location = error.stack?.match(
-      /apps\/portal\/tests\/(?:academic-browser|browser)\/[^\s():]+:\d+:\d+/,
+      /apps\/portal\/tests\/(?:academic-browser|repeater-browser|browser)\/[^\s():]+:\d+:\d+/,
     )?.[0];
     console.error(
       `Falha de configuração em ${location ?? 'local não identificado'} (detalhes omitidos).`,
