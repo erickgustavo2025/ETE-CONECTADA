@@ -434,11 +434,13 @@ export default function SchoolCompletionPanel({
           <label className="declaration-field">
             Motivo do encerramento
             <textarea
+              className="resize-none"
               name="reason"
               required
               minLength={3}
               maxLength={500}
-              style={{ resize: 'vertical' }}
+              rows={5}
+              style={{ resize: 'none' }}
               value={reason}
               readOnly={!!preview}
               disabled={busy}

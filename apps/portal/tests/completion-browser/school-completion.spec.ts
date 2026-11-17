@@ -259,6 +259,10 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const)
           exact: true,
         }),
       ).toBeDisabled();
+      await expect(dialog.getByLabel('Motivo do encerramento')).toHaveCSS(
+        'resize',
+        'none',
+      );
       for (const width of [320, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         if (width === 320) {
