@@ -116,6 +116,7 @@ async function run(
     const { verificationDelivery } = require('./src/lib/verification-delivery.ts');
     const { recoveryMailer } = require('./src/lib/recovery-mail.ts');
     const { MailDeliveryError } = require('./src/lib/email-transport.ts');
+    const { accountEmailMailer } = require('./src/lib/account-email-mail.ts');
     (async () => {
       const verification = verificationDelivery('A'.repeat(43));
       const recovery = recoveryMailer();
@@ -129,6 +130,11 @@ async function run(
       }
       assert.deepEqual(await verification.send(recipient), { result: 'email_sent' });
       await recovery.send(recipient, 'https://portal.example.invalid/redefinir-senha#token=fixture');
+      const account = accountEmailMailer();
+      assert.ok(account);
+      await account.confirmation(recipient, 'https://portal.example.invalid/confirmar-novo-email#token=fixture');
+      await account.notify('antes@example.invalid');
+      await account.notify(recipient);
     })().catch(() => { process.exitCode = 1; });
   `;
   await exec(process.execPath, ['--import', 'tsx', '-e', script], {
@@ -195,8 +201,8 @@ async function main() {
     secure = createTlsServer(options, (socket) => track(socket, true));
     const port = await bind(secure);
     await run(port, 'implicit', 'sent', cert);
-    assert.equal(commands.filter((command) => command === 'EMAIL').length, 2);
-    assert.equal(commands.filter((command) => command === 'AUTH').length, 2);
+    assert.equal(commands.filter((command) => command === 'EMAIL').length, 5);
+    assert.equal(commands.filter((command) => command === 'AUTH').length, 5);
 
     commands.length = 0;
     await run(port, 'implicit', 'failed');
@@ -215,9 +221,9 @@ async function main() {
     await run(await bind(starttls), 'starttls', 'sent', cert);
     assert.equal(
       commands.filter((command) => command === 'STARTTLS').length,
-      2,
+      5,
     );
-    assert.equal(commands.filter((command) => command === 'EMAIL').length, 2);
+    assert.equal(commands.filter((command) => command === 'EMAIL').length, 5);
     assert.ok(commands.indexOf('STARTTLS') < commands.indexOf('AUTH'));
 
     commands.length = 0;

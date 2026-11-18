@@ -51,6 +51,8 @@
     "test:private-input": "node --import tsx scripts/test-private-input.ts",
     "test:origin": "node --import tsx scripts/test-origin-http.ts",
     "test:security-headers": "node --import tsx scripts/test-security-headers.ts",
+    "test:account-email-change": "node --import tsx scripts/test-account-email-change.ts",
+    "test:account-password-change": "node --import tsx scripts/test-account-password-change.ts",
     "test:smtp": "node --import tsx scripts/test-smtp-delivery.ts",
     "test:mail-failures": "node --import tsx scripts/test-registration-mail.ts",
     "test:backup": "node --import tsx scripts/test-backup-restore.ts",

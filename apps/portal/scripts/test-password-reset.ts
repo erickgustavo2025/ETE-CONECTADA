@@ -260,6 +260,7 @@ async function main() {
         db,
         account.id,
         originalHash,
+        account.email,
         hash(randomBytes(32).toString('hex')),
         new Date(Date.now() + 60_000),
       ),

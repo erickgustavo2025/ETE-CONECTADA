@@ -279,6 +279,18 @@ export default function PortalHome({
                 </button>
               ),
             )}
+            {role && (
+              <a
+                className={styles.menuService}
+                href="/conta"
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className={styles.serviceIcon} aria-hidden="true">
+                  <ServiceIcon name="history" />
+                </span>
+                <span>Minha conta</span>
+              </a>
+            )}
             {role === 'secretary' && (
               <a
                 className={styles.menuService}

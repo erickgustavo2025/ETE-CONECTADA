@@ -10,6 +10,8 @@ export const portalDatabaseGrants = {
   student_details: mutable,
   enrollments: mutable,
   accounts: mutable,
+  account_security_events: append,
+  account_email_changes: temporary,
   student_access_changes: append,
   password_reset_tokens: temporary,
   sessions: temporary,

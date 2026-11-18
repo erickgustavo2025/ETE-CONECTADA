@@ -8,11 +8,12 @@ export type SessionRecord = {
   role: 'student' | 'secretary';
 };
 
-// Reconfere sob o mesmo lock do reset. Uma senha verificada antes da troca não cria sessão depois dela.
+// Reconfere o mesmo e-mail e a mesma senha sob o lock das alterações da conta.
 export async function createVerifiedSession(
   db: PrismaClient,
   accountId: string,
   passwordHash: string,
+  email: string | null,
   tokenHash: string,
   expiresAt: Date,
 ) {
@@ -22,7 +23,8 @@ export async function createVerifiedSession(
         Array<{ id: string; studentId: string; role: string }>
       >`
       SELECT id, student_id AS "studentId", role FROM accounts WHERE id = ${accountId}::uuid
-      AND status = 'active' AND password_hash = ${passwordHash} FOR UPDATE
+      AND status = 'active' AND password_hash = ${passwordHash}
+      AND email IS NOT DISTINCT FROM ${email}::text FOR UPDATE
     `;
       if (!current.length) return false;
       if (current[0].role === 'student') {

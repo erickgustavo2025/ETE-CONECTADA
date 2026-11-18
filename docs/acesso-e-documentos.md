@@ -99,6 +99,14 @@ sem documentos completos, senhas ou nomes dos familiares nos logs.
 Referência: [orientações OWASP para recuperação de senha](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
 Painel de atendimento e controles relacionados continuam em cards próprios.
 
+## Minha conta
+
+A pessoa titular pode alterar senha ou e-mail pelo menu **Minha conta**. A alteração exige a sessão da própria conta e a senha atual. Ao salvar uma senha nova, o portal encerra as sessões anteriores e os links de acesso pendentes.
+
+Para alterar o e-mail, o portal envia um link ao novo endereço. O link dura 30 minutos. A pessoa abre o link com a mesma conta e confirma em um botão. Até a confirmação, o endereço atual continua sendo o de login e recuperação. Depois de confirmar, o portal invalida as sessões antigas e tenta enviar um aviso aos dois endereços.
+
+Uma nova solicitação substitui o link anterior. Trocar ou recuperar a senha também invalida o link pendente do novo e-mail. O histórico administrativo guarda a ação, a conta e o horário, sem registrar senhas, tokens ou os endereços trocados. As telas de alteração seguem os controles de acesso de desenvolvimento até a liberação do portal.
+
 ## Entrega digital desejada
 
 A equipe substituiu o objetivo de retirada física pelo seguinte fluxo:

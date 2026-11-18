@@ -33,6 +33,8 @@ async function main() {
         (SELECT count(*) FROM sheet_import_previews) +
         (SELECT count(*) FROM enrollment_import_history) +
         (SELECT count(*) FROM accounts) +
+        (SELECT count(*) FROM account_security_events) +
+        (SELECT count(*) FROM account_email_changes) +
         (SELECT count(*) FROM enrollments) +
         (SELECT count(*) FROM sessions) +
         (SELECT count(*) FROM email_verification_tokens) +
