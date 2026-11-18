@@ -1,6 +1,6 @@
 # Histórico administrativo protegido
 
-Requisito confirmado pela equipe em 05/11/2026. Este documento define o aceite da EC067 e dos eventos gerados por EC124/126/127; não declara a proteção completa implementada.
+A equipe confirmou os requisitos em 05/11/2026. A EC067 protege os registros no banco da aplicação e oferece consulta à secretaria. A cópia externa protegida ainda precisa ser provisionada e conferida na infraestrutura.
 
 ## Comportamento esperado
 
@@ -22,11 +22,13 @@ Repetente aguardando turma fica bloqueado para novas demandas acadêmicas, inclu
 
 Uma conta da secretaria não deve conseguir remover evidências pelo portal ou pela credencial de aplicação. Não existe promessa de impossibilidade absoluta contra o proprietário/superusuário do banco ou contra quem controla toda a infraestrutura. Esse risco exige separação de acessos e cópia externa protegida; uma cadeia de hashes guardada somente no mesmo banco também pode ser reescrita por esse administrador.
 
-## Lacunas verificadas em 05/11
+## Consulta e proteção no portal
 
-Na base da EC125/PR76, `student_access_changes` já possui gatilho que recusa UPDATE. Ainda tem `ON DELETE CASCADE` no vínculo com aluno e não tem proteção própria contra DELETE/TRUNCATE. O histórico de importação também permite exclusão em cascata. Portanto não atribuir a essas tabelas a garantia completa exigida aqui. A migração de passagem da EC126 em preparação guarda estados mutáveis, não substitui um registro de eventos protegido.
-
-EC067 permanece pendente. Antes de concluir sua entrega, rever todos os históricos existentes e as credenciais efetivamente usadas; não basta esconder botões nem proteger apenas a tabela nova. Testes e limpeza devem usar banco descartável próprio. Não criar senha especial, parâmetro de requisição ou variável do portal que permita contornar as proteções para facilitar testes.
+- A secretaria abre **Histórico de ações** pelo menu. Pode filtrar por matrícula, nome, categoria e data. A data usa o horário de Recife. Cada página traz até 20 eventos.
+- A consulta inclui registros de acesso, matrícula, importação, versões do calendário e documentos. Mostra o responsável, o horário, a ação, a justificativa e as referências quando existem nos registros. Passagens automáticas mostram separadamente a confirmação original quando ela consta do evento.
+- O portal usa HTTPS no ambiente escolar, confere a origem e revalida o acesso da secretaria no banco. Os filtros vão no corpo da requisição e os resultados não são armazenados em cache. O histórico não envia CPF, filiação, credenciais ou arquivos.
+- A migração protege os históricos contra edição, exclusão, limpeza e perda de vínculo por cascata. Os pedidos de declaração conservam as atualizações operacionais necessárias para os fluxos existentes.
+- Conexões da aplicação recusam credenciais com propriedade, privilégios administrativos ou acesso além da matriz do portal. Antes de iniciar uma nova instalação, aplique as migrações e [prepare um papel separado para o portal](../../apps/portal/prisma/README.md). Em instalações existentes, prepare a credencial limitada antes de subir a nova versão do portal.
 
 ## Isolamento dos cenários de verificação
 

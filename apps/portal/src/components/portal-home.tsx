@@ -282,6 +282,18 @@ export default function PortalHome({
             {role === 'secretary' && (
               <a
                 className={styles.menuService}
+                href="/secretaria/historico"
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className={styles.serviceIcon} aria-hidden="true">
+                  <ServiceIcon name="history" />
+                </span>
+                <span>Histórico de ações</span>
+              </a>
+            )}
+            {role === 'secretary' && (
+              <a
+                className={styles.menuService}
                 href="/secretaria/alunos"
                 onClick={() => setMenuOpen(false)}
               >

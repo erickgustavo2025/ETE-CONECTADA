@@ -71,6 +71,7 @@
     "test:academic-input": "node --import tsx scripts/test-school-academic-input.ts",
     "test:academic-admin": "node --import tsx scripts/test-school-academic-administration.ts",
     "test:academic-browser": "node --import tsx ../../node_modules/@playwright/test/cli.js test --config tests/academic-browser/playwright.config.ts",
+    "test:audit-history": "node --import tsx scripts/test-audit-history.ts",
     "test:academic-catalogue": "node --import tsx scripts/test-school-academic-catalogue.ts",
     "test:repeater-input": "node --import tsx scripts/test-school-repeater-input.ts",
     "test:repeater-placement": "node --import tsx scripts/test-school-repeater-placement.ts",
