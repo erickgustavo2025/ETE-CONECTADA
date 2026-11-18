@@ -131,6 +131,10 @@ O [GitHub Actions](.github/workflows/ci.yml) já compila os apps, aplica as migr
 
 O [Dependabot](.github/dependabot.yml) propõe atualizações semanais, que são revisadas antes do merge. A [auditoria de dependências](.github/workflows/dependency-audit.yml) também roda semanalmente e pode ser iniciada manualmente.
 
+## Operar uma release
+
+Use o [procedimento de migração e retorno do portal](docs/operacao/migracoes-release.md) para preparar a manutenção do banco e conferir a compatibilidade da versão anterior.
+
 ## Como colaborar
 
 As tarefas estão no [Trello ETE CONECTADA](https://trello.com/b/gOjNklJZ/ete-conectada). Escolhemos uma tarefa por vez, trabalhamos em uma branch própria e abrimos um PR para revisão antes de integrar à `main`. Se a mudança envolver banco, dependências ou código compartilhado, combinamos os arquivos com o outro dev antes de começar.
