@@ -119,6 +119,22 @@ async function main() {
     client = undefined;
     await scenario.close();
     scenario = undefined;
+    scenario = await createTestDatabaseScenario({ schema: 'empty' });
+    client = new Client({ connectionString: scenario.config.url });
+    await client.connect();
+    assert.equal(
+      (
+        await client.query(
+          "SELECT count(*)::int AS n FROM pg_tables WHERE schemaname='public'",
+        )
+      ).rows[0].n,
+      0,
+      'O destino da restauração deve nascer sem tabelas, antes de receber o dump.',
+    );
+    await client.end();
+    client = undefined;
+    await scenario.close();
+    scenario = undefined;
     const previousIdentity = process.env.TEST_DATABASE_ID;
     process.env.TEST_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
     try {

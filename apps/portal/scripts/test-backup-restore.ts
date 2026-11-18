@@ -9,20 +9,10 @@ import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { Client } from 'pg';
 import { canonicalCheckDefinition } from './backup-catalog';
-import {
-  assertDatabaseIdentity,
-  parseTestEnvironment,
-  reportTestFailure,
-} from './test-environment';
+import { createTestDatabaseScenario } from './test-database-scenario';
+import { assertDatabaseIdentity, reportTestFailure } from './test-environment';
 
 // Ensaio próprio: não aceita arquivo, destino ou conexão externa por argumento.
-const expected = parseTestEnvironment(process.env);
-const sourceUrl = new URL(expected.url);
-const destination = `ete_test_restore_${randomUUID().replaceAll('-', '')}`;
-const destinationIdentity = randomUUID();
-const destinationUrl = new URL(sourceUrl);
-destinationUrl.pathname = `/${destination}`;
-assert.notEqual(destination, expected.database);
 const bin = process.env.TEST_PG_BIN ?? '';
 assert.ok(path.isAbsolute(bin), 'Informe TEST_PG_BIN do PostgreSQL 16.');
 for (const command of ['pg_dump', 'pg_restore']) {
@@ -40,8 +30,6 @@ const connect = (url: string) =>
     query_timeout: 10000,
     options: '-c timezone=UTC',
   });
-const source = connect(expected.url);
-const target = connect(destinationUrl.toString());
 let archiveHash = '';
 let qrArchiveHash = '';
 const digest = (data: Buffer | string) =>
@@ -292,11 +280,6 @@ async function checkRules(client: Client) {
     'OK: cursos, motivos de histórico e 27 UFs aceitos; valores externos recusados pelas três constraints.',
   );
 }
-let work = '';
-let created = false;
-let targetConnected = false;
-let sourceVerified = false;
-let initial: Awaited<ReturnType<typeof snapshot>> | undefined;
 const document = randomUUID();
 const issuedDocument = randomUUID();
 const automaticRequest = randomUUID();
@@ -315,12 +298,31 @@ const [
 ] = Array.from({ length: 11 }, () => randomUUID());
 
 async function main() {
-  await source.connect();
+  let sourceCase:
+    Awaited<ReturnType<typeof createTestDatabaseScenario>> | undefined;
+  let targetCase:
+    Awaited<ReturnType<typeof createTestDatabaseScenario>> | undefined;
+  let sourceClient: Client | undefined;
+  let targetClient: Client | undefined;
+  let work = '';
   let failure: unknown;
   try {
+    sourceCase = await createTestDatabaseScenario();
+    targetCase = await createTestDatabaseScenario({ schema: 'empty' });
+    const expected = sourceCase.config;
+    const {
+      database: destination,
+      identity: destinationIdentity,
+      url: destinationConnection,
+    } = targetCase.config;
+    assert.notEqual(destination, expected.database);
+    const sourceUrl = new URL(expected.url);
+    const destinationUrl = new URL(destinationConnection);
+    const source = (sourceClient = connect(expected.url));
+    const target = (targetClient = connect(destinationConnection));
+    await source.connect();
     await identity(source, expected.database, expected.identity);
-    sourceVerified = true;
-    initial = await snapshot(source);
+    const initial = await snapshot(source);
     for (const name of [
       'students',
       'accounts',
@@ -339,15 +341,7 @@ async function main() {
       );
     work = await mkdtemp(path.join(tmpdir(), 'ete-backup-lab-'));
     await chmod(work, 0o700);
-    await source.query(
-      `CREATE DATABASE ${quote(destination)} TEMPLATE template0`,
-    );
-    created = true;
-    await source.query(
-      `COMMENT ON DATABASE ${quote(destination)} IS 'ETE_CONECTADA_TEST:${destinationIdentity}'`,
-    );
     await target.connect();
-    targetConnected = true;
     await identity(target, destination, destinationIdentity);
     await assert.rejects(
       () => identity(target, destination, randomUUID()),
@@ -664,61 +658,16 @@ async function main() {
     // Uma falha de remoção não pula o fechamento/limpeza dos demais recursos próprios.
     for (const cleanup of [
       async () => {
-        if (targetConnected) await target.end();
+        await targetClient?.end();
       },
       async () => {
-        if (!created) return;
-        const row = await source.query(
-          "SELECT shobj_description(oid,'pg_database') AS marker FROM pg_database WHERE datname=$1",
-          [destination],
-        );
-        assert.equal(
-          row.rows[0]?.marker,
-          `ETE_CONECTADA_TEST:${destinationIdentity}`,
-        );
-        await source.query(`DROP DATABASE ${quote(destination)}`);
+        await sourceClient?.end();
       },
       async () => {
-        if (!sourceVerified) return;
-        await identity(source, expected.database, expected.identity);
-        await source.query(
-          'DELETE FROM declaration_document_actions WHERE document_id=$1',
-          [document],
-        );
-        await source.query(
-          'DELETE FROM declaration_current_issues WHERE document_id=$1',
-          [issuedDocument],
-        );
-        await source.query(
-          'DELETE FROM declaration_documents WHERE id=ANY($1::uuid[])',
-          [[document, issuedDocument]],
-        );
-        await source.query(
-          'DELETE FROM declaration_pdf_archives WHERE sha256=ANY($1::text[])',
-          [[archiveHash, qrArchiveHash]],
-        );
-        await source.query(
-          'DELETE FROM student_access_changes WHERE student_id=ANY($1::uuid[])',
-          [[student, otherStudent]],
-        );
-        await source.query('DELETE FROM students WHERE id=ANY($1::uuid[])', [
-          [student, otherStudent],
-        ]);
-        await source.query('DELETE FROM course_calendar_versions WHERE id=$1', [
-          calendar,
-        ]);
-        await source.query('DELETE FROM course_offerings WHERE id=$1', [
-          offering,
-        ]);
-        if (initial)
-          assert.deepEqual(
-            await snapshot(source),
-            initial,
-            'Limpeza preserva estado inicial.',
-          );
+        await targetCase?.close();
       },
       async () => {
-        await source.end();
+        await sourceCase?.close();
       },
       async () => {
         if (work) await rm(work, { recursive: true, force: true });

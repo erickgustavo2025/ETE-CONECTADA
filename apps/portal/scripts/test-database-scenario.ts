@@ -49,7 +49,9 @@ async function assertEmptySource(config: Configuration) {
 
 // Apenas harness: exige fonte sintética vazia identificada. Nunca é importado pelo portal.
 // Cada cenário conserva os eventos; descarta o banco inteiro após fechar seus clientes.
-export async function createTestDatabaseScenario() {
+export async function createTestDatabaseScenario({
+  schema = 'migrated',
+}: { schema?: 'migrated' | 'empty' } = {}) {
   const source = parseTestEnvironment(process.env);
   await assertEmptySource(source);
   const identity = randomUUID();
@@ -120,7 +122,7 @@ export async function createTestDatabaseScenario() {
       source,
     );
     await admin.query(
-      `CREATE DATABASE ${quote(database)} TEMPLATE ${quote(source.database)}`,
+      `CREATE DATABASE ${quote(database)} TEMPLATE ${quote(schema === 'empty' ? 'template0' : source.database)}`,
     );
     await admin.query(
       `COMMENT ON DATABASE ${quote(database)} IS 'ETE_CONECTADA_TEST:${identity}'`,
@@ -132,7 +134,7 @@ export async function createTestDatabaseScenario() {
     oid = result.rows[0]?.oid;
     owner = result.rows[0]?.owner;
     // Também recusa dados que entrem na fonte entre a conferência e a cópia.
-    await assertEmptySource(config);
+    if (schema === 'migrated') await assertEmptySource(config);
     return { config, close };
   } catch (error) {
     if (oid && owner) await close();
