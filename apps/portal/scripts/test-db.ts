@@ -147,14 +147,7 @@ async function main() {
       'OK: concorrência, confirmação única, login CPF/e-mail, senha inválida, sessão e logout.',
     );
   } finally {
-    try {
-      // Exclui exclusivamente o aluno criado por esta execução; FKs removem seus dados dependentes.
-      if (studentId) {
-        await db.student.delete({ where: { id: studentId } });
-      }
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

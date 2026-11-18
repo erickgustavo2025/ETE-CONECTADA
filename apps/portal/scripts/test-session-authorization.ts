@@ -333,12 +333,7 @@ async function main() {
       'OK: expiração, inatividade, revogação e logout isolado entre contas.',
     );
   } finally {
-    try {
-      if (created.length)
-        await db.student.deleteMany({ where: { id: { in: created } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 

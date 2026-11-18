@@ -8,7 +8,7 @@ import { reviewEnrollment } from '../src/lib/enrollment-validity';
 async function main() {
   const env = await openTestEnvironment({ http: true });
   const { db, base } = env;
-  let actorStudentId: string | undefined;
+
   let constraint = false;
   try {
     assert.equal(await db.student.count(), 0, 'Exige banco novo sintético.');
@@ -27,7 +27,7 @@ async function main() {
       },
       include: { account: true },
     });
-    actorStudentId = actor.id;
+
     const actorId = actor.account!.id;
     const token = randomBytes(32).toString('base64url');
     await db.session.create({
@@ -349,14 +349,16 @@ async function main() {
       await db.account.findUniqueOrThrow({ where: { id: account.id } }),
       account,
     );
-    await db.student.delete({ where: { id: actor.id } });
+    await assert.rejects(db.student.delete({ where: { id: actor.id } }));
     assert.equal(
       await count(),
       5,
-      'Excluir operador preserva histórico sem a referência da conta.',
+      'A exclusão do operador é recusada e o histórico preserva a autoria.',
     );
     assert.equal(
-      await db.enrollmentImportHistory.count({ where: { recordedById: null } }),
+      await db.enrollmentImportHistory.count({
+        where: { recordedById: actorId },
+      }),
       5,
     );
     console.log(
@@ -366,14 +368,6 @@ async function main() {
     try {
       if (constraint)
         await db.$executeRaw`ALTER TABLE enrollments DROP CONSTRAINT ec057_test_rollback`;
-      await db.student.deleteMany({
-        where: {
-          OR: [
-            ...(actorStudentId ? [{ id: actorStudentId }] : []),
-            { schoolRegistration: { in: ['00001001', '00001003'] } },
-          ],
-        },
-      });
     } finally {
       await env.close();
     }

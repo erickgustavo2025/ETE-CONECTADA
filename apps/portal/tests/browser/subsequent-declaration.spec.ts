@@ -192,36 +192,11 @@ test('subsequente gera com UF e município e secretaria consulta o PDF preenchid
     expect(details.parentOne).toBe('Filiação fictícia do subsequente');
     expect(errors).toEqual([]);
   } finally {
-    try {
-      await db.declarationCurrentIssue.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationDocumentAction.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationRequest.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationDocument.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationPdfArchive.deleteMany({
-        where: { documents: { none: {} } },
-      });
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-      await db.courseCalendarVersion.deleteMany({
-        where: { offeringId: fixture.enrollment.offeringId },
-      });
-      await db.courseOffering.deleteMany({
-        where: { id: fixture.enrollment.offeringId },
-      });
-    } finally {
-      await environment.close();
-      if (previousPreview === undefined)
-        delete process.env.DECLARATION_REGISTRY_PREVIEW;
-      else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
-      if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
-      else process.env.PORTAL_PUBLIC_URL = previousOrigin;
-    }
+    await environment.close();
+    if (previousPreview === undefined)
+      delete process.env.DECLARATION_REGISTRY_PREVIEW;
+    else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
+    if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
+    else process.env.PORTAL_PUBLIC_URL = previousOrigin;
   }
 });

@@ -460,25 +460,6 @@ async function main() {
       'OK: administração privada, filtros, bloqueios independentes, sessões encerradas, versões, concorrência, repetição, auditoria imutável e rollback.',
     );
   } finally {
-    await env.db.studentAccessChange.deleteMany({
-      where: { studentId: { in: ids } },
-    });
-    await env.db.declarationCurrentIssue.deleteMany({
-      where: { studentId: { in: ids } },
-    });
-    await env.db.declarationDocumentAction.deleteMany({
-      where: { studentId: { in: ids } },
-    });
-    await env.db.declarationRequest.deleteMany({
-      where: { studentId: { in: ids } },
-    });
-    await env.db.declarationDocument.deleteMany({
-      where: { studentId: { in: ids } },
-    });
-    await env.db.declarationPdfArchive.deleteMany({
-      where: { documents: { none: {} } },
-    });
-    await env.db.student.deleteMany({ where: { id: { in: ids } } });
     await env.close();
   }
 }

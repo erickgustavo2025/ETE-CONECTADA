@@ -345,7 +345,6 @@ async function main() {
         await db.$executeRawUnsafe(
           `ALTER TABLE enrollments DROP CONSTRAINT ${constraint}`,
         );
-      await db.student.deleteMany({ where: owned() });
     } finally {
       try {
         if (directory) await rm(directory, { recursive: true });

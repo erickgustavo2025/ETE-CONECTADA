@@ -16,7 +16,6 @@ async function main() {
   const environment = await openTestEnvironment();
   const { db } = environment;
   const ids: string[] = [];
-  const demoIds: string[] = [];
   try {
     assert.equal(
       await db.student.count(),
@@ -203,8 +202,6 @@ async function main() {
       markReadyForPickup(request.id, secretary.id),
       /Acesso não autorizado/,
     );
-    await db.student.deleteMany({ where: { id: { in: ids } } });
-    ids.length = 0;
 
     // O comando documentado migra/identifica antes do seed e preserva conta/senha e revisões.
     const demo = () => {
@@ -219,17 +216,7 @@ async function main() {
         'db:demo deve preparar somente o banco identificado.',
       );
     };
-    try {
-      demo();
-    } finally {
-      const fixtures = await db.student.findMany({
-        where: {
-          schoolRegistration: { in: ['9900001', '9900002', '9900003'] },
-        },
-        select: { id: true },
-      });
-      demoIds.push(...fixtures.map((row) => row.id));
-    }
+    demo();
     const account = await db.account.findUniqueOrThrow({
       where: { email: 'aluno.teste@eteconectada.invalid' },
     });
@@ -260,14 +247,7 @@ async function main() {
       'OK: conferência autorizada, matrículas múltiplas, período, geração/liberação, revisão posterior, revogação e demonstração idempotente.',
     );
   } finally {
-    try {
-      if (ids.length || demoIds.length)
-        await db.student.deleteMany({
-          where: { id: { in: [...ids, ...demoIds] } },
-        });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

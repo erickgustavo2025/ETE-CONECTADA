@@ -693,23 +693,7 @@ async function main() {
       'OK: ofertas/versionamento, fuso/virada, concorrência, idempotência, exceções, encerrados/integrado preservados, aviso de lista, limite3/4, autorização e rollback.',
     );
   } finally {
-    try {
-      if (students.length || importedRegistrations.length)
-        await db.student.deleteMany({
-          where: {
-            OR: [
-              { id: { in: students } },
-              { schoolRegistration: { in: importedRegistrations } },
-            ],
-          },
-        });
-      await db.courseCalendarVersion.deleteMany({
-        where: { offeringId: { in: offerIds } },
-      });
-      await db.courseOffering.deleteMany({ where: { id: { in: offerIds } } });
-    } finally {
-      await env.close();
-    }
+    await env.close();
   }
 }
 main().catch(reportTestFailure);

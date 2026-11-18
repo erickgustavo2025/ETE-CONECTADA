@@ -493,12 +493,7 @@ async function main() {
           ),
         );
       } finally {
-        try {
-          if (studentId)
-            await db.student.deleteMany({ where: { id: studentId } });
-        } finally {
-          await environment.close();
-        }
+        await environment.close();
       }
     }
   }

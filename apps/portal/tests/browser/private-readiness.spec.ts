@@ -12,7 +12,7 @@ for (const role of ['student', 'secretary'] as const) {
     process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
     const environment = await openTestEnvironment({ http: true });
     const { db, base } = environment;
-    let studentId: string | undefined;
+
     let release = () => {};
     const posts: string[] = [];
     page.on('request', (request) => {
@@ -58,7 +58,7 @@ for (const role of ['student', 'secretary'] as const) {
         },
         include: { account: true },
       });
-      studentId = person.id;
+
       const token = randomBytes(32).toString('base64url');
       await db.session.create({
         data: {
@@ -121,9 +121,7 @@ for (const role of ['student', 'secretary'] as const) {
     } finally {
       release();
       await page.unrouteAll({ behavior: 'wait' });
-      try {
-        if (studentId) await db.student.delete({ where: { id: studentId } });
-      } finally {
+      {
         await environment.close();
         if (previous === undefined)
           delete process.env.DECLARATION_REGISTRY_PREVIEW;

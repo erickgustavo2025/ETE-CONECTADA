@@ -284,7 +284,9 @@ async function main() {
       ).archiveSha256,
       null,
     );
-    await db.declarationDocument.delete({ where: { id: legacy.id } });
+    await assert.rejects(
+      db.declarationDocument.delete({ where: { id: legacy.id } }),
+    );
     await assert.rejects(
       db.declarationDocument.create({
         data: {
@@ -487,24 +489,9 @@ async function main() {
       'OK: registro privado individual e lote integrado/subsequente, hash/página, snapshot imutável, restrições de exclusão, papéis/origem, revogação, revisão concorrente e rollback integral.',
     );
   } finally {
-    try {
-      await db.declarationDocument.deleteMany({
-        where: { studentId: { in: students } },
-      });
-      await db.declarationPdfArchive.deleteMany({
-        where: { documents: { none: {} } },
-      });
-      await db.student.deleteMany({ where: { id: { in: students } } });
-      await db.courseCalendarVersion.deleteMany({
-        where: { offeringId: { in: offerings } },
-      });
-      await db.courseOffering.deleteMany({ where: { id: { in: offerings } } });
-    } finally {
-      await environment.close();
-      if (previous === undefined)
-        delete process.env.DECLARATION_REGISTRY_PREVIEW;
-      else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
-    }
+    await environment.close();
+    if (previous === undefined) delete process.env.DECLARATION_REGISTRY_PREVIEW;
+    else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
   }
 }
 main().catch(reportTestFailure);

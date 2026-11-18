@@ -495,20 +495,7 @@ async function main() {
       'OK: filiação completa por uma das duas referências escolares, respostas genéricas, chamada direta/entradas inválidas negadas, links legados/correção/bloqueio recusados, retomada protegida, expiração, confirmação única e login CPF/e-mail.',
     );
   } finally {
-    try {
-      if (studentId || secondStudentId)
-        await db.student.deleteMany({
-          where: {
-            id: {
-              in: [studentId, secondStudentId].filter(
-                (id): id is string => !!id,
-              ),
-            },
-          },
-        });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 

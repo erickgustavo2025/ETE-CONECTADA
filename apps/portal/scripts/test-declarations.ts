@@ -756,12 +756,7 @@ async function main() {
       'OK: solicitações persistidas e concorrentes, isolamento de alunos, preparação sem liberar retirada, confirmação e auditoria da retirada, autorização/origem, fotos e PDF do aluno removidos, frequência e lote A4.',
     );
   } finally {
-    try {
-      if (created.length)
-        await db.student.deleteMany({ where: { id: { in: created } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

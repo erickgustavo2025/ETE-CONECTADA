@@ -256,15 +256,7 @@ async function main() {
       'OK: pedido subsequente, autorização/DTO mínimo,3cursos, lote misto, revisão obsoleta, revalidação após geração e lote inválido sem preparar outro aluno.',
     );
   } finally {
-    try {
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-      await db.courseCalendarVersion.deleteMany({
-        where: { offeringId: { in: offerings } },
-      });
-      await db.courseOffering.deleteMany({ where: { id: { in: offerings } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

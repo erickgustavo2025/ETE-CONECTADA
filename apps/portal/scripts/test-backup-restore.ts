@@ -209,7 +209,28 @@ async function checkRules(client: Client) {
   } finally {
     await client.query('ROLLBACK');
   }
-  async function update(sql: string, values: string[], accepted: boolean) {
+
+  const protectedHistory = [
+    [
+      'UPDATE enrollment_import_history SET reason=$1 WHERE id=$2',
+      ['IDENTITY_REVIEW', history],
+    ],
+    ['DELETE FROM enrollment_import_history WHERE id=$1', [history]],
+    ['TRUNCATE enrollment_import_history', []],
+  ] as const;
+  for (const [sql, values] of protectedHistory) {
+    await client.query('BEGIN');
+    try {
+      await assert.rejects(
+        () => client.query(sql, [...values]),
+        (error: unknown) => (error as { code?: string }).code === '23000',
+      );
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  }
+  console.log('OK: histórico restaurado recusa alteração, exclusão e limpeza.');
+  async function checkDomain(sql: string, values: string[], accepted: boolean) {
     await client.query('BEGIN');
     try {
       if (accepted) assert.equal((await client.query(sql, values)).rowCount, 1);
@@ -223,7 +244,7 @@ async function checkRules(client: Client) {
     }
   }
   for (const course of ['ADM', 'DS', 'ENF', 'ZZZ'])
-    await update(
+    await checkDomain(
       'UPDATE course_offerings SET course_label=$1 WHERE id=$2',
       [course, offering],
       course !== 'ZZZ',
@@ -236,8 +257,11 @@ async function checkRules(client: Client) {
     'CALENDAR_HOLD',
     'UNAPPROVED',
   ])
-    await update(
-      'UPDATE enrollment_import_history SET reason=$1 WHERE id=$2',
+    await checkDomain(
+      `INSERT INTO enrollment_import_history
+        (enrollment_id, recorded_by_id, reason, mode, class_name, course_label, status)
+        SELECT enrollment_id, recorded_by_id, $1, mode, class_name, course_label, status
+        FROM enrollment_import_history WHERE id=$2`,
       [reason, history],
       reason !== 'UNAPPROVED',
     );
@@ -271,7 +295,7 @@ async function checkRules(client: Client) {
     'TO',
     'ZZ',
   ])
-    await update(
+    await checkDomain(
       'UPDATE student_details SET birth_state=$1 WHERE student_id=$2',
       [state, student],
       state !== 'ZZ',

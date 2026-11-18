@@ -49,7 +49,7 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
   const environment = await openTestEnvironment({ http: true });
   const { db, base } = environment;
   const suffix = randomBytes(8).toString('hex');
-  let studentId: string | undefined;
+
   try {
     const student = await db.student.create({
       data: {
@@ -74,7 +74,7 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
         },
       },
     });
-    studentId = student.id;
+
     await page.goto(`${base}/cadastro`);
     await page.getByLabel('Matrícula').fill(student.schoolRegistration!);
     await page.getByLabel('Data de nascimento').fill('2008-01-15');
@@ -95,7 +95,7 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
       ),
     ).toBeVisible();
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    expect(await db.account.count({ where: { studentId } })).toBe(0);
+    expect(await db.account.count({ where: { studentId: student.id } })).toBe(0);
     // Falha de conexão permite repetir sem perder os dados digitados.
     await page.route(
       '**/api/registration/check',
@@ -201,11 +201,7 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
     });
     expect(account.status).toBe('active');
   } finally {
-    try {
-      if (studentId) await db.student.deleteMany({ where: { id: studentId } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 });
 
@@ -223,8 +219,7 @@ test('aluno gera PDF e secretaria consulta o mesmo documento sem aprovação por
   const { db, base } = environment;
   const suffix = randomBytes(8).toString('hex');
   const password = 'PortalSintetico#123';
-  let studentId: string | undefined;
-  let secretaryId: string | undefined;
+
   try {
     const student = await db.student.create({
       data: {
@@ -254,7 +249,7 @@ test('aluno gera PDF e secretaria consulta o mesmo documento sem aprovação por
       },
       include: { enrollments: true },
     });
-    studentId = student.id;
+
     const secretary = await db.student.create({
       data: {
         fullName: `Secretaria sintética ${suffix}`,
@@ -268,7 +263,7 @@ test('aluno gera PDF e secretaria consulta o mesmo documento sem aprovação por
         },
       },
     });
-    secretaryId = secretary.id;
+
     async function createActiveAccount(
       studentId: string,
       role: 'student' | 'secretary',
@@ -377,33 +372,11 @@ test('aluno gera PDF e secretaria consulta o mesmo documento sem aprovação por
       ).status,
     ).toBe('AVAILABLE');
   } finally {
-    try {
-      if (studentId) {
-        const ids = [studentId, secretaryId].filter((id): id is string => !!id);
-        await db.declarationCurrentIssue.deleteMany({
-          where: { studentId: { in: ids } },
-        });
-        await db.declarationDocumentAction.deleteMany({
-          where: { studentId: { in: ids } },
-        });
-        await db.declarationRequest.deleteMany({
-          where: { studentId: { in: ids } },
-        });
-        await db.declarationDocument.deleteMany({
-          where: { studentId: { in: ids } },
-        });
-        await db.declarationPdfArchive.deleteMany({
-          where: { documents: { none: {} } },
-        });
-        await db.student.deleteMany({ where: { id: { in: ids } } });
-      }
-    } finally {
-      await environment.close();
-      if (previousPreview === undefined)
-        delete process.env.DECLARATION_REGISTRY_PREVIEW;
-      else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
-      if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
-      else process.env.PORTAL_PUBLIC_URL = previousOrigin;
-    }
+    await environment.close();
+    if (previousPreview === undefined)
+      delete process.env.DECLARATION_REGISTRY_PREVIEW;
+    else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
+    if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
+    else process.env.PORTAL_PUBLIC_URL = previousOrigin;
   }
 });

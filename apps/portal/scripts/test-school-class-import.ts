@@ -331,20 +331,6 @@ async function main() {
     try {
       if (constraint)
         await db.$executeRaw`ALTER TABLE enrollments DROP CONSTRAINT ec125_rollback`;
-      await db.student.deleteMany({
-        where: {
-          OR: [
-            { id: { in: students } },
-            {
-              schoolRegistration: { in: ['00001001', '00001002', '00001003'] },
-            },
-          ],
-        },
-      });
-      await db.courseCalendarVersion.deleteMany({
-        where: { offeringId: { in: scopes } },
-      });
-      await db.courseOffering.deleteMany({ where: { id: { in: scopes } } });
     } finally {
       await env.close();
     }

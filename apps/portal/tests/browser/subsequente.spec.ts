@@ -249,14 +249,6 @@ test('secretaria importa subsequente sem calendário prévio, confere estimativa
     ).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
-    try {
-      await db.student.deleteMany({ where: { id: { in: students } } });
-      await db.courseCalendarVersion.deleteMany({
-        where: { offeringId: { in: scopes } },
-      });
-      await db.courseOffering.deleteMany({ where: { id: { in: scopes } } });
-    } finally {
-      await env.close();
-    }
+    await env.close();
   }
 });

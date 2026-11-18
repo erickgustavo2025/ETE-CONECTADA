@@ -189,11 +189,7 @@ async function main() {
         }
       }
     } finally {
-      try {
-        await db.student.deleteMany({ where: { id: { in: ids } } });
-      } finally {
-        await environment.close();
-      }
+      await environment.close();
     }
   }
   console.log(

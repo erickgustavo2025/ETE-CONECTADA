@@ -220,10 +220,7 @@ async function main() {
       if (previous[i] === undefined) Reflect.deleteProperty(process.env, key);
       else Reflect.set(process.env, key, previous[i]);
     });
-    try {
-      if (studentId) await db.student.deleteMany({ where: { id: studentId } });
-      await db.accessAttemptBucket.deleteMany();
-    } finally {
+    {
       await environment.close();
     }
   }

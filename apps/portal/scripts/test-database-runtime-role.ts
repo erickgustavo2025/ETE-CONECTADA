@@ -69,6 +69,55 @@ async function main() {
       `REVOKE GRANT OPTION FOR SELECT ON public.student_access_changes FROM "${role}"`,
     );
     await assertPortalDatabaseRole(runtime);
+    const student = (
+      await runtime.query(
+        "INSERT INTO students (full_name,birth_date) VALUES ('Aluno fictício','2006-01-01') RETURNING id",
+      )
+    ).rows[0].id;
+    const operator = (
+      await admin.query(
+        "INSERT INTO students (full_name,birth_date) VALUES ('Operador fictício','1985-01-01') RETURNING id",
+      )
+    ).rows[0].id;
+    const account = (
+      await admin.query(
+        'INSERT INTO accounts(student_id) VALUES ($1) RETURNING id',
+        [operator],
+      )
+    ).rows[0].id;
+    const event = (
+      await runtime.query(
+        "INSERT INTO student_access_changes (student_id,created_by_id,request_key,kind,blocked,reason,revision) VALUES($1,$2,gen_random_uuid(),'LOGIN',true,'Bloqueio fictício de teste',1) RETURNING *",
+        [student, account],
+      )
+    ).rows[0];
+    for (const command of [
+      "UPDATE public.student_access_changes SET reason='Outro motivo'",
+      'DELETE FROM public.student_access_changes',
+      'TRUNCATE public.student_access_changes',
+      'DELETE FROM public.students',
+    ]) {
+      await assert.rejects(runtime.query(command), { code: '42501' });
+    }
+    for (const command of [
+      "UPDATE public.student_access_changes SET reason='Outro motivo'",
+      'DELETE FROM public.student_access_changes',
+      'TRUNCATE public.student_access_changes',
+    ]) {
+      await assert.rejects(admin.query(command), { code: '23000' });
+    }
+    await assert.rejects(
+      admin.query('DELETE FROM public.students WHERE id=$1', [student]),
+      { code: '23503' },
+    );
+    await assert.rejects(
+      admin.query('DELETE FROM public.accounts WHERE id=$1', [account]),
+      { code: '23503' },
+    );
+    assert.deepEqual(
+      (await runtime.query('SELECT * FROM public.student_access_changes')).rows,
+      [event],
+    );
     console.log(
       'OK: credencial própria do portal lê e acrescenta eventos; edição, exclusão, repasse de acesso e administração são recusados pela política.',
     );

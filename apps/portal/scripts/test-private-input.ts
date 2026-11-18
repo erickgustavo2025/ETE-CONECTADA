@@ -174,12 +174,7 @@ async function main() {
       'OK: cinco APIs privadas recusam excesso antes de EOF, mantêm origem/papel, mídia/JSON/headers privados e nenhuma escrita escolar.',
     );
   } finally {
-    try {
-      if (students.length)
-        await db.student.deleteMany({ where: { id: { in: students } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

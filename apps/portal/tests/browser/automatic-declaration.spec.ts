@@ -17,9 +17,7 @@ for (const purpose of ['PREVIEW', 'SCHOOL'] as const)
       else delete process.env.DECLARATION_ISSUANCE_MODE;
       const env = await openTestEnvironment({ http: true });
       const { db, base } = env;
-      let studentId: string | undefined,
-        offeringId: string | undefined,
-        staffId: string | undefined;
+      let studentId: string | undefined;
       const errors: string[] = [],
         keys: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
@@ -62,7 +60,7 @@ for (const purpose of ['PREVIEW', 'SCHOOL'] as const)
           enrollmentId = enrollment.id;
         } else {
           const f = subsequentFixture('DS', 2);
-          const offering = await db.courseOffering.create({
+          await db.courseOffering.create({
             data: {
               id: f.enrollment.offeringId,
               label: f.schedule.label,
@@ -76,7 +74,7 @@ for (const purpose of ['PREVIEW', 'SCHOOL'] as const)
               },
             },
           });
-          offeringId = offering.id;
+
           const { offering: ignored, ...fields } = f.enrollment;
           void ignored;
           const enrollment = await db.enrollment.create({
@@ -376,7 +374,7 @@ for (const purpose of ['PREVIEW', 'SCHOOL'] as const)
               },
               include: { account: true },
             });
-            staffId = staff.id;
+
             const staffContext = await page.context().browser()!.newContext();
             try {
               const staffToken = randomBytes(32).toString('base64url');
@@ -482,23 +480,6 @@ for (const purpose of ['PREVIEW', 'SCHOOL'] as const)
         expect(errors).toEqual([]);
         expect(enrollmentId).toBeTruthy();
       } finally {
-        if (studentId) {
-          await db.declarationCurrentIssue.deleteMany({ where: { studentId } });
-          await db.declarationDocumentAction.deleteMany({
-            where: { studentId },
-          });
-          await db.declarationRequest.deleteMany({ where: { studentId } });
-          await db.declarationDocument.deleteMany({ where: { studentId } });
-          await db.declarationPdfArchive.deleteMany({
-            where: { documents: { none: {} } },
-          });
-          await db.student.delete({ where: { id: studentId } });
-        }
-        if (staffId) await db.student.delete({ where: { id: staffId } });
-        if (offeringId) {
-          await db.courseCalendarVersion.deleteMany({ where: { offeringId } });
-          await db.courseOffering.delete({ where: { id: offeringId } });
-        }
         await env.close();
         delete process.env.DECLARATION_REGISTRY_PREVIEW;
         if (previousMode === undefined)

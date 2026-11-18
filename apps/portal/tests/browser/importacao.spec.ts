@@ -15,7 +15,7 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
     await import('../../scripts/test-environment');
   const env = await openTestEnvironment({ http: true });
   const { db, base } = env;
-  let actorId: string | undefined;
+
   const registrations = [
     '00001001',
     ...Array.from({ length: 21 }, (_, i) => String(1100 + i).padStart(8, '0')),
@@ -40,7 +40,7 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
       },
       include: { account: true },
     });
-    actorId = actor.id;
+
     const student = await db.student.create({
       data: {
         schoolRegistration: '00001001',
@@ -365,17 +365,6 @@ test('secretaria confere e importa integrado, preserva vínculos e recupera conf
     await expect(page).toHaveURL(`${base}/login`);
     expect(errors).toEqual([]);
   } finally {
-    try {
-      await db.student.deleteMany({
-        where: {
-          OR: [
-            ...(actorId ? [{ id: actorId }] : []),
-            { schoolRegistration: { in: registrations } },
-          ],
-        },
-      });
-    } finally {
-      await env.close();
-    }
+    await env.close();
   }
 });

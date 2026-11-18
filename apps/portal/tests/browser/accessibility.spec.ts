@@ -396,16 +396,11 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
     throw error;
   } finally {
     try {
-      if (students.length)
-        await db.student.deleteMany({ where: { id: { in: students } } });
+      await environment.close();
     } finally {
-      try {
-        await environment.close();
-      } finally {
-        if (previousPreview === undefined)
-          delete process.env.DECLARATION_REGISTRY_PREVIEW;
-        else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
-      }
+      if (previousPreview === undefined)
+        delete process.env.DECLARATION_REGISTRY_PREVIEW;
+      else process.env.DECLARATION_REGISTRY_PREVIEW = previousPreview;
     }
   }
 });

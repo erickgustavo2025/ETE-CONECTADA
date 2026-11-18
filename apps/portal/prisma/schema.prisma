@@ -144,7 +144,7 @@ model StudentAccessChange {
   reason String @db.VarChar(500)
   revision Int
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   createdBy Account @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
   @@unique([createdById, requestKey])
   @@unique([studentId, revision])
@@ -204,11 +204,11 @@ model DeclarationRequest {
   preparedById String? @map("prepared_by_id") @db.Uuid
   readyById String? @map("ready_by_id") @db.Uuid
   documentId String? @unique @map("document_id") @db.Uuid
-  document DeclarationDocument? @relation(fields: [documentId, studentId, enrollmentId], references: [id, studentId, enrollmentId], onDelete: Cascade, onUpdate: NoAction, map: "declaration_requests_document_fkey")
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  preparedBy Account? @relation("PreparedBy", fields: [preparedById], references: [id], onDelete: SetNull)
-  readyBy Account? @relation("ReadyBy", fields: [readyById], references: [id], onDelete: SetNull)
+  document DeclarationDocument? @relation(fields: [documentId, studentId, enrollmentId], references: [id, studentId, enrollmentId], onDelete: Restrict, onUpdate: NoAction, map: "declaration_requests_document_fkey")
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  preparedBy Account? @relation("PreparedBy", fields: [preparedById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  readyBy Account? @relation("ReadyBy", fields: [readyById], references: [id], onDelete: Restrict, onUpdate: NoAction)
   @@index([studentId, createdAt])
   @@index([status, createdAt])
   @@index([enrollmentId])
@@ -256,8 +256,8 @@ model EnrollmentImportHistory {
   validUntil DateTime? @map("valid_until") @db.Date
   status EnrollmentStatus
   reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(6)
-  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  recordedBy Account? @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  recordedBy Account? @relation(fields: [recordedById], references: [id], onDelete: Restrict, onUpdate: NoAction)
   @@index([enrollmentId, recordedAt, id])
   @@index([recordedById])
   @@map("enrollment_import_history")
@@ -284,7 +284,7 @@ model CourseCalendarVersion {
  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
  createdById String? @map("created_by_id") @db.Uuid
  offering CourseOffering @relation(fields: [offeringId], references: [id], onDelete: Restrict, onUpdate: NoAction)
- createdBy Account? @relation(fields: [createdById], references: [id], onDelete: SetNull, onUpdate: NoAction)
+ createdBy Account? @relation(fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
  @@unique([offeringId,revision])
  @@index([createdById])
  @@map("course_calendar_versions")

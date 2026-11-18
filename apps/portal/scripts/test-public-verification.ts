@@ -340,29 +340,11 @@ async function main() {
       'OK: consulta anônima mínima, nome mascarado/conferência, sem PDF/PII/listagem, legado privado, estado atual/cadastro alterado/rollback, falha503, origem/limites e orçamento separado de login.',
     );
   } finally {
-    try {
-      await db.declarationCurrentIssue.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationDocumentAction.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationDocument.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationPdfArchive.deleteMany({
-        where: { documents: { none: {} } },
-      });
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-      await db.accessAttemptBucket.deleteMany();
-    } finally {
-      await env.close();
-      if (previous === undefined)
-        delete process.env.DECLARATION_REGISTRY_PREVIEW;
-      else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
-      if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
-      else process.env.PORTAL_PUBLIC_URL = previousOrigin;
-    }
+    await env.close();
+    if (previous === undefined) delete process.env.DECLARATION_REGISTRY_PREVIEW;
+    else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
+    if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
+    else process.env.PORTAL_PUBLIC_URL = previousOrigin;
   }
 }
 main().catch(reportTestFailure);
