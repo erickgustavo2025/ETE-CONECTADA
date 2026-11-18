@@ -95,7 +95,9 @@ test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async (
       ),
     ).toBeVisible();
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    expect(await db.account.count({ where: { studentId: student.id } })).toBe(0);
+    expect(await db.account.count({ where: { studentId: student.id } })).toBe(
+      0,
+    );
     // Falha de conexão permite repetir sem perder os dados digitados.
     await page.route(
       '**/api/registration/check',
