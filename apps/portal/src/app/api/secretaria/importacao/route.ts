@@ -1,5 +1,5 @@
 import { withRepeaterSelections } from '@/lib/school-repeater-input';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
 import {
   consumeAccessAttempt,
   accessLimitResponse,
@@ -135,7 +135,7 @@ async function handlePOST(request: Request) {
     );
     if (
       (body.action === 'repeaters' || body.repeaters !== undefined) &&
-      !declarationRegistryPreviewEnabled()
+      !declarationPortalEnabled()
     )
       return json({ error: 'Página não disponível.' }, 404);
     if (body.action === 'repeaters') {

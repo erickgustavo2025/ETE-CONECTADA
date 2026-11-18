@@ -1,5 +1,6 @@
 'use client';
 import { newRequestKey as newKey } from '@/lib/request-key';
+import { useClientReady } from './use-client-ready';
 import { useEffect, useRef, useState } from 'react';
 import BirthplaceDialog, {
   type BirthplaceSummary,
@@ -29,6 +30,7 @@ export default function AutomaticDeclarationRequests({
   birthplace,
   issuanceBlocked = false,
 }: Props) {
+  const ready = useClientReady();
   const [requests, setRequests] = useState(initialRequests);
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
@@ -49,7 +51,7 @@ export default function AutomaticDeclarationRequests({
     action: 'request' | 'refresh',
     birthplace?: DeclaredBirthplace,
   ) {
-    if (lock.current) return false;
+    if (!ready || lock.current) return false;
     lock.current = true;
     setBusy(action);
     setMessage('');
@@ -145,7 +147,7 @@ export default function AutomaticDeclarationRequests({
   }
 
   async function file(row: RequestSummary, download: boolean) {
-    if (lock.current || !row.document) return;
+    if (!ready || lock.current || !row.document) return;
     const popup = download ? null : window.open('', '_blank');
     if (!download && !popup) {
       setFailed(true);
@@ -183,7 +185,7 @@ export default function AutomaticDeclarationRequests({
           'Arquivo indisponível. Atualize a lista e tente novamente.',
         );
       if (download)
-        await downloadDeclaration(response, 'declaracao-vinculo-teste.pdf');
+        await downloadDeclaration(response, 'declaracao-vinculo.pdf');
       else {
         const url = URL.createObjectURL(await response.blob());
         if (!popup || popup.closed) {
@@ -233,17 +235,22 @@ export default function AutomaticDeclarationRequests({
         <button
           className="ete-button"
           type="button"
-          disabled={!!busy || !enrollmentId || issuanceBlocked}
-          aria-busy={busy === 'request'}
+          disabled={!ready || !!busy || !enrollmentId || issuanceBlocked}
+          aria-busy={!ready || busy === 'request'}
           onClick={() => {
             setFailed(false);
             setMessage('');
             setOpen(true);
           }}
         >
-          Gerar declaração
+          {ready ? 'Gerar declaração' : 'Carregando…'}
         </button>
       </div>
+      <noscript>
+        <p className="document-notice">
+          Para continuar, ative o JavaScript ou procure a secretaria.
+        </p>
+      </noscript>
       <p
         className={`declaration-feedback ${failed ? 'request-error' : ''}`}
         role={failed ? 'alert' : 'status'}
@@ -265,7 +272,7 @@ export default function AutomaticDeclarationRequests({
           </div>
           <button
             className="ete-button ete-button--secondary ete-button--compact"
-            disabled={!!busy}
+            disabled={!ready || !!busy}
             type="button"
             onClick={() => perform('refresh')}
           >
@@ -311,7 +318,7 @@ export default function AutomaticDeclarationRequests({
                   <div className="request-row-actions">
                     <button
                       className="ete-button ete-button--secondary ete-button--compact"
-                      disabled={!!busy}
+                      disabled={!ready || !!busy}
                       type="button"
                       onClick={() => file(row, false)}
                     >
@@ -319,7 +326,7 @@ export default function AutomaticDeclarationRequests({
                     </button>
                     <button
                       className="ete-button ete-button--compact"
-                      disabled={!!busy}
+                      disabled={!ready || !!busy}
                       type="button"
                       onClick={() => file(row, true)}
                     >

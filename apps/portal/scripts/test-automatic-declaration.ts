@@ -3,7 +3,7 @@ import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { openTestEnvironment, reportTestFailure } from './test-environment';
 import { syntheticEnrollmentValidity } from './enrollment-fixture';
 import { consumeAccessAttempt } from '../src/lib/access-throttle';
-import { issueTestDeclaration } from '../src/lib/declaration-issuance';
+import { issueDeclaration } from '../src/lib/declaration-issuance';
 
 async function main() {
   process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
@@ -52,7 +52,7 @@ async function main() {
       data: { studentId, enrollmentId: enrollment.id },
     });
     const key = randomUUID();
-    const issued = await issueTestDeclaration(account.id, {
+    const issued = await issueDeclaration(account.id, {
       enrollmentId: enrollment.id,
       requestKey: key,
     });
@@ -74,7 +74,7 @@ async function main() {
     );
     assert.ok(request.generatedAt);
     assert.equal(request.readyAt, null);
-    const repeated = await issueTestDeclaration(account.id, {
+    const repeated = await issueDeclaration(account.id, {
       enrollmentId: enrollment.id,
       requestKey: key,
     });
@@ -95,7 +95,7 @@ async function main() {
     await db.$executeRaw`CREATE TRIGGER ec073_failure BEFORE INSERT ON declaration_requests FOR EACH ROW EXECUTE FUNCTION ec073_fail_request()`;
     try {
       await assert.rejects(
-        issueTestDeclaration(
+        issueDeclaration(
           account.id,
           { enrollmentId: enrollment.id, requestKey: randomUUID() },
           { state: 'PE', municipalityId: '2611101' },
@@ -137,7 +137,7 @@ async function main() {
       data: { birthplaceSource: 'SCHOOL_RECORD' },
     });
     await assert.rejects(
-      issueTestDeclaration(
+      issueDeclaration(
         account.id,
         { enrollmentId: enrollment.id, requestKey: randomUUID() },
         { state: 'PE', municipalityId: '2611101' },

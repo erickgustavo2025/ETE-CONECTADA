@@ -1,6 +1,6 @@
 import { currentSession } from '@/lib/session';
 import { canManageDeclarations } from '@/lib/declaration-access';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
 import {
   changeDeclarationDocument,
   readDocumentAction,
@@ -16,7 +16,7 @@ import { withApiCanonicalPath } from '@/lib/api-route';
 
 export const runtime = 'nodejs';
 async function handlePOST(request: Request) {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     return Response.json(
       { error: 'Página não disponível.' },
       { status: 404, headers: privateHeaders },
@@ -36,7 +36,8 @@ async function handlePOST(request: Request) {
     if (!canManageDeclarations(session.role))
       return Response.json(
         {
-          error: 'Somente a secretaria pode alterar a situação de uma minuta.',
+          error:
+            'Somente a secretaria pode alterar a situação de uma declaração.',
         },
         { status: 403, headers: privateHeaders },
       );

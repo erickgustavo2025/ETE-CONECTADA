@@ -2,7 +2,7 @@ import { validDocumentCode } from '@/lib/public-verification-input';
 import { notFound } from 'next/navigation';
 import PortalFrame from '@/components/portal-frame';
 import PublicVerificationPage from '@/components/public-verification';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
 export const metadata = {
   title: 'Verificar declaração | ETE CONECTADA',
   robots: { index: false, follow: false, nocache: true },
@@ -12,7 +12,7 @@ export default async function Page({
 }: {
   params: Promise<{ code: string }>;
 }) {
-  if (!declarationRegistryPreviewEnabled()) notFound();
+  if (!declarationPortalEnabled()) notFound();
   const { code } = await params;
   if (!validDocumentCode(code)) notFound();
   return (

@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
 import { randomBytes, randomInt } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
@@ -93,6 +94,49 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
   const students: string[] = [];
   const suffix = randomBytes(8).toString('hex');
   const password = 'PortalSintetico#123';
+  const navigationEvents: {
+    kind: string;
+    path?: string;
+    status?: number;
+    aborted?: boolean;
+  }[] = [];
+  const relevant = (url: string) => {
+    const path = new URL(url).pathname;
+    return ['/', '/login', '/declaracao', '/secretaria/declaracoes'].includes(
+      path,
+    )
+      ? path
+      : null;
+  };
+  page.on('response', (response) => {
+    const path = relevant(response.url());
+    if (path)
+      navigationEvents.push({
+        kind: 'response',
+        path,
+        status: response.status(),
+      });
+  });
+  page.on('requestfailed', (request) => {
+    const path = relevant(request.url());
+    if (path)
+      navigationEvents.push({
+        kind: 'requestfailed',
+        path,
+        aborted: request.failure()?.errorText === 'net::ERR_ABORTED',
+      });
+  });
+  page.on('framenavigated', (frame) => {
+    if (frame === page.mainFrame()) {
+      const path = relevant(frame.url());
+      if (path) navigationEvents.push({ kind: 'navigated', path });
+    }
+  });
+  page.on('console', (message) => {
+    if (/Fast Refresh.*full reload/i.test(message.text()))
+      navigationEvents.push({ kind: 'hmr-full-reload' });
+  });
+
   try {
     const student = await db.student.create({
       data: {
@@ -252,13 +296,36 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
       ).toBeFocused();
       await page.keyboard.press('Escape');
       await expect(menu).toBeFocused();
+      let releaseTransition: () => void = () => {};
+      const transitionGate = new Promise<void>((resolve) => {
+        releaseTransition = resolve;
+      });
+      const destinationRoute = '**/secretaria/declaracoes*';
+      if (role === 'secretary')
+        await page.route(destinationRoute, async (route) => {
+          if (route.request().headers().rsc === '1') {
+            navigationEvents.push({
+              kind: 'blocked-client-transition',
+              path: '/secretaria/declaracoes',
+            });
+            await transitionGate;
+          }
+          await route.continue();
+        });
       await menu.press('Enter');
       const destination =
         role === 'student' ? /\/declaracao$/ : /\/secretaria\/declaracoes$/;
-      await Promise.all([
-        page.waitForURL(destination),
-        page.getByRole('link', { name: 'Declaração de vínculo' }).click(),
-      ]);
+      try {
+        const link = page.getByRole('link', { name: 'Declaração de vínculo' });
+        await link.focus();
+        await Promise.all([
+          page.waitForURL(destination),
+          role === 'secretary' ? link.press('Enter') : link.click(),
+        ]);
+      } finally {
+        releaseTransition();
+        if (role === 'secretary') await page.unrouteAll({ behavior: 'wait' });
+      }
       await expect(page).toHaveURL(destination);
       await expect(
         page.getByRole('heading', {
@@ -321,6 +388,12 @@ test('teclado, contraste e reflow preservam acesso, menu e declarações', async
       await page.getByRole('button', { name: 'Sair', exact: true }).click();
       await expect(page).toHaveURL(/\/login$/);
     }
+  } catch (error) {
+    await writeFile(
+      test.info().outputPath('navigation.json'),
+      JSON.stringify(navigationEvents, null, 2),
+    );
+    throw error;
   } finally {
     try {
       if (students.length)

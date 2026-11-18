@@ -4,7 +4,7 @@ import {
   sameOriginRequest,
   readPrivateBody,
 } from '@/lib/private-request';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
 import { consumeAccessAttempt } from '@/lib/access-throttle';
 import { getDb } from '@/lib/db';
 import {
@@ -18,7 +18,7 @@ const headers = {
   'X-Robots-Tag': 'noindex, nofollow, noarchive',
 };
 async function handlePOST(request: Request) {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     return Response.json(
       { error: 'Página não disponível.' },
       { status: 404, headers },

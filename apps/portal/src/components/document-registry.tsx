@@ -323,13 +323,10 @@ export default function DocumentRegistry() {
         para encontrar uma turma, conferir uma declaração ou registrar seu
         cancelamento.
       </p>
-      <aside className="document-notice">
-        <strong>Área de testes: documentos sem validade oficial</strong>
-        <p>
-          Os PDFs ainda usam modelos de revisão. Cancelar um documento não
-          cancela o pedido do aluno.
-        </p>
-      </aside>
+      <p className="document-notice">
+        Cancelar uma declaração mantém o documento e o motivo no histórico. Uma
+        nova emissão substitui a versão anterior automaticamente.
+      </p>
       <form
         onSubmit={submit}
         noValidate
@@ -604,6 +601,7 @@ export default function DocumentRegistry() {
             {results.documents.map((d) => (
               <li className={styles.row} key={d.id}>
                 <strong>{documentStateLabels[d.state]}</strong>
+                {d.testOnly && <p>Arquivo de demonstração</p>}
                 <p>
                   {d.mode === 'INTEGRADO' ? 'Integrado' : 'Subsequente'} ·{' '}
                   {d.className} · {d.period}
@@ -678,12 +676,18 @@ export default function DocumentRegistry() {
                   <strong>{documentStateLabels[detail.document.state]}</strong>{' '}
                   · {date(detail.document.createdAt)}
                 </p>
+                {detail.document.testOnly && (
+                  <p>
+                    Arquivo de demonstração, anterior ao uso escolar. O conteúdo
+                    original foi preservado.
+                  </p>
+                )}
                 <p className={styles.identity}>
                   Documento: {detail.document.id.slice(-8)}
                 </p>
                 <div className={styles.body}>
                   {detail.document.body ||
-                    'Texto não disponível neste registro de teste.'}
+                    'Texto não disponível neste registro.'}
                 </div>
                 {fileError && <p role="alert">{fileError}</p>}
                 {detail.document.hasOriginal && (

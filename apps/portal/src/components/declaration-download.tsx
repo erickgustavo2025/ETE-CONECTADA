@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
 export async function downloadDeclaration(
   response: Response,
-  filename = "declaracao-vinculo-minuta.pdf",
+  filename = 'declaracao-para-conferencia.pdf',
 ) {
   if (!response.ok) {
     const result = await response.json();
     throw new Error(
-      result.error || "Não foi possível baixar o PDF. Tente novamente.",
+      result.error || 'Não foi possível baixar o PDF. Tente novamente.',
     );
   }
   const url = URL.createObjectURL(await response.blob());
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   link.href = url;
   link.download = filename;
   document.body.append(link);

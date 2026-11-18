@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { openTestEnvironment } from '../../scripts/test-environment';
 import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
-import { issueTestDeclaration } from '../../src/lib/declaration-issuance';
+import { issueDeclaration } from '../../src/lib/declaration-issuance';
 
 test('secretaria consulta minutas e registra cancelamento/substituição com recuperação de rede', async ({
   page,
@@ -242,7 +242,7 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
         birthplaceSource: 'SCHOOL_RECORD',
       },
     });
-    const issued = await issueTestDeclaration(studentAccount.id, {
+    const issued = await issueDeclaration(studentAccount.id, {
       enrollmentId: e.id,
       requestKey: randomUUID(),
     });
@@ -265,7 +265,7 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
         .getByRole('region', { name: 'Detalhes da declaração', exact: true })
         .locator('p')
         .first()
-        .getByText('Emitida para teste', { exact: true }),
+        .getByText('Emitida', { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Substituir documento', exact: true }),

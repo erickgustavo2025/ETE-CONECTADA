@@ -106,32 +106,38 @@ export async function createDeclarationsPdf(
   const logo = await pdf.embedPng(government);
   const margin = 45;
   const width = 505.28;
+  const school = items.every((item) => item.verification?.purpose === 'SCHOOL');
   pdf.setTitle(
-    items.some((item) => item.verification)
-      ? 'Declaração de vínculo - documento de teste'
-      : 'Declaração de vínculo - minuta para revisão',
+    school
+      ? 'Declaração de vínculo'
+      : items.some((item) => item.verification)
+        ? 'Declaração de vínculo - documento de teste'
+        : 'Declaração de vínculo - minuta para revisão',
   );
   pdf.setAuthor('ETE Conectada');
   pdf.setSubject(
-    'Minuta não assinada; modelo sujeito à validação da escola/GRE.',
+    school
+      ? 'Declaração de vínculo escolar com consulta ao registro de emissão.'
+      : 'Minuta não assinada; modelo sujeito à validação da escola/GRE.',
   );
   for (let index = 0; index < items.length; index++) {
     const fields = items[index].fields;
     const body = bodies[index];
     const page = pdf.addPage([595.28, 841.89]);
     try {
-      page.drawText(
-        items[index].verification
-          ? 'DOCUMENTO DE TESTE - SEM VALIDADE OFICIAL'
-          : 'MINUTA PARA REVISÃO - NÃO É DOCUMENTO EMITIDO',
-        {
-          x: margin,
-          y: 807,
-          size: 8,
-          font,
-          color: rgb(0.35, 0.35, 0.35),
-        },
-      );
+      if (items[index].verification?.purpose !== 'SCHOOL')
+        page.drawText(
+          items[index].verification
+            ? 'DOCUMENTO DE TESTE - SEM VALIDADE OFICIAL'
+            : 'MINUTA PARA REVISÃO - NÃO É DOCUMENTO EMITIDO',
+          {
+            x: margin,
+            y: 807,
+            size: 8,
+            font,
+            color: rgb(0.35, 0.35, 0.35),
+          },
+        );
       page.drawImage(logo, { x: 35, y: 641, width: 145, height: 145 });
       page.drawText('Secretaria de Educação', {
         x: 190,
@@ -248,12 +254,17 @@ export async function createDeclarationsPdf(
             'O endereço de verificação não cabe no modelo. Configure um endereço mais curto.',
           );
         drawDeclarationQr(page, verification, margin, 84, 54);
-        page.drawText('Verificação de teste:', {
-          x: 111,
-          y: 125,
-          font,
-          size: 7,
-        });
+        page.drawText(
+          verification.purpose === 'SCHOOL'
+            ? 'Verificação:'
+            : 'Verificação de teste:',
+          {
+            x: 111,
+            y: 125,
+            font,
+            size: 7,
+          },
+        );
         page.drawText(verification.url, { x: 111, y: 113, font, size: 6 });
         page.drawText('Código: ' + verification.code, {
           x: 111,
@@ -261,12 +272,17 @@ export async function createDeclarationsPdf(
           font,
           size: 7,
         });
-        page.drawText('Consulte a situação atual. Sem validade oficial.', {
-          x: 111,
-          y: 89,
-          font,
-          size: 7,
-        });
+        page.drawText(
+          verification.purpose === 'SCHOOL'
+            ? 'Consulte a situação atual pelo QR code ou endereço acima.'
+            : 'Consulte a situação atual. Sem validade oficial.',
+          {
+            x: 111,
+            y: 89,
+            font,
+            size: 7,
+          },
+        );
       } else {
         // A preparação antiga mantém a reserva visual, sem promover minutas.
         page.drawRectangle({

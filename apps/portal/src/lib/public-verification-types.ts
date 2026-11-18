@@ -3,7 +3,7 @@ export type PublicVerification = {
   code: string;
   state: PublicDocumentState;
   checkedAt: string;
-  testOnly: true;
+  testOnly: boolean;
   pdfSha256: string;
   nameMatches: boolean | null;
   document: {
@@ -27,7 +27,7 @@ export function isPublicVerification(
     typeof v.code === 'string' &&
     /^[\w-]{43}$/.test(v.code) &&
     ['VALID', 'CANCELLED', 'SUPERSEDED'].includes(String(v.state)) &&
-    v.testOnly === true &&
+    typeof v.testOnly === 'boolean' &&
     typeof v.checkedAt === 'string' &&
     Number.isFinite(Date.parse(v.checkedAt)) &&
     typeof v.pdfSha256 === 'string' &&

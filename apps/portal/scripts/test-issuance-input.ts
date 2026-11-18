@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import {
   readIssuanceInput,
-  testIssuanceContent,
+  issuanceContent,
 } from '../src/lib/declaration-issuance-input';
 import { syntheticEnrollmentValidity } from './enrollment-fixture';
 import { subsequentFixture } from './subsequent-declaration-fixture';
@@ -56,17 +56,17 @@ const student = {
     },
   ],
 };
-const content = testIssuanceContent(student, enrollmentId);
+const content = issuanceContent(student, enrollmentId);
 assert.equal(content.snapshot.subjectName, student.fullName);
 assert.equal(content.snapshot.testOnly, true);
 assert.match(content.snapshot.body, /100%/);
 assert.equal(content.fields.reviewed, true);
-assert.throws(() => testIssuanceContent(student, randomUUID()));
+assert.throws(() => issuanceContent(student, randomUUID()));
 assert.throws(() =>
-  testIssuanceContent({ ...student, details: null }, enrollmentId),
+  issuanceContent({ ...student, details: null }, enrollmentId),
 );
 const f = subsequentFixture();
-const sub = testIssuanceContent(
+const sub = issuanceContent(
   { ...f.student, details: student.details },
   f.enrollment.id,
 );

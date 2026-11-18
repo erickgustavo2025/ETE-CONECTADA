@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import type { Prisma } from '../generated/prisma/client';
 import { getDb } from './db';
 import { RequestError } from './request-error';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import {
   academicInclude,
   academicSnapshot,
@@ -409,7 +409,7 @@ export async function administerAcademicEnrollment(
   actorId: string,
   value: unknown,
 ) {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     throw new RequestError('Página não disponível.', 404);
   const input = readAcademicAdminInput(value);
   return getDb().$transaction(

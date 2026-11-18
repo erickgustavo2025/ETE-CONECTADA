@@ -1,7 +1,7 @@
 import type { Enrollment, Prisma } from '../generated/prisma/client';
 import { getDb } from './db';
 import { RequestError } from './request-error';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import {
   readCalendarDraft,
   calendarDay,
@@ -281,7 +281,7 @@ export async function applyStudentAcademicProgression(
   return result;
 }
 export async function synchronizeOwnAcademicState(accountId: string) {
-  if (!declarationRegistryPreviewEnabled()) return;
+  if (!declarationPortalEnabled()) return;
   return getDb().$transaction(
     async (tx) => {
       const [actor] = await tx.$queryRaw<

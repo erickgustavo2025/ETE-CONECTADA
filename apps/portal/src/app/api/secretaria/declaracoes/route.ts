@@ -1,3 +1,4 @@
+import { declarationMode } from '@/lib/declaration-configuration';
 import {
   declarationRegistryPreviewEnabled,
   prepareDeclarationDocuments,
@@ -21,6 +22,11 @@ import {
 
 export const runtime = 'nodejs';
 async function handlePOST(request: Request) {
+  if (declarationMode() === 'SCHOOL')
+    return Response.json(
+      { error: 'A emissão agora é automática pela conta do aluno.' },
+      { status: 410, headers: privateHeaders },
+    );
   if (!sameOriginRequest(request))
     return Response.json(
       { error: 'Origem não autorizada.' },
@@ -117,7 +123,7 @@ async function handlePOST(request: Request) {
         ...privateHeaders,
         'Content-Type': 'application/pdf',
         'Content-Disposition':
-          'attachment; filename="declaracoes-vinculo-minutas.pdf"',
+          'attachment; filename="declaracoes-para-conferencia.pdf"',
       },
     });
   } catch (error) {

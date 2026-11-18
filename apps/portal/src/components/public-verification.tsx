@@ -16,7 +16,7 @@ import styles from './public-verification.module.css';
 
 type Phase = 'loading' | 'ready' | 'not-found' | 'unavailable' | 'limited';
 const labels = {
-  VALID: 'Registro válido para teste',
+  VALID: 'Declaração válida',
   CANCELLED: 'Declaração cancelada',
   SUPERSEDED: 'Declaração substituída',
 };
@@ -201,10 +201,15 @@ export default function PublicVerificationPage({ code }: { code: string }) {
           Confira se o documento consta no registro da escola e qual é a
           situação atual.
         </p>
-        <aside className={styles.notice}>
-          <strong>Ambiente de testes</strong>
-          <p>Os documentos desta etapa ainda não têm validade oficial.</p>
-        </aside>
+        {data?.testOnly && (
+          <aside className={styles.notice}>
+            <strong>Arquivo de demonstração</strong>
+            <p>
+              Este arquivo foi gerado antes do uso escolar e não é uma
+              declaração escolar válida.
+            </p>
+          </aside>
+        )}
         <div
           className={styles.status}
           aria-live="polite"
@@ -214,7 +219,11 @@ export default function PublicVerificationPage({ code }: { code: string }) {
             <h2>Consultando o registro…</h2>
           ) : ready ? (
             <>
-              <h2>{labels[data.state]}</h2>
+              <h2>
+                {data.testOnly && data.state === 'VALID'
+                  ? 'Arquivo de demonstração registrado'
+                  : labels[data.state]}
+              </h2>
               <p>
                 {data.state === 'VALID'
                   ? 'Nenhum cancelamento ou substituição registrado.'

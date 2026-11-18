@@ -30,6 +30,12 @@ function summary(
     mode: snapshotText(row.snapshot, 'mode'),
     period: snapshotText(row.snapshot, 'periodLabel'),
     page: row.sourcePdfPage,
+    testOnly:
+      row.status === 'DRAFT' ||
+      (row.snapshot !== null &&
+        typeof row.snapshot === 'object' &&
+        !Array.isArray(row.snapshot) &&
+        row.snapshot.testOnly === true),
   };
 }
 function text(body: Record<string, unknown>, key: string, max = 180) {
@@ -72,7 +78,7 @@ export async function searchDocuments(body: Record<string, unknown>) {
   const documentId = text(body, 'documentId', 36);
   if (documentId) {
     if (!validRequestId(documentId))
-      throw new DeclarationValidationError('Escolha uma minuta válida.');
+      throw new DeclarationValidationError('Escolha um documento válido.');
     const row = await db.declarationDocument.findUnique({
       where: { id: documentId.toLowerCase() },
       select: {
@@ -95,7 +101,10 @@ export async function searchDocuments(body: Record<string, unknown>) {
       },
     });
     if (!row)
-      throw new RequestError('Minuta não encontrada. Atualize a lista.', 404);
+      throw new RequestError(
+        'Declaração não encontrada. Atualize a lista.',
+        404,
+      );
     const period = snapshotText(row.snapshot, 'periodLabel');
     const successors =
       period && row.status === 'DRAFT'
@@ -198,10 +207,7 @@ export async function searchDocuments(body: Record<string, unknown>) {
       ...(status
         ? {
             status: status as
-              | 'REQUESTED'
-              | 'IN_PREPARATION'
-              | 'READY_FOR_PICKUP'
-              | 'AVAILABLE',
+              'REQUESTED' | 'IN_PREPARATION' | 'READY_FOR_PICKUP' | 'AVAILABLE',
           }
         : {}),
       ...(studentId ? { studentId: studentId.toLowerCase() } : {}),

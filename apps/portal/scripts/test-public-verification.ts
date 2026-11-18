@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { openTestEnvironment, reportTestFailure } from './test-environment';
 import { syntheticEnrollmentValidity } from './enrollment-fixture';
-import { issueTestDeclaration } from '../src/lib/declaration-issuance';
+import { issueDeclaration } from '../src/lib/declaration-issuance';
 import { changeDeclarationDocument } from '../src/lib/declaration-document-actions';
 import { consumeAccessAttempt } from '../src/lib/access-throttle';
 import { isPublicVerification } from '../src/lib/public-verification-types';
@@ -63,7 +63,7 @@ async function main() {
         socialNameSource: 'SCHOOL_RECORD',
       },
     });
-    const first = await issueTestDeclaration(student.a.id, {
+    const first = await issueDeclaration(student.a.id, {
       enrollmentId: enrollment.id,
       requestKey: randomUUID(),
     });
@@ -265,7 +265,7 @@ async function main() {
       true,
       'A consulta confere o snapshot, sem reescrever documento após mudar o cadastro.',
     );
-    const second = await issueTestDeclaration(student.a.id, {
+    const second = await issueDeclaration(student.a.id, {
       enrollmentId: enrollment.id,
       requestKey: randomUUID(),
     });

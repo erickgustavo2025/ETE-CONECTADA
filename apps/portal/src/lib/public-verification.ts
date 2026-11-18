@@ -1,6 +1,6 @@
 import { Prisma } from '@/generated/prisma/client';
 import { getDb } from './db';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import {
   documentNameMatches,
   maskDocumentName,
@@ -13,8 +13,7 @@ export async function readPublicVerification(
   code: string,
   fullName: string | null,
 ): Promise<PublicVerification | null> {
-  if (!declarationRegistryPreviewEnabled() || !validDocumentCode(code))
-    return null;
+  if (!declarationPortalEnabled() || !validDocumentCode(code)) return null;
   return getDb().$transaction(
     async (tx) => {
       const checkedAt = new Date().toISOString();
@@ -51,12 +50,16 @@ export async function readPublicVerification(
           throw new Error('Registro de verificação incompleto.');
         return v;
       };
-      if (
-        row.snapshotVersion !== 2 ||
-        snapshot.testOnly !== true ||
-        row.sourcePdfPage !== 1 ||
-        row.archive?.templateVersion !== 'minuta-a4-qr-v1'
-      )
+      const preview =
+        row.snapshotVersion === 2 &&
+        snapshot.testOnly === true &&
+        row.archive?.templateVersion === 'minuta-a4-qr-v1';
+      const school =
+        row.snapshotVersion === 3 &&
+        snapshot.testOnly === false &&
+        snapshot.issuanceMode === 'SCHOOL' &&
+        row.archive?.templateVersion === 'vinculo-a4-qr-v1';
+      if ((!preview && !school) || row.sourcePdfPage !== 1)
         throw new Error('Arquivo de verificação indisponível.');
       const mode = field('mode'),
         number = mode === 'INTEGRADO' ? snapshot.grade : snapshot.moduleNumber;
@@ -96,7 +99,7 @@ export async function readPublicVerification(
         code: row.publicCode,
         state,
         checkedAt,
-        testOnly: true,
+        testOnly: preview,
         pdfSha256: row.sourcePdfSha256,
         nameMatches: fullName === null ? null : legalMatch || socialMatch,
         document: {

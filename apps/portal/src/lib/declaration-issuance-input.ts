@@ -1,3 +1,4 @@
+import type { DeclarationMode } from './declaration-configuration';
 import {
   declarationDefaults,
   declarationBody,
@@ -60,9 +61,10 @@ export function readIssuanceInput(value: unknown) {
 }
 
 // O cliente não fornece nome, filiação, curso, módulo ou uma aprovação da secretaria.
-export function testIssuanceContent(
+export function issuanceContent(
   student: DeclarationStudent,
   enrollmentId: string,
+  mode: DeclarationMode = 'PREVIEW',
 ) {
   const enrollment = student.enrollments.find((e) => e.id === enrollmentId);
   if (!enrollment)
@@ -87,7 +89,8 @@ export function testIssuanceContent(
   });
   const snapshot = {
     type: 'DECLARACAO_VINCULO',
-    testOnly: true,
+    testOnly: mode !== 'SCHOOL',
+    ...(mode === 'SCHOOL' ? { issuanceMode: 'SCHOOL' } : {}),
     subjectName: student.fullName ?? '',
     socialName: fields.socialName,
     mode: enrollment.mode,

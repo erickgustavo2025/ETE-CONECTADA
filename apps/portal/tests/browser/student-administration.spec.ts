@@ -4,7 +4,7 @@ import { writeFile } from 'node:fs/promises';
 import { openTestEnvironment } from '../../scripts/test-environment';
 import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
 import { subsequentFixture } from '../../scripts/subsequent-declaration-fixture';
-import { issueTestDeclaration } from '../../src/lib/declaration-issuance';
+import { issueDeclaration } from '../../src/lib/declaration-issuance';
 
 for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
   test(`secretaria administra aluno ${mode} sem cancelar documentos e recupera envio incerto`, async ({
@@ -121,7 +121,7 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
           })
         ).id;
       }
-      const issued = await issueTestDeclaration(student.a.id, {
+      const issued = await issueDeclaration(student.a.id, {
         enrollmentId,
         requestKey: randomUUID(),
       });

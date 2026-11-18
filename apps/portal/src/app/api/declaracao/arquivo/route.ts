@@ -1,7 +1,7 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
 import { getDb } from '@/lib/db';
 import { currentSession } from '@/lib/session';
-import { declarationRegistryPreviewEnabled } from '@/lib/declaration-documents';
+import { declarationPortalEnabled } from '@/lib/declaration-documents';
 import {
   readStudentDeclarationPdf,
   PdfArchiveError,
@@ -24,7 +24,7 @@ async function handlePOST(request: Request) {
       { error: 'Origem não autorizada.' },
       { status: 403, headers: privateHeaders },
     );
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     return Response.json(
       { error: 'Recurso indisponível.' },
       { status: 404, headers: privateHeaders },
@@ -68,7 +68,7 @@ async function handlePOST(request: Request) {
       headers: {
         ...privateHeaders,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `${input.body.download ? 'attachment' : 'inline'}; filename="declaracao-vinculo-teste.pdf"`,
+        'Content-Disposition': `${input.body.download ? 'attachment' : 'inline'}; filename="declaracao-vinculo.pdf"`,
       },
     });
   } catch (error) {

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { openTestEnvironment } from '../../scripts/test-environment';
 import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
-import { issueTestDeclaration } from '../../src/lib/declaration-issuance';
+import { issueDeclaration } from '../../src/lib/declaration-issuance';
 import { changeDeclarationDocument } from '../../src/lib/declaration-document-actions';
 
 test('QR consulta registro sem login, confere nome/PDF local e acompanha substituição, cancelamento e falhas', async ({
@@ -77,7 +77,7 @@ test('QR consulta registro sem login, confere nome/PDF local e acompanha substit
         ...syntheticEnrollmentValidity(),
       },
     });
-    const first = await issueTestDeclaration(account.id, {
+    const first = await issueDeclaration(account.id, {
       enrollmentId: enrollment.id,
       requestKey: randomUUID(),
     });
@@ -93,7 +93,7 @@ test('QR consulta registro sem login, confere nome/PDF local e acompanha substit
     });
     await expect(
       page.getByRole('heading', {
-        name: 'Registro válido para teste',
+        name: 'Arquivo de demonstração registrado',
         exact: true,
       }),
     ).toBeVisible();
@@ -204,7 +204,7 @@ test('QR consulta registro sem login, confere nome/PDF local e acompanha substit
         fullPage: true,
       });
     }
-    const second = await issueTestDeclaration(account.id, {
+    const second = await issueDeclaration(account.id, {
       enrollmentId: enrollment.id,
       requestKey: randomUUID(),
     });
@@ -217,14 +217,14 @@ test('QR consulta registro sem login, confere nome/PDF local e acompanha substit
     ).toBeVisible();
     await expect(
       page.getByRole('heading', {
-        name: 'Registro válido para teste',
+        name: 'Arquivo de demonstração registrado',
         exact: true,
       }),
     ).toHaveCount(0);
     await page.goto(base + '/validar/' + second.document.publicCode);
     await expect(
       page.getByRole('heading', {
-        name: 'Registro válido para teste',
+        name: 'Arquivo de demonstração registrado',
         exact: true,
       }),
     ).toBeVisible();
@@ -284,7 +284,7 @@ test('QR consulta registro sem login, confere nome/PDF local e acompanha substit
     ).toBeVisible();
     await expect(
       page.getByRole('heading', {
-        name: 'Registro válido para teste',
+        name: 'Arquivo de demonstração registrado',
         exact: true,
       }),
     ).toHaveCount(0);

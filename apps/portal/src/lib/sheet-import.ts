@@ -1,4 +1,4 @@
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import {
   prepareRepeaterPlacements,
   applyRepeaterPlacement,
@@ -521,7 +521,7 @@ export async function previewSheetImport(
   actorId: string,
   input: SheetInput,
 ) {
-  if (input.repeaters?.length && !declarationRegistryPreviewEnabled())
+  if (input.repeaters?.length && !declarationPortalEnabled())
     throw new SheetImportError('Página não disponível.', 404);
   return db.$transaction(
     async (tx) => {
@@ -636,7 +636,7 @@ export async function confirmSheetImport(
   acceptCalendarDifferences: unknown = false,
   acceptRepeaterPlacements: unknown = false,
 ) {
-  if (input.repeaters?.length && !declarationRegistryPreviewEnabled())
+  if (input.repeaters?.length && !declarationPortalEnabled())
     throw new SheetImportError('Página não disponível.', 404);
   if (
     confirmed !== true ||
@@ -894,7 +894,7 @@ export async function suggestRepeaterPlacements(
   sheetName: unknown,
   page: unknown,
 ) {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     throw new SheetImportError('Página não disponível.', 404);
   return db.$transaction(
     async (tx) => {

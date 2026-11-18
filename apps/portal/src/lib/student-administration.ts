@@ -1,6 +1,6 @@
 import { Prisma } from '../generated/prisma/client';
 import { getDb } from './db';
-import { declarationRegistryPreviewEnabled } from './declaration-documents';
+import { declarationPortalEnabled } from './declaration-documents';
 import { RequestError, validRequestId } from './declaration-requests';
 import { readStudentAdminInput } from './student-administration-input';
 import type { StudentAccessInput } from './student-administration-input';
@@ -136,7 +136,7 @@ export async function administerStudents(
   actorId: string,
   value: unknown,
 ): Promise<StudentAdminResult> {
-  if (!declarationRegistryPreviewEnabled())
+  if (!declarationPortalEnabled())
     throw new RequestError('Página não disponível.', 404);
   if (!validRequestId(actorId))
     throw new RequestError('Acesso não autorizado.', 403);
