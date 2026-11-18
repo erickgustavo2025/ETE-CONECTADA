@@ -1,4 +1,8 @@
-import { emailTransport, type MailFetch } from './email-transport';
+import {
+  emailProviderConfigured,
+  emailTransport,
+  type MailFetch,
+} from './email-transport';
 import { verificationUrl } from './portal-origin';
 
 export function verificationDelivery(
@@ -9,7 +13,7 @@ export function verificationDelivery(
   const url = verificationUrl(token, env);
   if (!url) return null;
   // Só a demonstração sem provedor oferece link local. Falhas não usam esse caminho.
-  if (env.NODE_ENV === 'development' && !env.RESEND_API_KEY && !env.EMAIL_FROM)
+  if (env.NODE_ENV === 'development' && !emailProviderConfigured(env))
     return {
       async send() {
         return { result: 'dev_link' as const, verificationUrl: url };

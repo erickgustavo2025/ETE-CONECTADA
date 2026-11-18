@@ -203,3 +203,45 @@ test('e-mail: recuperação compartilha transporte, aviso não contém token e f
   await assert.rejects(failed.send(recipient, token), MailDeliveryError);
   await assert.rejects(failed.notify(recipient), MailDeliveryError);
 });
+
+const smtpSettings = {
+  ...settings,
+  EMAIL_TRANSPORT: 'smtp',
+  SMTP_HOST: 'smtp.example.invalid',
+  SMTP_PORT: '587',
+  SMTP_USER: 'fixture-smtp',
+  SMTP_PASSWORD: 'fixture-smtp-secret',
+};
+
+test('SMTP: configuração explícita não usa Resend nem link de demonstração quando incompleta', () => {
+  for (const missing of [
+    { SMTP_HOST: '' },
+    { SMTP_HOST: 'http://smtp.example.invalid' },
+    { SMTP_PORT: '587smtp' },
+    { SMTP_PORT: '0' },
+    { SMTP_USER: '' },
+    { SMTP_PASSWORD: '' },
+    { EMAIL_FROM: '' },
+    { SMTP_TLS_MODE: 'plain' },
+    { EMAIL_TRANSPORT: 'typo' },
+  ]) {
+    const env = { ...smtpSettings, ...missing };
+    assert.equal(emailTransport(env), null);
+    assert.equal(verificationDelivery(token, env), null);
+    assert.equal(recoveryMailer(env), null);
+  }
+
+  const empty = {
+    NODE_ENV: 'development',
+    EMAIL_TRANSPORT: 'smtp',
+  };
+  assert.equal(verificationDelivery(token, empty), null);
+  assert.equal(recoveryMailer(empty), null);
+});
+
+test('SMTP: cadastro e recuperação aceitam o mesmo transporte configurado', () => {
+  const env = { ...smtpSettings, RESEND_API_KEY: '' };
+  assert.equal(emailTransport(env)?.origin, settings.PORTAL_PUBLIC_URL);
+  assert.ok(verificationDelivery(token, env));
+  assert.ok(recoveryMailer(env));
+});

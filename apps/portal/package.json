@@ -51,6 +51,7 @@
     "test:private-input": "node --import tsx scripts/test-private-input.ts",
     "test:origin": "node --import tsx scripts/test-origin-http.ts",
     "test:security-headers": "node --import tsx scripts/test-security-headers.ts",
+    "test:smtp": "node --import tsx scripts/test-smtp-delivery.ts",
     "test:mail-failures": "node --import tsx scripts/test-registration-mail.ts",
     "test:backup": "node --import tsx scripts/test-backup-restore.ts",
     "test:birthplace": "node --import tsx scripts/test-declaration-birthplace.ts",
@@ -88,6 +89,7 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "next": "16.4.5",
+    "nodemailer": "10.6.0",
     "pdf-lib": "^1.17.1",
     "pg": "^8.23.1",
     "qrcode-generator": "2.0.4",
@@ -99,6 +101,7 @@
   "devDependencies": {
     "@playwright/test": "1.64.1",
     "@types/node": "^22.0.0",
+    "@types/nodemailer": "8.0.2",
     "@types/pg": "^8.15.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.3.0",

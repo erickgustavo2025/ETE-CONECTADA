@@ -1,14 +1,19 @@
 # Falhas no envio de e-mail
 
-Cadastro e recuperação usam o mesmo transporte Resend. O endereço do provedor é fixo em HTTPS, redirecionamentos são recusados e o envio tem prazo de cinco segundos. Não há repetição automática: após um timeout, a mensagem pode já ter sido aceita. Uma resposta aceita pelo provedor não comprova entrega na caixa de entrada.
+Cadastro e recuperação usam o mesmo transporte. O sistema informa que o provedor aceitou a mensagem. A confirmação de recebimento precisa ser feita na caixa de entrada. O servidor evita repetir automaticamente um envio cujo resultado é incerto.
 
 ## Configuração e demonstração
 
-O envio exige `RESEND_API_KEY`, `EMAIL_FROM` e uma origem válida em `PORTAL_PUBLIC_URL`. Fora de desenvolvimento, essa origem precisa usar HTTPS. Configuração incompleta ou inválida bloqueia o início da confirmação antes de criar uma conta pendente.
+Configure `EMAIL_FROM` com um remetente autorizado e `PORTAL_PUBLIC_URL` com a origem do portal, sem caminho. Fora de desenvolvimento, a origem deve usar HTTPS.
 
-Somente em `NODE_ENV=development`, sem chave **e** sem remetente, o cadastro oferece o link local de demonstração. A ausência de origem permite link relativo nessa situação. Quando o provedor está configurado, rejeição, erro de rede ou timeout devolvem erro genérico, sem link alternativo, token, destinatário ou resposta do provedor.
+- Para SMTP, selecione `EMAIL_TRANSPORT=smtp` e informe `SMTP_HOST`, `SMTP_USER` e `SMTP_PASSWORD` fornecidos pelo provedor. A porta padrão é 587 com STARTTLS obrigatório. A porta 465 usa TLS desde o início. Se o provedor usar outra porta, defina `SMTP_PORT` e, quando necessário, `SMTP_TLS_MODE=starttls` ou `SMTP_TLS_MODE=implicit`. A conexão exige certificado válido e TLS 1.2 ou superior.
+- Para manter o envio pela API Resend, use a configuração existente com `RESEND_API_KEY` e `EMAIL_FROM`. O seletor `EMAIL_TRANSPORT=resend` é opcional nesse caso. O endereço HTTPS do provedor é fixo e o prazo de resposta é de cinco segundos. Redirecionamentos são recusados.
 
-Os bloqueios de cadastro, login e recuperação em produção continuam ativos. Configurar e-mail não libera o portal para uso real.
+Guarde senhas e chaves no gerenciador de segredos do ambiente. A conexão SMTP tem limites de espera para DNS, abertura, saudação e inatividade. Falhas não devolvem dados do provedor, destinatário ou token. Uma configuração selecionada incompleta bloqueia o envio antes de criar a pendência, sem troca automática de provedor.
+
+Somente em desenvolvimento e sem qualquer configuração de e-mail, o cadastro oferece o link local de demonstração. A ausência de origem permite link relativo nessa situação.
+
+Os bloqueios de cadastro, login e recuperação em produção continuam ativos. Configurar e-mail é uma etapa da preparação para uso real.
 
 ## Reenvio e recuperação
 
@@ -19,6 +24,7 @@ A solicitação de recuperação mantém a mesma resposta pública para e-mails 
 ## Verificação
 
 - `npm run test:unit`: matriz por ambiente, configuração parcial, resposta aceita, rejeições, redirect, erro de rede e aborto real pelo prazo do transporte. Sem rede externa.
+- `npm run test:smtp --workspace @ete-conectada/portal`: envio entre processos em loopback, SMTP com TLS implícito e STARTTLS, rejeição de certificado não confiável e recusa de conexão sem TLS. Usa OpenSSL para criar um certificado fictício e apaga os arquivos ao encerrar.
 - `npm run test:mail-failures`: handler real com banco sintético identificado e transporte externo simulado. Confere configuração, falhas, conta pendente, destinatário, senha preservada, rotação e uso único dos tokens.
 - `npm run test:registration`, `npm run test:password-reset`, `npm run test:production` e jornadas de navegador: fluxos existentes, bloqueios de produção e respostas sem dados privados.
 
