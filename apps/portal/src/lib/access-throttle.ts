@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import type { Prisma, PrismaClient } from '../generated/prisma/client';
 
 export const accessPolicies = {
+  'account-change': { limit: 7, windowMs: 10 * 60_000 },
   'student-admin-search': { limit: 60, windowMs: 5 * 60_000 },
   'student-admin-change': { limit: 20, windowMs: 5 * 60_000 },
   login: { limit: 10, windowMs: 5 * 60_000 },
@@ -22,8 +23,7 @@ const privateDocumentPolicy = { limit: 120, windowMs: 60_000 };
 export const accessBucketCapacity = 20_000;
 export type AccessAction = keyof typeof accessPolicies;
 export type AccessDecision =
-  | { allowed: true }
-  | { allowed: false; retryAfter: number };
+  { allowed: true } | { allowed: false; retryAfter: number };
 type Transaction = Prisma.TransactionClient;
 type State = { keyMaterial: string; lastSweepMs: number };
 

@@ -17,6 +17,8 @@ const categoryLabel: Record<AuditCategory, string> = {
   DECLARACAO: 'Declaração',
 };
 const actionLabel: Record<string, string> = {
+  PASSWORD_CHANGED: 'Senha alterada pela pessoa titular',
+  EMAIL_CHANGED: 'E-mail alterado pela pessoa titular',
   LOGIN_BLOCK: 'Acesso ao portal bloqueado',
   LOGIN_UNBLOCK: 'Acesso ao portal restabelecido',
   ISSUANCE_BLOCK: 'Novas declarações bloqueadas',

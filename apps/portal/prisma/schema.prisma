@@ -130,6 +130,7 @@ model Account {
   declarationDocumentActions DeclarationDocumentAction[]
   studentAccessChanges StudentAccessChange[]
   academicEvents SchoolAcademicEvent[]
+  securityEvents AccountSecurityEvent[]
   @@map("accounts")
 }
 
@@ -150,6 +151,16 @@ model StudentAccessChange {
   @@unique([studentId, revision])
   @@index([studentId, createdAt])
   @@map("student_access_changes")
+}
+
+model AccountSecurityEvent {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String @map("account_id") @db.Uuid
+  action String @db.VarChar(24)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([accountId, createdAt, id])
+  @@map("account_security_events")
 }
 
 model PasswordResetToken {

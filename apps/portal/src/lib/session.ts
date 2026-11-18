@@ -11,9 +11,14 @@ export function hashSessionToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-export async function currentSession(): Promise<SessionRecord | null> {
+export async function currentSessionHash(): Promise<string | null> {
   if (process.env.NODE_ENV !== 'development') return null;
   const token = (await cookies()).get(sessionCookiePolicy().name)?.value;
   if (!token || !/^[A-Za-z0-9_-]{40,50}$/.test(token)) return null;
-  return findSessionRecord(getDb(), hashSessionToken(token));
+  return hashSessionToken(token);
+}
+
+export async function currentSession(): Promise<SessionRecord | null> {
+  const sessionHash = await currentSessionHash();
+  return sessionHash ? findSessionRecord(getDb(), sessionHash) : null;
 }
