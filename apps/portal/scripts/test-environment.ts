@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer } from 'node:net';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { smtpSettings } from '../src/lib/email-transport';
 
 export class TestEnvironmentError extends Error {}
 const fail = (message: string): never => {
@@ -155,6 +156,8 @@ async function startPortal(signal: AbortSignal, publicOrigin?: string) {
       env: {
         ...env,
         NODE_ENV: 'development',
+        EMAIL_TRANSPORT: '',
+        ...Object.fromEntries(smtpSettings.map((key) => [key, ''])),
         RESEND_API_KEY: '',
         EMAIL_FROM: '',
         PORTAL_PUBLIC_URL: publicOrigin ?? `http://127.0.0.1:${port}`,

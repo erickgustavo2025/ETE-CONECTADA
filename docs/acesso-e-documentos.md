@@ -75,18 +75,14 @@ a pessoa entra com a nova senha. O sistema tenta enviar um aviso da alteração,
 sem incluir senha. O instante fica em `accounts.password_reset_at`; isso não
 substitui o histórico administrativo futuro.
 
-Configure **RESEND_API_KEY**, **EMAIL_FROM** e **PORTAL_PUBLIC_URL** em ambiente
-autorizado. A última é a origem do portal, sem caminho, usada para construir os
-links; não usamos o cabeçalho Host enviado pelo visitante. Aceita HTTPS ou HTTP
-loopback para desenvolvimento. Sem configuração completa não há envio e o recibo
-continua genérico. As duas APIs continuam recusando produção antes de acessar o banco.
+Em ambiente autorizado, configure o remetente e o provedor conforme o [guia de e-mail](seguranca/falhas-email.md). A origem do portal vem de `PORTAL_PUBLIC_URL`, sem caminho. A recuperação continua com recibo genérico quando o envio está indisponível. As duas APIs continuam recusando produção antes de acessar o banco.
 
 O envio usa `after` do Next.js após responder, com tempo limite e erro genérico
 sem dados pessoais nos logs. É uma tentativa no processo do servidor, sem fila
 persistente nem garantia de entrega: encerramento do processo ou indisponibilidade
 do provedor exige nova tentativa depois do intervalo. Falha no aviso de alteração
 não desfaz uma senha já atualizada. A entrega real por e-mail ainda exige validação
-no ambiente autorizado; os testes usam transporte simulado e contas fictícias.
+no ambiente autorizado. Os testes usam contas fictícias e verificam SMTP/TLS local e falhas simuladas.
 
 A migração é aditiva: uma tabela de tokens e uma coluna opcional. Ao reverter
 código, mantenha as APIs de recuperação bloqueadas e as estruturas no banco;
