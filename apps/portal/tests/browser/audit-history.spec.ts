@@ -137,8 +137,11 @@ test('secretaria consulta o histórico de ações e o aluno não tem acesso', as
     ).toBeVisible();
     expect(new URL(page.url()).search).toBe('');
     expect(
-      await page.evaluate(() => document.documentElement.scrollWidth),
-    ).toBe(320);
+      await page.evaluate(() => {
+        const root = document.documentElement;
+        return root.scrollWidth - root.clientWidth;
+      }),
+    ).toBe(0);
 
     await page.getByLabel('Categoria').selectOption('DECLARACAO');
     await page.getByRole('button', { name: 'Buscar', exact: true }).click();
