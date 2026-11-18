@@ -6,7 +6,8 @@ export type AcademicAction =
   | 'REPEAT_PREVIOUS'
   | 'RESUME'
   | 'ALLOW_REQUESTS'
-  | 'WAIT_REQUESTS';
+  | 'WAIT_REQUESTS'
+  | 'REOPEN';
 export type AcademicAdminInput =
   | { operation: 'detail'; enrollmentId: string; page: number }
   | {
@@ -62,6 +63,7 @@ export function readAcademicAdminInput(value: unknown): AcademicAdminInput {
       'RESUME',
       'ALLOW_REQUESTS',
       'WAIT_REQUESTS',
+      'REOPEN',
     ] as const
   ).find((a) => a === b.action);
   if (

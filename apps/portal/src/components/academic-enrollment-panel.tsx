@@ -14,6 +14,7 @@ class AcademicHttpError extends Error {
   }
 }
 const labels: Record<AcademicAction, string> = {
+  REOPEN: 'Corrigir encerramento por engano',
   ALLOW_REQUESTS: 'Liberar solicitações enquanto aguarda turma',
   WAIT_REQUESTS: 'Voltar a aguardar turma sem novas solicitações',
   ENABLE: 'Confirmar matrícula e passagem automática',
@@ -22,6 +23,8 @@ const labels: Record<AcademicAction, string> = {
   RESUME: 'Corrigir marcação de reprovação',
 };
 const descriptions: Record<AcademicAction, string> = {
+  REOPEN:
+    'O encerramento continuará no histórico. A matrícula voltará para conferência antes de permitir novas declarações; conta, datas e arquivos anteriores serão preservados.',
   ALLOW_REQUESTS:
     'Use somente após conferir uma matrícula ainda vigente. A liberação é uma exceção registrada no histórico: não promove, não transfere, não muda datas e não remove bloqueios manuais.',
   WAIT_REQUESTS:
@@ -283,14 +286,26 @@ export default function AcademicEnrollmentPanel({
             Vigência: {date(row.validFrom)} a {date(row.validUntil)}.
           </p>
           <p>
-            {row.repetitionPending
-              ? 'A passagem automática fica suspensa enquanto aguarda nova turma.'
-              : row.progressionHeld
-                ? 'A passagem automática aguarda conferência da secretaria.'
-                : row.nextDate
-                  ? `Próxima etapa a partir de ${date(row.nextDate)}. Até lá, a declaração usa a etapa atual.`
-                  : 'Última etapa do curso. A conclusão precisa ser confirmada pela secretaria.'}
+            {row.status === 'ENDED'
+              ? 'Este vínculo foi encerrado. A conta e os documentos anteriores são preservados; esta matrícula não permite nova declaração de vínculo.'
+              : row.repetitionPending
+                ? 'A passagem automática fica suspensa enquanto aguarda nova turma.'
+                : row.progressionHeld
+                  ? 'A passagem automática aguarda conferência da secretaria.'
+                  : row.nextDate
+                    ? `Próxima etapa a partir de ${date(row.nextDate)}. Até lá, a declaração usa a etapa atual.`
+                    : 'Última etapa do curso. A conclusão precisa ser confirmada pela secretaria.'}
           </p>
+          {row.canReopen && (
+            <button
+              type="button"
+              className="ete-button ete-button--secondary"
+              disabled={busy}
+              onClick={(e) => open('REOPEN', e.currentTarget)}
+            >
+              {labels.REOPEN}
+            </button>
+          )}
           {row.status !== 'ENDED' && (
             <div className={styles.actions}>
               {!row.repetitionPending && (

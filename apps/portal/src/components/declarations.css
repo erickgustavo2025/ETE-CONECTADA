@@ -99,7 +99,8 @@
 }
 .search-input input,
 .declaration-field input,
-.declaration-field select {
+.declaration-field select,
+.declaration-field textarea {
   width: 100%;
   min-height: 48px;
   padding: 12px 14px;
@@ -260,6 +261,9 @@
 .declaration-field select {
   cursor: pointer;
 }
+.declaration-field textarea {
+  cursor: text;
+}
 
 @media (max-width: 850px) {
   .secretary-workspace {
@@ -318,7 +322,8 @@
   }
   .declaration-field input,
   .search-input input,
-  .declaration-field select {
+  .declaration-field select,
+  .declaration-field textarea {
     font-size: 16px;
   }
   .results-pagination button {

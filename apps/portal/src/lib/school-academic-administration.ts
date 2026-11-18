@@ -34,6 +34,24 @@ const object = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+function consistentClosure(
+  row: Parameters<typeof academicSnapshot>[0],
+  event: { revision: number; afterState: Prisma.JsonValue } | null,
+) {
+  if (
+    !event ||
+    event.revision !== row.academicRevision ||
+    row.status !== 'ENDED'
+  )
+    return false;
+  const after = object(event.afterState);
+  return (
+    after.completion === true &&
+    Object.entries(academicSnapshot(row)).every(
+      ([key, value]) => after[key] === value,
+    )
+  );
+}
 export async function manageAcademicEnrollment(
   tx: Prisma.TransactionClient,
   actorId: string,
@@ -82,13 +100,33 @@ export async function manageAcademicEnrollment(
           'A situação escolar mudou. Consulte novamente antes de confirmar.',
           409,
         );
-      if (row.status === 'ENDED')
+      if (row.status === 'ENDED' && input.action !== 'REOPEN')
         throw new RequestError(
           'Esta matrícula está encerrada. Confira o vínculo antes de alterar.',
           409,
         );
       let patch: AcademicPatch;
-      if (input.action === 'ENABLE') {
+      let correctedEventId: string | undefined;
+      if (input.action === 'REOPEN') {
+        const closure = await tx.schoolAcademicEvent.findFirst({
+          where: { enrollmentId: row.id, kind: 'END' },
+          orderBy: { revision: 'desc' },
+        });
+        if (!consistentClosure(row, closure))
+          throw new RequestError(
+            'Não há encerramento por conclusão compatível para corrigir. Consulte a situação atual.',
+            409,
+          );
+        correctedEventId = closure!.id;
+        patch = {
+          status: 'UNCONFIRMED',
+          reviewedAt: null,
+          reviewedById: null,
+          progressionHeld: true,
+          repetitionOverride: false,
+          nextClassName: null,
+        };
+      } else if (input.action === 'ENABLE') {
         if (
           row.repetitionPending ||
           !row.periodLabel ||
@@ -253,6 +291,7 @@ export async function manageAcademicEnrollment(
         actorId,
         operationKey,
         requestHash,
+        correctsEventId: correctedEventId,
         actorName: actor.name ?? 'Responsável da secretaria',
         effectiveOn: calendarDay(now),
         reason: input.reason,
@@ -334,6 +373,15 @@ export async function manageAcademicEnrollment(
       version: academicVersion(row),
       nextDate,
       previousStage,
+      canReopen:
+        row.status === 'ENDED' &&
+        consistentClosure(
+          row,
+          await tx.schoolAcademicEvent.findFirst({
+            where: { enrollmentId: row.id, kind: 'END' },
+            orderBy: { revision: 'desc' },
+          }),
+        ),
     },
     history: history.map((e) => ({
       kind: e.kind,

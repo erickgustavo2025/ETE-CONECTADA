@@ -86,6 +86,8 @@ export async function recordAcademicChange(
     reason: string;
     requestHash?: string;
     actorName?: string;
+    completion?: boolean;
+    correctsEventId?: string;
   },
 ) {
   const updated = await tx.enrollment.update({
@@ -104,6 +106,10 @@ export async function recordAcademicChange(
         ...academicSnapshot(updated),
         ...(event.requestHash ? { requestHash: event.requestHash } : {}),
         ...(event.actorName ? { actorLabel: event.actorName } : {}),
+        ...(event.completion ? { completion: true } : {}),
+        ...(event.correctsEventId
+          ? { correctsEventId: event.correctsEventId }
+          : {}),
       },
       effectiveOn: new Date(event.effectiveOn + 'T00:00:00Z'),
       reason: event.reason,

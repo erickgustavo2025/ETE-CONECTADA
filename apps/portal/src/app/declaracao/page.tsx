@@ -32,7 +32,10 @@ export default async function DeclarationPage() {
       },
     }),
   ]);
-  const enrollment = student?.enrollments[0];
+  const enrollment =
+    student?.enrollments.find((e) => e.status === 'ACTIVE') ??
+    student?.enrollments.find((e) => e.status !== 'ENDED') ??
+    student?.enrollments[0];
   const automatic =
     declarationRegistryPreviewEnabled() && session.role === 'student';
   return (
@@ -80,13 +83,22 @@ export default async function DeclarationPage() {
             solicitar.
           </p>
         )}
+        {enrollment?.status === 'ENDED' && (
+          <p className="document-notice">
+            <strong>Seus vínculos estão encerrados.</strong> Você pode consultar
+            e baixar os documentos anteriores. Uma nova declaração de vínculo
+            exige matrícula ativa.
+          </p>
+        )}
         <StudentDeclarationRequests
           automatic={automatic}
           issuanceBlocked={
             (access?.issuanceBlocked ?? true) ||
             Boolean(access?.enrollments.length)
           }
-          enrollmentId={enrollment?.id ?? null}
+          enrollmentId={
+            enrollment?.status === 'ENDED' ? null : (enrollment?.id ?? null)
+          }
           initialRequests={requests}
           birthplace={
             student?.details?.birthCity &&
