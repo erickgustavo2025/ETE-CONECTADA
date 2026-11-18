@@ -217,6 +217,8 @@ async function checkRules(client: Client) {
     ],
     ['DELETE FROM enrollment_import_history WHERE id=$1', [history]],
     ['TRUNCATE enrollment_import_history', []],
+    ['DELETE FROM account_security_events WHERE account_id=$1', [account]],
+    ['TRUNCATE account_security_events', []],
   ] as const;
   for (const [sql, values] of protectedHistory) {
     await client.query('BEGIN');
@@ -528,6 +530,10 @@ async function main() {
       await source.query(
         "INSERT INTO student_access_changes(student_id,created_by_id,request_key,kind,blocked,reason,revision) VALUES($1,$2,$3,'ISSUANCE',true,'Emissão fictícia bloqueada',2)",
         [student, account, randomUUID()],
+      );
+      await source.query(
+        "INSERT INTO account_security_events(account_id,action) VALUES($1,'PASSWORD_CHANGED')",
+        [account],
       );
       await source.query(
         "INSERT INTO sessions(token_hash,account_id,expires_at) VALUES($1,$2,now() + interval '1 day')",

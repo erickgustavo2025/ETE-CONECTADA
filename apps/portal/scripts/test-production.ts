@@ -273,6 +273,9 @@ async function main() {
       ],
       ['/api/registration/verify', 503, { token }],
       ['/api/password-reset/request', 503, { email: account.email }],
+      ['/api/conta/senha', 503, {}],
+      ['/api/conta/email', 503, {}],
+      ['/api/conta/email/confirmar', 503, {}],
       [
         '/api/password-reset/confirm',
         503,

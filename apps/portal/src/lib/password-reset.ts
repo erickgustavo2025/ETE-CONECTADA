@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { PrismaClient } from '../generated/prisma/client';
 import { normalizeEmail } from './registration';
 import { clearLoginAttempts } from './access-throttle';
+import { invalidateAccountCredentials } from './account-change-auth';
 import { hashPassword } from './password';
 import {
   resetLifetimeMs,
@@ -137,13 +138,7 @@ export async function completePasswordReset(
         where: { id: token.accountId },
         data: { passwordHash, updatedAt: now, passwordResetAt: now },
       });
-      await tx.session.deleteMany({ where: { accountId: token.accountId } });
-      await tx.emailVerificationToken.deleteMany({
-        where: { accountId: token.accountId },
-      });
-      await tx.passwordResetToken.deleteMany({
-        where: { accountId: token.accountId },
-      });
+      await invalidateAccountCredentials(tx, token.accountId);
       const student = await tx.student.findUniqueOrThrow({
         where: { id: token.account.studentId },
         select: { cpf: true },

@@ -3,7 +3,8 @@ import { verifyPassword } from './password';
 import { findSessionRecord, type SessionRecord } from './session-record';
 
 type Credential = { session: SessionRecord; passwordHash: string };
-export type AccountChangeProblem = 'session' | 'password' | 'same' | 'format';
+export type AccountChangeProblem =
+  'session' | 'password' | 'same' | 'format' | 'link';
 export class AccountChangeError extends Error {
   constructor(public readonly reason: AccountChangeProblem) {
     super(reason);
@@ -67,4 +68,5 @@ export async function invalidateAccountCredentials(
   await tx.session.deleteMany({ where: { accountId } });
   await tx.emailVerificationToken.deleteMany({ where: { accountId } });
   await tx.passwordResetToken.deleteMany({ where: { accountId } });
+  await tx.accountEmailChange.deleteMany({ where: { accountId } });
 }

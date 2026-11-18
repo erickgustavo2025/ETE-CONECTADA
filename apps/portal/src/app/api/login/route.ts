@@ -104,6 +104,7 @@ async function handlePOST(request: Request) {
       getDb(),
       row!.id,
       row!.passwordHash!,
+      row.email,
       hashSessionToken(token),
       new Date(Date.now() + sessionDurationSeconds * 1000),
     );

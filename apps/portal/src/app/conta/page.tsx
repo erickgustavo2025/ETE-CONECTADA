@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import PortalHome from '@/components/portal-home';
+import { AccountEmailForm } from '@/components/account-email-form';
 import { AccountPasswordForm } from '@/components/account-password-form';
 import { currentSession } from '@/lib/session';
 
@@ -13,6 +14,7 @@ export default async function AccountPage() {
       <section className="document-page" aria-labelledby="account-title">
         <h1 id="account-title">Minha conta</h1>
         <AccountPasswordForm />
+        <AccountEmailForm email={session.email} />
       </section>
     </PortalHome>
   );

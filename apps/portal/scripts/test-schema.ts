@@ -25,6 +25,8 @@ const columns: Record<string, string> = {
   accounts:
     'id student_id email password_hash status created_at updated_at role password_reset_at',
   account_security_events: 'id account_id action created_at',
+  account_email_changes:
+    'account_id new_email token_hash credential_hash created_at expires_at',
   password_reset_tokens:
     'token_hash account_id credential_hash expires_at created_at',
   email_verification_tokens:
@@ -350,6 +352,7 @@ async function main() {
       ],
       ['course_calendar_versions', 'created_by_id', 'accounts', 'RESTRICT'],
       ['account_security_events', 'account_id', 'accounts', 'RESTRICT'],
+      ['account_email_changes', 'account_id', 'accounts', 'CASCADE'],
       ['sessions', 'account_id', 'accounts', 'CASCADE'],
       ['email_verification_tokens', 'account_id', 'accounts', 'CASCADE'],
       ['password_reset_tokens', 'account_id', 'accounts', 'CASCADE'],
@@ -385,6 +388,7 @@ async function main() {
     for (const name of [
       'course_calendar_versions_offering_id_revision_key',
       'students_cpf_key',
+      'account_email_changes_token_hash_key',
       'students_school_registration_key',
       'students_import_source_id_key',
       'accounts_student_id_key',

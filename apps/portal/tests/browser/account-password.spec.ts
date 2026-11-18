@@ -65,7 +65,8 @@ test('titular altera a senha e precisa entrar novamente', async ({ page }) => {
     await expect(
       page.getByRole('heading', { name: 'Minha conta' }),
     ).toBeVisible();
-    await page
+    const passwordForm = page.getByRole('region', { name: 'Alterar senha' });
+    await passwordForm
       .getByLabel('Senha atual', { exact: true })
       .fill('Senha Fictícia Errada');
     await page.getByLabel('Nova senha', { exact: true }).fill(next);
@@ -75,7 +76,7 @@ test('titular altera a senha e precisa entrar novamente', async ({ page }) => {
       page.getByRole('region', { name: 'Alterar senha' }).getByRole('alert'),
     ).toContainText('A senha atual está incorreta');
 
-    await page.getByLabel('Senha atual', { exact: true }).fill(before);
+    await passwordForm.getByLabel('Senha atual', { exact: true }).fill(before);
     const [changed] = await Promise.all([
       page.waitForResponse((response) => response.url() === api),
       page.getByRole('button', { name: 'Salvar nova senha' }).click(),
