@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@/generated/prisma/client';
 import { utcPostgresUrl } from './database-config';
+import { assertPortalDatabaseRole } from './database-runtime-role';
 
 const globalForPrisma = globalThis as typeof globalThis & {
   portalPrisma?: PrismaClient;
@@ -13,6 +14,7 @@ export function getDb(): PrismaClient {
     throw new Error('Configure DATABASE_URL para acessar o banco do portal.');
   const adapter = new PrismaPg({
     connectionString: utcPostgresUrl(connectionString, process.env.PGOPTIONS),
+    onConnect: assertPortalDatabaseRole,
     max: 5,
     connectionTimeoutMillis: 15000,
     idleTimeoutMillis: 60000,

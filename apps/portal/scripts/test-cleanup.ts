@@ -60,6 +60,16 @@ async function main() {
       0,
       'Cenários próprios ainda existem após os testes.',
     );
+    const rolePrefix = `ete_test_role_${expected.identity.slice(0, 8)}_`;
+    const roles = await client.query<{ n: number }>(
+      'SELECT count(*)::int AS n FROM pg_roles WHERE left(rolname,length($1))=$1',
+      [rolePrefix],
+    );
+    assert.equal(
+      roles.rows[0].n,
+      0,
+      'Credenciais próprias ainda existem após os testes.',
+    );
     await client.query('ROLLBACK');
     console.log(
       'OK: banco descartável sem alunos, contas, matrículas, sessões, tokens, solicitações, tentativas ou fotos residuais.',

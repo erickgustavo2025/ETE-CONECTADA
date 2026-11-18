@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { Client } from 'pg';
+import { getDb, disconnectDb } from '../src/lib/db';
 import { assertPortalDatabaseRole } from '../src/lib/database-runtime-role';
 import { assignPortalDatabaseGrants } from './database-runtime-grants';
 import { createTestDatabaseScenario } from './test-database-scenario';
@@ -16,14 +17,23 @@ async function main() {
   url.password = password;
   const runtime = new Client({ connectionString: url.toString() });
   let created = false;
+  const previousUrl = process.env.DATABASE_URL;
   try {
     await admin.connect();
     await assert.rejects(assertPortalDatabaseRole(admin), /privilégios/);
+    process.env.DATABASE_URL = scenario.config.url;
+    await assert.rejects(getDb().$queryRaw`SELECT current_user`, /privilégios/);
+    await disconnectDb();
     await admin.query(`CREATE ROLE "${role}" LOGIN PASSWORD '${password}'`);
     created = true;
     await assignPortalDatabaseGrants(admin, role);
     await runtime.connect();
     await assertPortalDatabaseRole(runtime);
+    process.env.DATABASE_URL = url.toString();
+    assert.deepEqual(await getDb().$queryRaw`SELECT current_user AS role`, [
+      { role },
+    ]);
+    await disconnectDb();
 
     const permissions = await runtime.query(`
       SELECT has_table_privilege('public.student_access_changes','SELECT') AS read,
@@ -63,7 +73,10 @@ async function main() {
       'OK: credencial própria do portal lê e acrescenta eventos; edição, exclusão, repasse de acesso e administração são recusados pela política.',
     );
   } finally {
+    if (previousUrl === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = previousUrl;
     try {
+      await disconnectDb();
       await runtime.end();
       await admin.end();
       await scenario.close();

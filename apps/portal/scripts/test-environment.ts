@@ -132,6 +132,12 @@ async function startPortal(signal: AbortSignal, publicOrigin?: string) {
   });
   if (signal.aborted) throw cancelled();
   const require = createRequire(import.meta.url);
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (key.startsWith('TEST_DATABASE_') || key.startsWith('PG'))
+      delete env[key];
+  }
+  delete env.DIRECT_URL;
   const child = spawn(
     process.execPath,
     [
@@ -147,7 +153,7 @@ async function startPortal(signal: AbortSignal, publicOrigin?: string) {
       cwd: fileURLToPath(new URL('../', import.meta.url)),
       detached: true,
       env: {
-        ...process.env,
+        ...env,
         NODE_ENV: 'development',
         RESEND_API_KEY: '',
         EMAIL_FROM: '',
@@ -296,21 +302,34 @@ export async function openTestEnvironment({
     restore();
     throw error;
   }
-  process.env.DATABASE_URL = scenario.config.url;
   process.env.DIRECT_URL = scenario.config.url;
   process.env.TEST_DATABASE_URL = scenario.config.url;
   process.env.TEST_DATABASE_NAME = scenario.config.database;
   process.env.TEST_DATABASE_ID = scenario.config.identity;
   process.env.RESEND_API_KEY = '';
   process.env.EMAIL_FROM = '';
+  let runtime:
+    | Awaited<
+        ReturnType<
+          typeof import('./test-database-runtime').createTestDatabaseRuntime
+        >
+      >
+    | undefined;
+  let db:
+    | ReturnType<
+        typeof import('./database-maintenance').openMaintenanceDatabase
+      >
+    | undefined;
   let portal: Awaited<ReturnType<typeof startPortal>> | undefined;
   const controller = new AbortController();
   let closing: Promise<void> | undefined;
+  let starting: Promise<void> | undefined;
   const close = () => {
     closing ??= (async () => {
       controller.abort();
       process.off('SIGINT', interrupted);
       process.off('SIGTERM', interrupted);
+      await starting?.catch(() => {});
       let failure: unknown;
       for (const action of [
         async () => {
@@ -320,7 +339,13 @@ export async function openTestEnvironment({
           await databaseModule.disconnectDb();
         },
         async () => {
+          await db?.$disconnect();
+        },
+        async () => {
           await scenario.close();
+        },
+        async () => {
+          await runtime?.drop();
         },
       ]) {
         try {
@@ -342,9 +367,22 @@ export async function openTestEnvironment({
   process.once('SIGINT', interrupted);
   process.once('SIGTERM', interrupted);
   try {
-    const db = databaseModule.getDb();
-    if (http) portal = await startPortal(controller.signal, publicOrigin);
-    if (controller.signal.aborted) fail('Execução sintética cancelada.');
+    starting = (async () => {
+      runtime = await (
+        await import('./test-database-runtime')
+      ).createTestDatabaseRuntime(scenario.config);
+      if (!runtime.url)
+        fail('Não foi possível preparar a credencial limitada do cenário.');
+      if (controller.signal.aborted) fail('Execução sintética cancelada.');
+      process.env.DATABASE_URL = runtime.url;
+      db = (await import('./database-maintenance')).openMaintenanceDatabase(
+        scenario.config.url,
+      );
+      if (http) portal = await startPortal(controller.signal, publicOrigin);
+    })();
+    await starting;
+    if (controller.signal.aborted || !db)
+      return fail('Execução sintética cancelada.');
     return { db, base: portal?.base ?? '', close };
   } catch (error) {
     await close();

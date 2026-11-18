@@ -4,7 +4,7 @@ import {
   reportTestFailure,
   TestEnvironmentError,
 } from './test-environment';
-import { getDb, disconnectDb } from '../src/lib/db';
+import { openMaintenanceDatabase } from './database-maintenance';
 import { hashPassword } from '../src/lib/password';
 import { reviewEnrollment } from '../src/lib/enrollment-validity';
 
@@ -15,8 +15,7 @@ async function main() {
   const demo = args.includes('--demo');
   const expected = parseTestEnvironment(process.env);
   await verifyTestDatabase(expected);
-  process.env.DATABASE_URL = expected.url;
-  const db = getDb();
+  const db = openMaintenanceDatabase(expected.url);
   const students = [
     {
       cpf: '45278196319',
@@ -187,7 +186,7 @@ async function main() {
         : 'Seed concluído: três alunos sintéticos; contas existentes preservadas.',
     );
   } finally {
-    await disconnectDb();
+    await db.$disconnect();
   }
 }
 main().catch(reportTestFailure);

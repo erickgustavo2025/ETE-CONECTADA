@@ -52,11 +52,11 @@ npm run test:cleanup
 npm run build
 ```
 
-Execute os testes HTTP em sequência, sem outro `next dev` na pasta do portal: o Next compartilha `.next/dev` e seu lock. Cada teste inicia um servidor próprio com a URL já conferida, em `127.0.0.1`/porta livre, e `RESEND_API_KEY`/`EMAIL_FROM` vazios. Não precisa iniciar `dev:portal`. `TEST_BASE_URL` é recusado, inclusive localhost, para evitar uma instância que use outro banco.
+Execute os testes HTTP em sequência, sem outro `next dev` na pasta do portal: o Next compartilha `.next/dev` e seu lock. Cada cenário cria um banco próprio a partir da fonte migrada e vazia. O servidor recebe a credencial limitada desse cenário e inicia em `127.0.0.1`/porta livre, e `RESEND_API_KEY`/`EMAIL_FROM` vazios. Não precisa iniciar `dev:portal`. `TEST_BASE_URL` é recusado, inclusive localhost, para evitar uma instância que use outro banco.
 
 Antes de Prisma/servidor/fixtures, a guarda valida a configuração e consulta apenas `current_database()` e o comentário em `pg_database`. Nome ou UUID divergente impedem escritas. Sem configuração completa, nem essa conexão ocorre. Erros não imprimem connection strings.
 
-Ao terminar (inclusive por falha), os scripts tentam excluir somente os IDs criados por eles e encerram o portal e as conexões. Se o banco ficar indisponível ou o processo sofrer SIGKILL, a limpeza não pode ser garantida; descarte a instância de teste inteira. SIGINT/SIGTERM cancela a inicialização e encerra o servidor próprio.
+Ao terminar, os testes encerram o portal e as conexões, descartam o banco do cenário e removem seu papel temporário. Se o banco ficar indisponível ou o processo sofrer SIGKILL, descarte a instância de teste inteira. SIGINT e SIGTERM cancelam a inicialização e encerram o servidor próprio.
 
 `test:declarations` salva `declaracao.pdf` e `lote.pdf` sintéticos em um diretório novo `ete-declarations-test-*` na pasta temporária do sistema, com criação exclusiva dos arquivos. O caminho é informado para conferência visual; remova esse diretório após a conferência. `TEST_PDF_OUTPUT` e `TEST_BATCH_PDF_OUTPUT` são recusados para não sobrescrever arquivos existentes. Nenhum PDF real deve entrar nesse ambiente.
 
@@ -74,19 +74,22 @@ Depois da preparação, executa `db:validate`, `db:migrate`, `db:status` e `test
 
 O mesmo job, **Migrações e integração em PostgreSQL descartável**, gera explicitamente o cliente Prisma após validar as migrações e executa `npm run test:integration`: importação → cadastro → declaração → sessão/autorização → produção → dados complementares → vigência de matrícula → importação XLS → histórico das alterações escolares → banco, em sequência. O comando usa `&&`, portanto uma falha interrompe os testes seguintes e reprova a etapa. Os testes de desenvolvimento usam o helper existente para conferir identidade do banco, iniciar seu próprio Next dev em loopback/porta livre, aguardar readiness e encerrar servidor/conexões/fixtures. `TEST_BASE_URL` permanece recusado; não se inicia `dev:portal` externo. O subprocesso força `NODE_ENV=development` e e-mail desabilitado. Nenhuma autenticação em produção é liberada.
 
-Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem alunos, contas, matrículas, sessões, tokens, solicitações ou fotos arquivadas. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
+Após a integração, `test:cleanup` confere que as tabelas de dados estão vazias, sem apagar nada. Essa etapa também executa depois de uma falha, desde que o banco e o cliente tenham sido preparados. Ela falha se restarem dados na fonte, bancos de cenário ou papéis temporários. Esse comando só faz sentido no banco **novo e sem seed** do job; num banco de demonstração com fixtures preexistentes, um resultado não vazio é esperado. A guarda de identidade é a mesma dos demais testes.
 
 A remoção do contêiner segue com `always()`, independentemente do resultado da conferência de limpeza. Registros residuais são sinalizados, não apagados para disfarçar a falha. PDFs sintéticos temporários e processos restantes em encerramentos abruptos são descartados junto com a VM hospedada. As saídas dos testes ficam nos logs do Actions, sem tokens, senhas ou connection strings; não se publicam PDFs como artifacts. O job não depende de servidor, seed, e-mail ou banco da escola.
 
 ## Acessos fixos para demonstração local
 
-Para explorar as telas, use um banco local separado dos testes automáticos e dos dados da escola. Prepare um banco novo e identificado como acima, aplique as migrações e execute na raiz:
+Para explorar as telas, use um banco local separado dos testes automáticos e dos dados da escola. Prepare um banco novo e identificado como acima. Execute os comandos na raiz. Crie e configure um papel dedicado para a demonstração conforme o [guia do banco](../apps/portal/prisma/README.md).
 
 ```bash
 npm run db:demo
-# Neste mesmo terminal, com as variáveis do banco de demonstração:
-export DATABASE_URL="$TEST_DATABASE_URL"
-export DIRECT_URL="$TEST_DATABASE_URL"
+DIRECT_URL="$TEST_DATABASE_URL" npm run db:provision-runtime --workspace @ete-conectada/portal -- ete_portal_demo
+```
+
+Inicie o portal em outro terminal com `DATABASE_URL` apontando para a credencial de `ete_portal_demo`.
+
+```bash
 export NODE_ENV=development
 export RESEND_API_KEY=
 export EMAIL_FROM=
