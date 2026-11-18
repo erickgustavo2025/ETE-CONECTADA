@@ -144,12 +144,7 @@ async function main() {
       'OK: complemento ausente, persistência, origem, correção parcial, permissões, revogação, constraints e preservação após saída do operador.',
     );
   } finally {
-    try {
-      if (ids.length)
-        await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

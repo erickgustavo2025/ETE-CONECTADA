@@ -1,11 +1,17 @@
 # Banco de dados do portal
 
-O portal usa PostgreSQL (Neon). Configure `DATABASE_URL` em `apps/portal/.env.local` usando a connection string do Neon, depois execute na raiz:
+O portal usa PostgreSQL. No banco de desenvolvimento, crie um papel com login dedicado ao portal e defina sua senha pelo gerenciador de credenciais do banco. Use um papel sem associação a outros papéis e sem propriedade de objetos.
+
+No terminal de manutenção, exporte `DIRECT_URL` com a conexão do proprietário do banco. Aplique as migrações e conceda os privilégios ao papel dedicado. Substitua `ete_portal` pelo nome que você criou.
 
 ```sh
-npm install
 npm run db:migrate --workspace @ete-conectada/portal
+npm run db:provision-runtime --workspace @ete-conectada/portal -- ete_portal
 ```
+
+O comando retira de `PUBLIC` o direito de criar objetos no schema `public` e o direito de criar schemas ou tabelas temporárias neste banco. Execute em um banco dedicado ao portal e conceda explicitamente aos demais usuários de manutenção os acessos de que precisarem.
+
+Configure `DATABASE_URL` do portal com a credencial limitada em `apps/portal/.env.local` ou no gerenciador de segredos do ambiente. Reserve `DIRECT_URL` ao terminal de manutenção. O portal verifica o papel antes da primeira consulta de cada conexão e recusa permissões incompatíveis. Reaplique a concessão após migrações que adicionem tabelas usadas pelo portal.
 
 `db:migrate` aplica as migrações pendentes em ordem, incluindo a tabela de sessões. Para seed e testes, prepare outro PostgreSQL local descartável conforme [testes isolados](../../../docs/testes-isolados.md); esses scripts não usam o Neon configurado em `.env.local`. `db:seed` pode ser executado novamente sem duplicar os estudantes; ele cria a conta de teste ativa apenas se ela ainda não existir, preservando senhas existentes. Os três registros são inteiramente fictícios. Os CPFs foram gerados para passar no cálculo de dígitos verificadores, mas são dados sintéticos de teste.
 
@@ -67,7 +73,7 @@ npm run test:db --workspace @ete-conectada/portal
 
 `test:db` exige configuração e identidade do banco descartável. Inicia seu próprio portal em loopback/porta livre, com e-mail desativado, e encerra o processo ao terminar. `TEST_BASE_URL` não é aceito. Cria um aluno sintético temporário e remove somente esse aluno ao terminar. Verifica concorrência na reivindicação, confirmação única, login CPF/e-mail, sessão e logout.
 
-O runtime limita o pool a cinco conexões com espera de conexão de 15 segundos. Credenciais ficam exclusivamente em `.env.local`.
+O runtime limita o pool a cinco conexões com espera de conexão de 15 segundos. Guarde a credencial fora do Git.
 
 ## Solicitações de declaração
 

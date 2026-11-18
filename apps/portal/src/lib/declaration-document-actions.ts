@@ -1,4 +1,4 @@
-import { Prisma } from '@/generated/prisma/client';
+import type { Prisma } from '@/generated/prisma/client';
 import { getDb } from './db';
 import { declarationPortalEnabled } from './declaration-documents';
 import { DeclarationValidationError } from './declarations';
@@ -88,9 +88,8 @@ export async function changeDeclarationDocument(
         ...(input.successorId ? [input.successorId] : []),
       ]),
     ].sort();
-    await tx.$queryRaw(
-      Prisma.sql`SELECT id FROM declaration_documents WHERE id IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY id FOR UPDATE`,
-    );
+    // A trava transacional serializa emissões e ações. Os documentos são
+    // somente de leitura aqui, então a consulta usa o privilégio SELECT.
     const rows = await tx.declarationDocument.findMany({
       where: { id: { in: ids } },
       include: { terminalActions: true, predecessorActions: true },

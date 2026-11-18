@@ -15,13 +15,6 @@ async function main() {
   const env = await openTestEnvironment({ http: true }),
     { db, base } = env;
   const ids: string[] = [];
-  const registrations = [
-    '00001001',
-    '00001002',
-    '00001003',
-    '00001005',
-    '00009999',
-  ];
   let constraint = false;
   try {
     assert.equal(
@@ -582,14 +575,6 @@ async function main() {
     try {
       if (constraint)
         await db.$executeRaw`ALTER TABLE enrollments DROP CONSTRAINT ec056_test_rollback`;
-      await db.student.deleteMany({
-        where: {
-          OR: [
-            { id: { in: ids } },
-            { schoolRegistration: { in: registrations } },
-          ],
-        },
-      });
     } finally {
       await env.close();
     }

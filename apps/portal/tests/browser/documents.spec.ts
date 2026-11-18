@@ -313,27 +313,10 @@ test('secretaria consulta minutas e registra cancelamento/substituição com rec
     ).toBe('CANCELLED');
     expect(errors).toEqual([]);
   } finally {
-    try {
-      await db.declarationCurrentIssue.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationDocumentAction.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationDocument.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationPdfArchive.deleteMany({
-        where: { documents: { none: {} } },
-      });
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await env.close();
-      if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
-      else process.env.PORTAL_PUBLIC_URL = previousOrigin;
-      if (previous === undefined)
-        delete process.env.DECLARATION_REGISTRY_PREVIEW;
-      else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
-    }
+    await env.close();
+    if (previousOrigin === undefined) delete process.env.PORTAL_PUBLIC_URL;
+    else process.env.PORTAL_PUBLIC_URL = previousOrigin;
+    if (previous === undefined) delete process.env.DECLARATION_REGISTRY_PREVIEW;
+    else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
   }
 });

@@ -1,8 +1,10 @@
 import {
-  openTestEnvironment,
+  verifyTestDatabase,
+  parseTestEnvironment,
   reportTestFailure,
   TestEnvironmentError,
 } from './test-environment';
+import { openMaintenanceDatabase } from './database-maintenance';
 import { hashPassword } from '../src/lib/password';
 import { reviewEnrollment } from '../src/lib/enrollment-validity';
 
@@ -11,8 +13,9 @@ async function main() {
   if (args.some((arg) => arg !== '--demo') || args.length > 1)
     throw new TestEnvironmentError('Use seed sem argumentos ou com --demo.');
   const demo = args.includes('--demo');
-  const environment = await openTestEnvironment();
-  const { db } = environment;
+  const expected = parseTestEnvironment(process.env);
+  await verifyTestDatabase(expected);
+  const db = openMaintenanceDatabase(expected.url);
   const students = [
     {
       cpf: '45278196319',
@@ -183,7 +186,7 @@ async function main() {
         : 'Seed concluído: três alunos sintéticos; contas existentes preservadas.',
     );
   } finally {
-    await environment.close();
+    await db.$disconnect();
   }
 }
 main().catch(reportTestFailure);

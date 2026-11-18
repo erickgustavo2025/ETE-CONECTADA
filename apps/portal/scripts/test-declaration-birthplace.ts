@@ -180,7 +180,14 @@ async function main() {
       where: { id: accounts[0].id },
       data: { status: 'active', role: 'secretary' },
     });
-    await db.declarationRequest.deleteMany({ where: { studentId: ids[1] } });
+    await db.declarationRequest.updateMany({
+      where: { studentId: ids[1], status: 'REQUESTED' },
+      data: {
+        status: 'READY_FOR_PICKUP',
+        generatedAt: new Date(),
+        readyAt: new Date(),
+      },
+    });
     await db.studentDetails.update({
       where: { studentId: ids[1] },
       data: {
@@ -220,11 +227,7 @@ async function main() {
       'OK: local canônico e pedido atômicos, titularidade/estado da conta, filiação preservada, dados de outro aluno, repetição e correção da secretaria protegidos.',
     );
   } finally {
-    try {
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

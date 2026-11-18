@@ -283,20 +283,9 @@ async function main() {
       'OK: cancelamento/substituição auditados, papéis/origem, confirmação/motivo, repetição e concorrência idempotentes, snapshot/pedido preservados, vínculo/período/ciclo recusados e evento imutável.',
     );
   } finally {
-    try {
-      await db.declarationDocumentAction.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationDocument.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await environment.close();
-      if (previous === undefined)
-        delete process.env.DECLARATION_REGISTRY_PREVIEW;
-      else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
-    }
+    await environment.close();
+    if (previous === undefined) delete process.env.DECLARATION_REGISTRY_PREVIEW;
+    else process.env.DECLARATION_REGISTRY_PREVIEW = previous;
   }
 }
 main().catch(reportTestFailure);

@@ -1,11 +1,27 @@
 import assert from 'node:assert/strict';
-import { openTestEnvironment, reportTestFailure } from './test-environment';
+import { Client } from 'pg';
+import {
+  assertDatabaseIdentity,
+  parseTestEnvironment,
+  reportTestFailure,
+} from './test-environment';
 
 // Usar somente no banco NOVO do CI, sem seed. Nunca apaga registros.
 async function main() {
-  const environment = await openTestEnvironment();
+  const expected = parseTestEnvironment(process.env);
+  const client = new Client({
+    connectionString: expected.url,
+    connectionTimeoutMillis: 5000,
+    query_timeout: 5000,
+  });
+  await client.connect();
   try {
-    const counts = await environment.db.$queryRaw<Array<{ records: bigint }>>`
+    await client.query('BEGIN READ ONLY');
+    const identity = await client.query(
+      "SELECT current_database() AS database,shobj_description(oid,'pg_database') AS marker FROM pg_database WHERE datname=current_database()",
+    );
+    assertDatabaseIdentity(identity.rows[0], expected);
+    const counts = await client.query<{ records: string }>(`
       SELECT (
         (SELECT count(*) FROM access_attempt_buckets) +
         (SELECT count(*) FROM students) +
@@ -28,17 +44,38 @@ async function main() {
         (SELECT count(*) FROM declaration_document_actions) +
         (SELECT count(*) FROM retired_profile_photos)
       ) AS records
-    `;
+    `);
     assert.equal(
-      counts[0].records,
+      BigInt(counts.rows[0].records),
       BigInt(0),
-      'Os testes devem remover todos os registros sintéticos do banco novo.',
+      'A fonte não deve receber os registros dos cenários.',
     );
+    const prefix = `ete_test_case_${expected.identity.slice(0, 8)}_`;
+    const residual = await client.query<{ n: number }>(
+      'SELECT count(*)::int AS n FROM pg_database WHERE left(datname,length($1))=$1',
+      [prefix],
+    );
+    assert.equal(
+      residual.rows[0].n,
+      0,
+      'Cenários próprios ainda existem após os testes.',
+    );
+    const rolePrefix = `ete_test_role_${expected.identity.slice(0, 8)}_`;
+    const roles = await client.query<{ n: number }>(
+      'SELECT count(*)::int AS n FROM pg_roles WHERE left(rolname,length($1))=$1',
+      [rolePrefix],
+    );
+    assert.equal(
+      roles.rows[0].n,
+      0,
+      'Credenciais próprias ainda existem após os testes.',
+    );
+    await client.query('ROLLBACK');
     console.log(
       'OK: banco descartável sem alunos, contas, matrículas, sessões, tokens, solicitações, tentativas ou fotos residuais.',
     );
   } finally {
-    await environment.close();
+    await client.end();
   }
 }
 main().catch(reportTestFailure);

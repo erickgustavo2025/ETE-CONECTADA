@@ -213,9 +213,7 @@ test('painel consulta pedidos anteriores por modalidade e turma, pagina e recupe
     expect(errors).toEqual([]);
   } finally {
     unblock();
-    try {
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
+    {
       await environment.close();
       if (previous === undefined)
         delete process.env.DECLARATION_REGISTRY_PREVIEW;

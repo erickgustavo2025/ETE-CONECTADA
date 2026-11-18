@@ -176,7 +176,14 @@ test('aluno confirma UF e município no pedido sem chamadas por letra nem altera
     ).toBeNull();
     expect(await db.declarationRequest.count()).toBe(1);
     // Uma nova abertura não restaura silenciosamente uma opção filtrada.
-    await db.declarationRequest.deleteMany({ where: { studentId: ids[0] } });
+    await db.declarationRequest.updateMany({
+      where: { studentId: ids[0], status: 'REQUESTED' },
+      data: {
+        status: 'READY_FOR_PICKUP',
+        generatedAt: new Date(),
+        readyAt: new Date(),
+      },
+    });
     await page.reload();
     await page
       .getByRole('button', { name: 'Solicitar declaração', exact: true })
@@ -205,10 +212,6 @@ test('aluno confirma UF e município no pedido sem chamadas por letra nem altera
       ),
     ).toBe(true);
   } finally {
-    try {
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 });

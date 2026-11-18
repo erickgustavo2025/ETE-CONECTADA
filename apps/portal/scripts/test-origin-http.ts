@@ -139,11 +139,7 @@ async function main() {
       'OK: matriz de14POSTs recusa origem ausente/null/externa sem efeitos; Host/forwarded não mudam confiança; proxy e logout legítimos preservados.',
     );
   } finally {
-    try {
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await env.close();
-    }
+    await env.close();
   }
 }
 main().catch(reportTestFailure);

@@ -312,16 +312,6 @@ async function main() {
       'OK: emissão/pedido atômicos, histórico, repetição, Abrir/Baixar e isolamento HTTP.',
     );
   } finally {
-    if (studentId) {
-      await db.declarationCurrentIssue.deleteMany({ where: { studentId } });
-      await db.declarationDocumentAction.deleteMany({ where: { studentId } });
-      await db.declarationRequest.deleteMany({ where: { studentId } });
-      await db.declarationDocument.deleteMany({ where: { studentId } });
-      await db.declarationPdfArchive.deleteMany({
-        where: { documents: { none: {} } },
-      });
-      await db.student.delete({ where: { id: studentId } });
-    }
     await env.close();
   }
 }

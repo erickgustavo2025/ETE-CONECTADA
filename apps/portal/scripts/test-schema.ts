@@ -298,18 +298,43 @@ async function main() {
       'document_actions_successor_fkey',
     ])
       constraint(name);
-    const actionsTrigger = await client.query(
-      "SELECT count(*)::int AS count FROM pg_trigger WHERE tgname='document_actions_immutable' AND tgenabled='O' AND NOT tgisinternal",
+    const protectedHistory = [
+      ['student_access_changes', 'student_access_changes_immutable'],
+      ['enrollment_import_history', 'enrollment_import_history_immutable'],
+      ['course_calendar_versions', 'course_calendar_versions_immutable'],
+      ['declaration_documents', 'declaration_documents_immutable'],
+      ['declaration_pdf_archives', 'declaration_pdf_archives_immutable'],
+      ['declaration_document_actions', 'document_actions_immutable'],
+      ['school_academic_events', 'school_academic_events_immutable'],
+      ['declaration_requests', 'declaration_requests_no_delete'],
+    ];
+    const historyTriggers = await client.query<{
+      table_name: string;
+      name: string;
+      definition: string;
+    }>(
+      "SELECT relname AS table_name, tgname AS name, pg_get_triggerdef(t.oid) AS definition FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid WHERE tgenabled='A' AND NOT tgisinternal AND tgfoid='public.reject_audit_history_write()'::regprocedure",
     );
-    assert.equal(actionsTrigger.rows[0].count, 1);
-    const documentTrigger = await client.query(
-      "SELECT pg_get_triggerdef(oid) AS definition FROM pg_trigger WHERE tgname='declaration_documents_immutable' AND tgenabled='O' AND NOT tgisinternal",
-    );
-    assert.equal(documentTrigger.rows.length, 1);
-    assert.match(
-      documentTrigger.rows[0].definition,
-      /BEFORE UPDATE ON public.declaration_documents/,
-    );
+    assert.equal(historyTriggers.rowCount, 2 * protectedHistory.length);
+    for (const [table, name] of protectedHistory) {
+      const row = historyTriggers.rows.find(
+        (trigger) => trigger.table_name === table && trigger.name === name,
+      );
+      assert.ok(row, `Proteção por linha: ${table}`);
+      assert.ok(
+        row.definition.includes(
+          table === 'declaration_requests'
+            ? 'BEFORE DELETE '
+            : 'BEFORE DELETE OR UPDATE ',
+        ),
+      );
+      const bulk = historyTriggers.rows.find(
+        (trigger) =>
+          trigger.table_name === table &&
+          trigger.name === `${table}_no_truncate`,
+      );
+      assert.match(bulk?.definition ?? '', /BEFORE TRUNCATE/);
+    }
     for (const [table, field, target, deletion] of [
       ['accounts', 'student_id', 'students', 'CASCADE'],
       ['declaration_documents', 'student_id', 'students', 'RESTRICT'],
@@ -321,19 +346,20 @@ async function main() {
         'course_offerings',
         'RESTRICT',
       ],
-      ['course_calendar_versions', 'created_by_id', 'accounts', 'SET NULL'],
+      ['course_calendar_versions', 'created_by_id', 'accounts', 'RESTRICT'],
       ['sessions', 'account_id', 'accounts', 'CASCADE'],
       ['email_verification_tokens', 'account_id', 'accounts', 'CASCADE'],
       ['password_reset_tokens', 'account_id', 'accounts', 'CASCADE'],
       ['enrollments', 'student_id', 'students', 'CASCADE'],
       ['enrollments', 'reviewed_by_id', 'accounts', 'SET NULL'],
       ['sheet_import_previews', 'actor_id', 'accounts', 'CASCADE'],
-      ['enrollment_import_history', 'enrollment_id', 'enrollments', 'CASCADE'],
-      ['enrollment_import_history', 'recorded_by_id', 'accounts', 'SET NULL'],
-      ['declaration_requests', 'student_id', 'students', 'CASCADE'],
-      ['declaration_requests', 'enrollment_id', 'enrollments', 'CASCADE'],
-      ['declaration_requests', 'prepared_by_id', 'accounts', 'SET NULL'],
-      ['declaration_requests', 'ready_by_id', 'accounts', 'SET NULL'],
+      ['enrollment_import_history', 'enrollment_id', 'enrollments', 'RESTRICT'],
+      ['enrollment_import_history', 'recorded_by_id', 'accounts', 'RESTRICT'],
+      ['declaration_requests', 'student_id', 'students', 'RESTRICT'],
+      ['declaration_requests', 'enrollment_id', 'enrollments', 'RESTRICT'],
+      ['declaration_requests', 'prepared_by_id', 'accounts', 'RESTRICT'],
+      ['declaration_requests', 'ready_by_id', 'accounts', 'RESTRICT'],
+      ['student_access_changes', 'student_id', 'students', 'RESTRICT'],
       ['retired_profile_photos', 'student_id', 'students', 'CASCADE'],
       ['student_details', 'student_id', 'students', 'CASCADE'],
       ['student_details', 'updated_by_id', 'accounts', 'SET NULL'],
@@ -397,7 +423,7 @@ async function main() {
     assert.doesNotMatch(openRequest.indexdef, /AVAILABLE|READY_FOR_PICKUP/);
     assert.match(
       constraint('declaration_requests_document_fkey'),
-      /FOREIGN KEY \(document_id, student_id, enrollment_id\) REFERENCES declaration_documents\(id, student_id, enrollment_id\) ON DELETE CASCADE/,
+      /FOREIGN KEY \(document_id, student_id, enrollment_id\) REFERENCES declaration_documents\(id, student_id, enrollment_id\) ON DELETE RESTRICT/,
     );
     assert.match(
       constraint('school_academic_events_enrollment_id_fkey'),
@@ -412,8 +438,6 @@ async function main() {
       /repetition_pending/,
     );
     for (const name of [
-      'school_academic_events_immutable',
-      'school_academic_events_no_truncate',
       'school_academic_events_revision',
       'enrollment_academic_revision',
     ]) {
@@ -422,11 +446,7 @@ async function main() {
         [name],
       );
       assert.equal(trigger.rowCount, 1, `Proteção acadêmica ativa: ${name}`);
-      if (name.endsWith('_revision'))
-        assert.match(
-          trigger.rows[0].definition,
-          /DEFERRABLE INITIALLY DEFERRED/,
-        );
+      assert.match(trigger.rows[0].definition, /DEFERRABLE INITIALLY DEFERRED/);
     }
     const registered = await client.query(
       "SELECT count(*)::int AS count FROM pg_trigger WHERE tgname='declaration_requests_registered' AND tgenabled='O' AND NOT tgisinternal",

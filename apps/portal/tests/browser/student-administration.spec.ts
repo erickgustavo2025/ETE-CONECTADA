@@ -409,31 +409,6 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
         info.outputPath('navigation-proof.json'),
         JSON.stringify({ navigation, errors }, null, 2),
       );
-      await env.db.studentAccessChange.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await env.db.declarationCurrentIssue.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await env.db.declarationDocumentAction.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await env.db.declarationRequest.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await env.db.declarationDocument.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await env.db.declarationPdfArchive.deleteMany({
-        where: { documents: { none: {} } },
-      });
-      await env.db.student.deleteMany({ where: { id: { in: ids } } });
-      if (offeringId) {
-        await env.db.courseCalendarVersion.deleteMany({
-          where: { offeringId },
-        });
-        await env.db.courseOffering.delete({ where: { id: offeringId } });
-      }
       try {
         await env.close();
       } finally {

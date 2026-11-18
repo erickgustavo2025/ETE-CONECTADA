@@ -223,18 +223,8 @@ async function main() {
       'OK: busca privada por aluno, estados/modalidade/turma/datas, paginação estável, detalhe auditado e recusas de acesso.',
     );
   } finally {
-    try {
-      await db.declarationDocumentAction.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.declarationDocument.deleteMany({
-        where: { studentId: { in: ids } },
-      });
-      await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await env.close();
-      delete process.env.DECLARATION_REGISTRY_PREVIEW;
-    }
+    await env.close();
+    delete process.env.DECLARATION_REGISTRY_PREVIEW;
   }
 }
 main().catch(reportTestFailure);

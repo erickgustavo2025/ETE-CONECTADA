@@ -11,10 +11,8 @@ async function main() {
   const students: string[] = [],
     offers: string[] = [];
   let rollbackConstraint = false;
-  let rollbackRegistrationReserved = false;
   try {
     assert.equal(await db.student.count(), 0, 'Exige banco novo sintético.');
-    rollbackRegistrationReserved = true;
     const password = 'SubsequenteSintetico#123';
     const actor = await db.student.create({
       data: {
@@ -265,13 +263,18 @@ async function main() {
         offering: await db.courseOffering.findUniqueOrThrow({ where: { id } }),
       });
       const beforeRollback = await snapshot();
+      const newRegistration = {
+        ADM: '00001009',
+        DS: '00001019',
+        ENF: '00001029',
+      }[courseLabel];
       sheet.wb.Sheets['Fictícia'].B7 = {
         t: 's',
         v: 'Pessoa Fictícia Corrigida no Lote',
       };
       XLSX.utils.sheet_add_aoa(
         sheet.wb.Sheets['Fictícia'],
-        [['00001009', 'Outra Pessoa Fictícia', '01/01/2000']],
+        [[newRegistration, 'Outra Pessoa Fictícia', '01/01/2000']],
         { origin: 'A8' },
       );
       const batchResponse = await post({ action: 'preview', ...payload() });
@@ -293,7 +296,7 @@ async function main() {
           acceptIdentityChanges: true,
           acceptCalendarDifferences: true,
         });
-      await db.$executeRaw`ALTER TABLE enrollments ADD CONSTRAINT ec109_sub_rollback CHECK (school_import_key NOT LIKE '%:00001009')`;
+      await db.$executeRaw`ALTER TABLE enrollments ADD CONSTRAINT ec109_sub_rollback CHECK (school_import_key !~ ':000010(09|19|29)$') NOT VALID`;
       rollbackConstraint = true;
       assert.equal((await applyBatch()).status, 409);
       assert.deepEqual(
@@ -302,7 +305,9 @@ async function main() {
         `Rollback ${courseLabel} preserva pessoa, vínculos, histórico e calendário.`,
       );
       assert.equal(
-        await db.student.count({ where: { schoolRegistration: '00001009' } }),
+        await db.student.count({
+          where: { schoolRegistration: newRegistration },
+        }),
         0,
       );
       assert.equal(
@@ -327,7 +332,9 @@ async function main() {
         'Repetição do token retorna o resultado sem duplicar.',
       );
       assert.equal(
-        await db.student.count({ where: { schoolRegistration: '00001009' } }),
+        await db.student.count({
+          where: { schoolRegistration: newRegistration },
+        }),
         1,
       );
       assert.equal(
@@ -335,7 +342,6 @@ async function main() {
           .fullName,
         'Pessoa Fictícia Corrigida no Lote',
       );
-      await db.student.delete({ where: { schoolRegistration: '00001009' } });
     }
     console.log(
       'OK: inspeção/catálogos privados do subsequente ADM/DS/Enfermagem, módulos3/4, modalidade, calendário, reimportação, exceção explícita, histórico, rollback de lote com recuperação e repetição, integrado/contas preservados.',
@@ -344,15 +350,6 @@ async function main() {
     try {
       if (rollbackConstraint)
         await db.$executeRaw`ALTER TABLE enrollments DROP CONSTRAINT ec109_sub_rollback`;
-      if (rollbackRegistrationReserved)
-        await db.student.deleteMany({
-          where: { schoolRegistration: '00001009' },
-        });
-      await db.student.deleteMany({ where: { id: { in: students } } });
-      await db.courseCalendarVersion.deleteMany({
-        where: { offeringId: { in: offers } },
-      });
-      await db.courseOffering.deleteMany({ where: { id: { in: offers } } });
     } finally {
       await env.close();
     }

@@ -352,12 +352,7 @@ async function main() {
       'OK: resposta genérica, transporte simulado, segredo apenas em hash, intervalo, uso único, senha atualizada, sessões revogadas e login concorrente antigo recusado.',
     );
   } finally {
-    try {
-      if (ids.length)
-        await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

@@ -15,8 +15,7 @@ test('recuperação protege o link, trata resposta perdida e encerra sessões an
   const password = 'SenhaInicial#123',
     nextPassword = 'NovaSenha#456',
     finalPassword = 'SenhaFinal#789';
-  let studentId: string | undefined,
-    link = '';
+  let link = '';
   const delivery = {
     origin: base,
     async send(to: string, url: string) {
@@ -39,7 +38,7 @@ test('recuperação protege o link, trata resposta perdida e encerra sessões an
       },
       include: { account: true },
     });
-    studentId = student.id;
+
     const accountId = student.account!.id;
     await page.goto(`${base}/login`);
     await page.getByRole('link', { name: 'Esqueci minha senha' }).click();
@@ -210,10 +209,6 @@ test('recuperação protege o link, trata resposta perdida e encerra sessões an
       page.getByRole('heading', { name: 'Acesso ao portal' }),
     ).toBeVisible();
   } finally {
-    try {
-      if (studentId) await db.student.deleteMany({ where: { id: studentId } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 });

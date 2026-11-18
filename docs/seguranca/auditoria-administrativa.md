@@ -1,6 +1,6 @@
 # Histórico administrativo protegido
 
-Requisito confirmado pela equipe em 05/11/2026. Este documento define o aceite da EC067 e dos eventos gerados por EC124/126/127; não declara a proteção completa implementada.
+A equipe confirmou os requisitos em 05/11/2026. A EC067 protege os registros no banco da aplicação e oferece consulta à secretaria. A cópia externa protegida ainda precisa ser provisionada e conferida na infraestrutura.
 
 ## Comportamento esperado
 
@@ -22,11 +22,21 @@ Repetente aguardando turma fica bloqueado para novas demandas acadêmicas, inclu
 
 Uma conta da secretaria não deve conseguir remover evidências pelo portal ou pela credencial de aplicação. Não existe promessa de impossibilidade absoluta contra o proprietário/superusuário do banco ou contra quem controla toda a infraestrutura. Esse risco exige separação de acessos e cópia externa protegida; uma cadeia de hashes guardada somente no mesmo banco também pode ser reescrita por esse administrador.
 
-## Lacunas verificadas em 05/11
+## Consulta e proteção no portal
 
-Na base da EC125/PR76, `student_access_changes` já possui gatilho que recusa UPDATE. Ainda tem `ON DELETE CASCADE` no vínculo com aluno e não tem proteção própria contra DELETE/TRUNCATE. O histórico de importação também permite exclusão em cascata. Portanto não atribuir a essas tabelas a garantia completa exigida aqui. A migração de passagem da EC126 em preparação guarda estados mutáveis, não substitui um registro de eventos protegido.
+- A secretaria abre **Histórico de ações** pelo menu. Pode filtrar por matrícula, nome, categoria e data. A data usa o horário de Recife. Cada página traz até 20 eventos.
+- A consulta inclui registros de acesso, matrícula, importação, versões do calendário e documentos. Mostra o responsável, o horário, a ação, a justificativa e as referências quando existem nos registros. Passagens automáticas mostram separadamente a confirmação original quando ela consta do evento.
+- O portal usa HTTPS no ambiente escolar, confere a origem e revalida o acesso da secretaria no banco. Os filtros vão no corpo da requisição e os resultados não são armazenados em cache. O histórico não envia CPF, filiação, credenciais ou arquivos.
+- A migração protege os históricos contra edição, exclusão, limpeza e perda de vínculo por cascata. Os pedidos de declaração conservam as atualizações operacionais necessárias para os fluxos existentes.
+- Conexões da aplicação recusam credenciais com propriedade, privilégios administrativos ou acesso além da matriz do portal. Antes de iniciar uma nova instalação, aplique as migrações e [prepare um papel separado para o portal](../../apps/portal/prisma/README.md). Em instalações existentes, prepare a credencial limitada antes de subir a nova versão do portal.
 
-EC067 permanece pendente. Antes de concluir sua entrega, rever todos os históricos existentes e as credenciais efetivamente usadas; não basta esconder botões nem proteger apenas a tabela nova. Testes e limpeza devem usar banco descartável próprio. Não criar senha especial, parâmetro de requisição ou variável do portal que permita contornar as proteções para facilitar testes.
+## Isolamento dos cenários de verificação
+
+`npm run test:database-scenarios` verifica a criação de bancos separados a partir de uma fonte local, migrada, vazia e identificada. A fonte não recebe os registros do cenário. O histórico permanece no banco do cenário até seu descarte integral; não é necessário desabilitar gatilhos ou apagar os eventos para limpá-lo.
+
+O descarte confere nome, identificador interno, proprietário e marcador antes de remover somente o banco criado pelo harness. Recusa marcador divergente e conexões ainda abertas; não usa `FORCE` nem encerra sessões desconhecidas. Este módulo é exclusivo do harness e não inicia um servidor HTTP. Essa preparação de testes, isoladamente, não entrega a separação de privilégios do portal nem as demais proteções da EC067; os testes com credencial limitada e as proteções do serviço continuam necessários.
+
+O harness das jornadas agora deriva um banco por cenário, fecha seu portal e suas conexões antes de descartá-lo e restaura a configuração da fonte para a próxima execução. `db:demo` e o seed continuam persistentes no banco explicitamente identificado; não recebem essa semântica de descarte. `test:cleanup` consulta a fonte original e o catálogo de bancos em modo somente leitura, recusando resíduos sem removê-los. A integração desse isolamento não equivale à proteção completa de auditoria.
 
 ## Evidência necessária para concluir EC067
 

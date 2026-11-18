@@ -485,12 +485,7 @@ async function main() {
       'OK: erro do armazenamento recusa acesso e restauração recupera o serviço.',
     );
   } finally {
-    try {
-      if (ids.length)
-        await db.student.deleteMany({ where: { id: { in: ids } } });
-    } finally {
-      await environment.close();
-    }
+    await environment.close();
   }
 }
 main().catch(reportTestFailure);

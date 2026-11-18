@@ -8,7 +8,7 @@ test('calendário manual saiu do menu, atalhos levam à importação e API antig
 }) => {
   const env = await openTestEnvironment({ http: true });
   const { db, base } = env;
-  let id: string | undefined;
+
   try {
     const staff = await db.student.create({
       data: {
@@ -25,7 +25,7 @@ test('calendário manual saiu do menu, atalhos levam à importação e API antig
       },
       include: { account: true },
     });
-    id = staff.id;
+
     const token = randomBytes(32).toString('base64url');
     await db.session.create({
       data: {
@@ -75,10 +75,6 @@ test('calendário manual saiu do menu, atalhos levam à importação e API antig
       ).status(),
     ).toBe(401);
   } finally {
-    try {
-      if (id) await db.student.deleteMany({ where: { id } });
-    } finally {
-      await env.close();
-    }
+    await env.close();
   }
 });

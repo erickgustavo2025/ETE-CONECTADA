@@ -32,15 +32,9 @@ npm ci --ignore-scripts
 
 ### Configurar o banco do portal
 
-Use um banco de desenvolvimento. No Neon, crie uma branch própria para isso. Crie `apps/portal/.env.local` a partir de [`.env.example`](apps/portal/.env.example) e preencha `DATABASE_URL` com a conexão desse banco. `DIRECT_URL` é opcional e permite usar uma conexão direta nos comandos do Prisma.
+Use um banco de desenvolvimento. Configure um papel de acesso limitado para o portal e aplique as migrações com a credencial de manutenção. O [guia do banco](apps/portal/prisma/README.md) mostra os comandos e a configuração de `DATABASE_URL`.
 
-Aplique as migrações nesse banco:
-
-```bash
-npm run db:migrate --workspace @ete-conectada/portal
-```
-
-Os comandos de desenvolvimento e build geram o cliente Prisma automaticamente. Mais detalhes sobre o banco, as migrações e o Prisma Studio estão no [guia do banco](apps/portal/prisma/README.md).
+Os comandos de desenvolvimento e build geram o cliente Prisma automaticamente.
 
 Ao atualizar uma instalação existente, pare o portal antes de migrar e reinicie com o código novo. A correção de fuso da conexão encerra sessões e invalida links e prévias anteriores, preservando contas e dados escolares. Veja o [procedimento de atualização](docs/seguranca/horarios-banco.md).
 
