@@ -37,6 +37,15 @@ try {
         ),
       );
       await page.getByRole('heading', { level: 1 }).waitFor();
+      if (!index && process.env.CONTAINER_EXPECTED_PORTAL_ORIGIN) {
+        const expected = new URL(process.env.CONTAINER_EXPECTED_PORTAL_ORIGIN);
+        await expect(
+          page.getByRole('link', { name: 'Acessar portal', exact: true }),
+        ).toHaveAttribute('href', new URL('/', expected).toString());
+        await expect(
+          page.getByRole('link', { name: 'Primeiro acesso', exact: false }),
+        ).toHaveAttribute('href', new URL('/cadastro', expected).toString());
+      }
       if (index) {
         const password = page.getByLabel('Senha', { exact: true });
         assert.equal(await password.getAttribute('type'), 'password');

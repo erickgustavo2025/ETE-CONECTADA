@@ -1,14 +1,6 @@
-import Image from "next/image";
-import type { ReactNode } from "react";
-import CrossAppLink from "../../../../shared/navigation/cross-app-link";
-
-const lanHost = process.env.NEXT_PUBLIC_LAN_HOST;
-const siteUrl =
-  process.env.NODE_ENV === "development"
-    ? lanHost
-      ? `http://${lanHost}:3000`
-      : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-    : process.env.NEXT_PUBLIC_SITE_URL || "https://eteconectada.com";
+import Image from 'next/image';
+import type { ReactNode } from 'react';
+import CrossAppLink from '../../../../shared/navigation/cross-app-link';
 
 export function StateMarks() {
   return (
@@ -69,14 +61,17 @@ export function SchoolFooter() {
 }
 
 export function PortalNavigationLink({
-  destination = "home",
+  destination = 'home',
   siteHref,
+  siteDevelopmentPort,
 }: {
-  destination?: "home" | "site";
+  destination?: 'home' | 'site';
   siteHref?: string;
+  siteDevelopmentPort?: number;
 }) {
-  const isSite = destination === "site";
-  const label = isSite ? "Site da escola" : "Página inicial";
+  const isSite = destination === 'site';
+  if (isSite && !siteHref) return null;
+  const label = isSite ? 'Site da escola' : 'Página inicial';
   const content = (
     <>
       <svg
@@ -105,11 +100,11 @@ export function PortalNavigationLink({
       <span>{label}</span>
     </>
   );
-  return isSite ? (
+  return isSite && siteHref ? (
     <CrossAppLink
       className="portal-navigation-link ete-button ete-button--header"
-      href={siteHref ?? siteUrl}
-      developmentPort={3000}
+      href={siteHref}
+      developmentPort={siteDevelopmentPort}
       aria-label={label}
       title={label}
     >

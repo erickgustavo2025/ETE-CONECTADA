@@ -1,18 +1,8 @@
 import Image from 'next/image';
 import { headers } from 'next/headers';
 import CrossAppLink from '../../../shared/navigation/cross-app-link';
+import { crossAppDestination } from '../../../shared/navigation/cross-app-destination';
 import PernambucoArt from '../../../shared/brand/pernambuco-art';
-
-const lanHost = process.env.NEXT_PUBLIC_LAN_HOST;
-const configuredLoginUrl =
-  process.env.NODE_ENV === 'development'
-    ? lanHost
-      ? `http://${lanHost}:3001/login`
-      : process.env.NEXT_PUBLIC_PORTAL_LOGIN_URL ||
-        'http://localhost:3001/login'
-    : process.env.NEXT_PUBLIC_PORTAL_LOGIN_URL ||
-      'https://portal.eteconectada.com/login';
-const portalUrl = new URL('/', configuredLoginUrl).toString();
 
 function StateMarks() {
   return (
@@ -37,23 +27,16 @@ function StateMarks() {
   );
 }
 export default async function Home() {
-  // O link já chega com o host certo no HTML, antes da hidratação do navegador.
-  const requestHost =
-    process.env.NODE_ENV === 'development'
-      ? (await headers()).get('host')
-      : null;
-  let entryUrl = portalUrl;
-  if (requestHost) {
-    try {
-      const url = new URL(`http://${requestHost}`);
-      url.port = '3001';
-      url.pathname = '/';
-      entryUrl = url.toString();
-    } catch {
-      /* Usa a configuração inicial quando o Host não é válido. */
-    }
-  }
-  const firstAccessUrl = new URL('/cadastro', entryUrl).toString();
+  const development = process.env.NODE_ENV === 'development';
+  const portal = crossAppDestination(process.env.NEXT_PUBLIC_PORTAL_LOGIN_URL, {
+    development,
+    port: 3001,
+    requestHost: development ? (await headers()).get('host') : null,
+    lanHost: process.env.NEXT_PUBLIC_LAN_HOST,
+  });
+  const firstAccessUrl = portal
+    ? new URL('/cadastro', portal.href).toString()
+    : null;
   return (
     <div className="site-page">
       <a className="skip-link" href="#conteudo">
@@ -91,20 +74,22 @@ export default async function Home() {
             <a className="about-link" href="#sobre">
               Sobre a escola
             </a>
-            <CrossAppLink
-              className="header-button ete-button ete-button--header"
-              href={entryUrl}
-              developmentPort={3001}
-            >
-              <Image
-                className="entry-icon"
-                src="/icons/login.png"
-                width={800}
-                height={800}
-                alt=""
-              />
-              Acessar portal
-            </CrossAppLink>
+            {portal && (
+              <CrossAppLink
+                className="header-button ete-button ete-button--header"
+                href={portal.href}
+                developmentPort={portal.developmentPort}
+              >
+                <Image
+                  className="entry-icon"
+                  src="/icons/login.png"
+                  width={800}
+                  height={800}
+                  alt=""
+                />
+                Acessar portal
+              </CrossAppLink>
+            )}
           </nav>
         </div>
       </header>
@@ -126,22 +111,24 @@ export default async function Home() {
                 O espaço digital da nossa ETE. Um caminho mais simples para
                 acessar os serviços da escola.
               </p>
-              <div className="hero-actions">
-                <CrossAppLink
-                  className="primary-button ete-button"
-                  href={entryUrl}
-                  developmentPort={3001}
-                >
-                  Acessar meu portal <span aria-hidden="true">→</span>
-                </CrossAppLink>
-                <CrossAppLink
-                  className="text-link"
-                  href={firstAccessUrl}
-                  developmentPort={3001}
-                >
-                  Primeiro acesso <span aria-hidden="true">↗</span>
-                </CrossAppLink>
-              </div>
+              {portal && firstAccessUrl && (
+                <div className="hero-actions">
+                  <CrossAppLink
+                    className="primary-button ete-button"
+                    href={portal.href}
+                    developmentPort={portal.developmentPort}
+                  >
+                    Acessar meu portal <span aria-hidden="true">→</span>
+                  </CrossAppLink>
+                  <CrossAppLink
+                    className="text-link"
+                    href={firstAccessUrl}
+                    developmentPort={portal.developmentPort}
+                  >
+                    Primeiro acesso <span aria-hidden="true">↗</span>
+                  </CrossAppLink>
+                </div>
+              )}
             </div>
             <div className="brand-stage">
               <PernambucoArt className="stage-art" />
@@ -175,29 +162,32 @@ export default async function Home() {
               Uma Escola Técnica Estadual de Pernambuco. Este é o ponto de
               encontro digital da nossa comunidade escolar.
             </p>
-            <p className="muted">
-              O portal está em desenvolvimento. Já é possível criar seu acesso,
-              solicitar sua declaração de vínculo e acompanhar o atendimento
-              pela secretaria.
-            </p>
+            {portal && (
+              <p className="muted">
+                Pelo portal, você pode solicitar sua declaração de vínculo e
+                consultar seus documentos.
+              </p>
+            )}
           </div>
         </section>
-        <section
-          className="school-access container"
-          aria-label="Primeiro acesso ao portal"
-        >
-          <div>
-            <h3>É sua primeira vez por aqui?</h3>
-            <p>Tenha sua matrícula e data de nascimento em mãos.</p>
-          </div>
-          <CrossAppLink
-            className="ete-button ete-button--secondary"
-            href={firstAccessUrl}
-            developmentPort={3001}
+        {portal && firstAccessUrl && (
+          <section
+            className="school-access container"
+            aria-label="Primeiro acesso ao portal"
           >
-            Criar meu acesso <span aria-hidden="true">→</span>
-          </CrossAppLink>
-        </section>
+            <div>
+              <h3>É sua primeira vez por aqui?</h3>
+              <p>Tenha sua matrícula e data de nascimento em mãos.</p>
+            </div>
+            <CrossAppLink
+              className="ete-button ete-button--secondary"
+              href={firstAccessUrl}
+              developmentPort={portal.developmentPort}
+            >
+              Criar meu acesso <span aria-hidden="true">→</span>
+            </CrossAppLink>
+          </section>
+        )}
       </main>
       <footer className="site-footer">
         <div className="container footer-inner">

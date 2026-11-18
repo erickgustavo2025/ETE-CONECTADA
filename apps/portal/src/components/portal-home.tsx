@@ -15,6 +15,7 @@ import PernambucoArt from '../../../../shared/brand/pernambuco-art';
 type PortalHomeProps = {
   studentName: string | null;
   siteHref?: string;
+  siteDevelopmentPort?: number;
   role?: 'student' | 'secretary';
   children?: ReactNode;
   internalPage?: boolean;
@@ -79,6 +80,7 @@ function ServiceIcon({ name }: { name: string }) {
 export default function PortalHome({
   studentName,
   siteHref,
+  siteDevelopmentPort,
   role = 'student',
   children,
   internalPage = false,
@@ -144,6 +146,7 @@ export default function PortalHome({
             <PortalNavigationLink
               destination={internalPage ? 'home' : 'site'}
               siteHref={siteHref}
+              siteDevelopmentPort={siteDevelopmentPort}
             />
           </div>
         </div>

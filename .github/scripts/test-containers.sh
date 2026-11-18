@@ -105,6 +105,7 @@ for app in site portal; do
   urls[$app]="http://$(docker port "$id" 3000/tcp)"
   docker image inspect --format 'Imagem conferida: {{.Id}}; usuário={{.Config.User}}' "$image"
 done
+CONTAINER_EXPECTED_PORTAL_ORIGIN=https://portal.example.invalid \
 CONTAINER_SITE_URL="${urls[site]}" CONTAINER_PORTAL_URL="${urls[portal]}" node scripts/test-container-browser.mjs
 
 # Scanner fixo e verificado, sem ler configurações/segredos do desenvolvedor.
