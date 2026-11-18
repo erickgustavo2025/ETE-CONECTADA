@@ -133,7 +133,7 @@ O [Dependabot](.github/dependabot.yml) propõe atualizações semanais, que são
 
 ## Operar uma release
 
-Use o [procedimento de migração e retorno do portal](docs/operacao/migracoes-release.md) para preparar a manutenção do banco e conferir a compatibilidade da versão anterior.
+Use o [procedimento de migração e retorno do portal](docs/operacao/migracoes-release.md) para preparar a manutenção do banco e conferir a compatibilidade da versão anterior. Veja a [checagem operacional](docs/operacao/monitoramento.md) para conferir os serviços e identificar falhas.
 
 ## Como colaborar
 

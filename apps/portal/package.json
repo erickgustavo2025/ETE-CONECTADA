@@ -55,6 +55,8 @@
     "test:account-password-change": "node --import tsx scripts/test-account-password-change.ts",
     "test:smtp": "node --import tsx scripts/test-smtp-delivery.ts",
     "test:mail-failures": "node --import tsx scripts/test-registration-mail.ts",
+    "test:operational-health": "node --import tsx scripts/test-operational-health.ts",
+    "ops:health": "node --import tsx scripts/check-operational-health.ts",
     "test:backup": "node --import tsx scripts/test-backup-restore.ts",
     "test:birthplace": "node --import tsx scripts/test-declaration-birthplace.ts",
     "test:subsequent-declaration": "node --import tsx scripts/test-subsequent-declaration-http.ts",
