@@ -37,14 +37,34 @@ try {
         ),
       );
       await page.getByRole('heading', { level: 1 }).waitFor();
-      if (!index && process.env.CONTAINER_EXPECTED_PORTAL_ORIGIN) {
-        const expected = new URL(process.env.CONTAINER_EXPECTED_PORTAL_ORIGIN);
-        await expect(
-          page.getByRole('link', { name: 'Acessar portal', exact: true }),
-        ).toHaveAttribute('href', new URL('/', expected).toString());
-        await expect(
-          page.getByRole('link', { name: 'Primeiro acesso', exact: false }),
-        ).toHaveAttribute('href', new URL('/cadastro', expected).toString());
+      if (
+        !index &&
+        process.env.CONTAINER_EXPECTED_PORTAL_ORIGIN !== undefined
+      ) {
+        const portal = page.getByRole('link', {
+          name: 'Acessar portal',
+          exact: true,
+        });
+        const registration = page.getByRole('link', {
+          name: 'Primeiro acesso',
+          exact: false,
+        });
+        if (process.env.CONTAINER_EXPECTED_PORTAL_ORIGIN) {
+          const expected = new URL(
+            process.env.CONTAINER_EXPECTED_PORTAL_ORIGIN,
+          );
+          await expect(portal).toHaveAttribute(
+            'href',
+            new URL('/', expected).toString(),
+          );
+          await expect(registration).toHaveAttribute(
+            'href',
+            new URL('/cadastro', expected).toString(),
+          );
+        } else {
+          await expect(portal).toHaveCount(0);
+          await expect(registration).toHaveCount(0);
+        }
       }
       if (index) {
         const password = page.getByLabel('Senha', { exact: true });
