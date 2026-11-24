@@ -10,6 +10,8 @@ Antes de guardar os arquivos, o workflow exige CI e análise de segurança aprov
 
 ## Conteúdo e identidade
 
+O site do pacote de homologação sai sem atalhos para o portal enquanto o endereço oficial não estiver configurado no build. O endereço fictício usado nas verificações comuns não vai na imagem do pacote.
+
 O artefato `imagens-COMMIT-RUN-TENTATIVA` contém apenas:
 
 - `site.tar.gz` e `portal.tar.gz`: imagens salvas pelo Docker, comprimidas depois dos testes;
