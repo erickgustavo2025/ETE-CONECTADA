@@ -81,11 +81,16 @@ python3 scripts/check-container-layers.py "$work/negative.tar" "$marker" || resu
 [[ "$result" == 1 ]] || { echo 'Controle negativo não reprovou no vazamento esperado.' >&2; exit 1; }
 echo 'OK: controle negativo detectou dado apagado que persistiu na camada anterior.'
 
+portal_origin=https://portal.example.invalid
+if [[ -n "${TEST_IMAGE_OUTPUT_DIR:-}" ]]; then
+  # O pacote de homologação não pode sair com um endereço fictício no site.
+  portal_origin=''
+fi
 declare -A urls image_ids
 for app in site portal; do
   image="ete-$app:$run_id"
   docker build --file "$work/context/Dockerfile" --target "$app" \
-    --build-arg NEXT_PUBLIC_PORTAL_LOGIN_URL=https://portal.example.invalid/login \
+    --build-arg "NEXT_PUBLIC_PORTAL_LOGIN_URL=${portal_origin:+$portal_origin/login}" \
     --label "org.opencontainers.image.revision=$source_commit" \
     --label "org.opencontainers.image.title=ete-$app" \
     --label "ete.test.id=$run_id" --tag "$image" "$work/context"
@@ -105,7 +110,7 @@ for app in site portal; do
   urls[$app]="http://$(docker port "$id" 3000/tcp)"
   docker image inspect --format 'Imagem conferida: {{.Id}}; usuário={{.Config.User}}' "$image"
 done
-CONTAINER_EXPECTED_PORTAL_ORIGIN=https://portal.example.invalid \
+CONTAINER_EXPECTED_PORTAL_ORIGIN="$portal_origin" \
 CONTAINER_SITE_URL="${urls[site]}" CONTAINER_PORTAL_URL="${urls[portal]}" node scripts/test-container-browser.mjs
 
 # Scanner fixo e verificado, sem ler configurações/segredos do desenvolvedor.
