@@ -35,7 +35,7 @@ python3 scripts/release-artifact.py verify /caminho/do/pacote COMMIT_DE_40_CARAC
 
 Esse comando não inicia containers nem faz deploy. Usa somente os seis arquivos conhecidos e não extrai as camadas. Um hash prova integridade em relação à referência conferida; não é assinatura nem comprovação independente de autoria. Obtenha o pacote por uma execução confiável, confirme o commit revisado e a origem. Não aceite um manifesto recebido por outro canal somente porque seus próprios hashes combinam.
 
-Uma nova tentativa pode produzir outro ID de imagem. Escolha o pacote exato e promova seus mesmos bytes; não reconstrua a imagem silenciosamente para outro ambiente. Publicação autenticada num registry aprovado, armazenamento definitivo, aprovação de deploy e rollback continuam em suas etapas próprias.
+Uma nova tentativa pode produzir outro ID de imagem. Escolha o pacote exato e promova seus mesmos bytes; não reconstrua a imagem silenciosamente para outro ambiente. A publicação no GHCR é feita por um workflow separado, que reaproveita este pacote ([Publicação no GHCR](publicacao-ghcr.md)). Armazenamento definitivo, aprovação de deploy e rollback continuam em suas etapas próprias.
 
 ## Limites e segurança
 
