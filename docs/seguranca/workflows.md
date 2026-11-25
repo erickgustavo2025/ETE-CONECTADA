@@ -1,6 +1,6 @@
 # Segurança dos workflows
 
-O CI verifica código de branches e pull requests em runners hospedados pelo GitHub. Ele não publica a aplicação nem acessa a VPS ou o banco da escola. A auditoria de dependências consulta o lockfile por agendamento ou execução manual.
+O CI verifica código de branches e pull requests em runners hospedados pelo GitHub. Ele não publica a aplicação nem acessa a VPS ou o banco da escola. A auditoria de dependências consulta o lockfile por agendamento ou execução manual. A publicação das imagens é um fluxo separado, manual e restrito à `main`, descrito em [Publicação no GHCR](../publicacao-ghcr.md).
 
 ## Permissões e execução
 

@@ -1,0 +1,118 @@
+name: Publicar imagens no GHCR
+
+# Publica no GHCR os MESMOS bytes já construídos, testados e auditados pelo
+# workflow "Imagens Docker". Não reconstrói nada. Somente execução manual na main.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: ID numérico da execução de "Imagens Docker" (na main) que guardou o pacote verificado
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Verificar pacote e publicar site e portal
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    env:
+      RUN_ID: ${{ inputs.run_id }}
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Conferir a execução informada
+        id: origem
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ ! "$RUN_ID" =~ ^[0-9]{1,20}$ ]]; then
+            echo 'Informe somente o número da execução de Imagens Docker.' >&2
+            exit 1
+          fi
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID")
+          if ! jq -e --arg repo "$GITHUB_REPOSITORY" '
+              (.path | startswith(".github/workflows/images.yml"))
+              and .conclusion == "success"
+              and .head_branch == "main"
+              and .event == "workflow_dispatch"
+              and (.head_repository.full_name | ascii_downcase) == ($repo | ascii_downcase)
+            ' <<<"$run" >/dev/null; then
+            echo 'A execução precisa ser de Imagens Docker, aprovada, iniciada manualmente na main deste repositório.' >&2
+            exit 1
+          fi
+          sha=$(jq -r '.head_sha' <<<"$run")
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'Commit da execução inválido.' >&2
+            exit 1
+          fi
+          artifacts=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?per_page=100")
+          ids=$(jq -r --arg sha "$sha" --arg run "$RUN_ID" '
+              [.artifacts[]
+                | select(.expired == false
+                  and (.name | test("^imagens-" + $sha + "-" + $run + "-[0-9]+$")))
+                | .id] | .[]
+            ' <<<"$artifacts")
+          if [[ "$(wc -l <<<"$ids")" != 1 || ! "$ids" =~ ^[0-9]+$ ]]; then
+            echo 'Não há exatamente um pacote válido nessa execução. Ele expira em 3 dias: gere outro com Imagens Docker (execução manual).' >&2
+            exit 1
+          fi
+          {
+            echo "sha=$sha"
+            echo "artifact_id=$ids"
+          } >>"$GITHUB_OUTPUT"
+      - name: Baixar somente o pacote dessa execução
+        id: download
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.origem.outputs.artifact_id }}
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/ete-publicar-${{ github.run_id }}
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Conferir integridade e commit do pacote
+        env:
+          DIR: ${{ steps.download.outputs.download-path }}
+          SHA: ${{ steps.origem.outputs.sha }}
+        run: python3 scripts/release-artifact.py verify "$DIR" "$SHA"
+      - name: Publicar site e portal no GHCR
+        env:
+          DIR: ${{ steps.download.outputs.download-path }}
+          SHA: ${{ steps.origem.outputs.sha }}
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          repo="${GITHUB_REPOSITORY,,}"
+          short="${SHA:0:12}"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          {
+            echo '## Imagens publicadas'
+            echo "Commit: \`$SHA\`"
+          } >>"$GITHUB_STEP_SUMMARY"
+          for app in site portal; do
+            image_id=$(jq -r --arg app "$app" '.images[] | select(.app == $app) | .image_id' "$DIR/release.json")
+            [[ "$image_id" =~ ^sha256:[a-f0-9]{64}$ ]]
+            docker load --input "$DIR/$app.tar.gz"
+            # O que foi carregado precisa ser exatamente a imagem testada.
+            [[ "$(docker image inspect --format '{{.Id}}' "$image_id")" == "$image_id" ]]
+            name="ghcr.io/$repo-$app"
+            docker tag "$image_id" "$name:sha-$short"
+            docker tag "$image_id" "$name:latest"
+            docker push "$name:sha-$short"
+            docker push "$name:latest"
+            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$name:sha-$short")
+            echo "- \`$digest\` (tags \`sha-$short\` e \`latest\`)" >>"$GITHUB_STEP_SUMMARY"
+          done
