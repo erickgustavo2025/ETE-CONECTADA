@@ -22,6 +22,7 @@
     "test:unit": "npm run test:unit --workspace @ete-conectada/portal",
     "audit:dependencies": "npm audit --audit-level=high",
     "db:demo": "npm run db:demo --workspace @ete-conectada/portal",
+    "db:demo:devops": "npm run db:demo --workspace @ete-conectada/portal -- --turma-devops",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "eslint apps shared scripts eslint.config.mjs --max-warnings=0",
     "format": "node scripts/format.mjs --write",
