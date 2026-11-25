@@ -1,9 +1,8 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
 import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { hashSessionToken } from '@/lib/session';
+import { currentSessionHash } from '@/lib/session';
 import { sessionCookiePolicy } from '@/lib/session-cookie';
 
 export const runtime = 'nodejs';
@@ -15,11 +14,11 @@ async function handlePOST(request: Request) {
       { status: 403, headers: privateHeaders },
     );
   const cookie = sessionCookiePolicy();
-  const token = (await cookies()).get(cookie.name)?.value;
-  if (process.env.NODE_ENV === 'development' && token) {
+  const tokenHash = await currentSessionHash();
+  if (tokenHash) {
     try {
       await getDb().session.deleteMany({
-        where: { tokenHash: hashSessionToken(token) },
+        where: { tokenHash },
       });
     } catch {
       /* O cookie ainda é removido se o banco estiver indisponível. */

@@ -13,6 +13,7 @@ import {
 import { currentSessionHash } from './session';
 import { sessionCookiePolicy } from './session-cookie';
 import { findSessionRecord } from './session-record';
+import { portalAccessEnabled } from './portal-access';
 
 export function accountChangeFailure(error: string, status: number) {
   return NextResponse.json({ error }, { status, headers: privateHeaders });
@@ -29,7 +30,7 @@ export async function readAccountChange(
       body: Record<string, unknown>;
     }
 > {
-  if (process.env.NODE_ENV !== 'development')
+  if (!portalAccessEnabled())
     return {
       response: accountChangeFailure(
         'Alterações de conta indisponíveis neste ambiente.',

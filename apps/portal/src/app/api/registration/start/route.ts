@@ -1,4 +1,5 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
+import { portalAccessEnabled } from '@/lib/portal-access';
 import { verificationDelivery } from '@/lib/verification-delivery';
 import { MailDeliveryError } from '@/lib/email-transport';
 import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
@@ -22,7 +23,6 @@ import {
   normalizeCpf,
   normalizeSchoolRegistration,
   normalizeEmail,
-  registrationEnabled,
   validBirthDate,
   normalizeParentName,
 } from '@/lib/registration';
@@ -30,7 +30,7 @@ import {
 export const runtime = 'nodejs';
 
 async function handlePOST(request: Request) {
-  if (!registrationEnabled) return disabledResponse();
+  if (!portalAccessEnabled()) return disabledResponse();
   if (!sameOriginRequest(request))
     return Response.json(
       { error: 'Solicitação não autorizada.' },

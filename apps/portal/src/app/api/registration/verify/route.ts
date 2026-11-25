@@ -1,4 +1,5 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
+import { portalAccessEnabled } from '@/lib/portal-access';
 import { sameOriginRequest, privateHeaders } from '@/lib/private-request';
 import { getDb } from '@/lib/db';
 import {
@@ -11,16 +12,12 @@ import {
   verifyAccount,
   RegistrationConflict,
 } from '@/lib/account-registration';
-import {
-  databaseErrorResponse,
-  disabledResponse,
-  registrationEnabled,
-} from '@/lib/registration';
+import { databaseErrorResponse, disabledResponse } from '@/lib/registration';
 
 export const runtime = 'nodejs';
 
 async function handlePOST(request: Request) {
-  if (!registrationEnabled) return disabledResponse();
+  if (!portalAccessEnabled()) return disabledResponse();
   if (!sameOriginRequest(request))
     return Response.json(
       { error: 'Solicitação não autorizada.' },

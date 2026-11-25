@@ -1,4 +1,5 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
+import { portalAccessEnabled } from '@/lib/portal-access';
 import {
   consumeAccessAttempt,
   accessLimitResponse,
@@ -34,7 +35,7 @@ function rejected(reason: ResetProblem) {
 
 export const runtime = 'nodejs';
 async function handlePOST(request: Request) {
-  if (process.env.NODE_ENV !== 'development') return disabledResponse();
+  if (!portalAccessEnabled()) return disabledResponse();
   if (!sameOriginRequest(request))
     return Response.json(
       { error: 'Solicitação não autorizada.' },

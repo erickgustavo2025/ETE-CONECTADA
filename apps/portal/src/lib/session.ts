@@ -5,6 +5,7 @@ import { findSessionRecord } from '@/lib/session-record';
 import type { SessionRecord } from '@/lib/session-record';
 
 import { sessionCookiePolicy } from './session-cookie';
+import { portalAccessEnabled } from './portal-access';
 export { sessionDurationSeconds } from './session-cookie';
 
 export function hashSessionToken(token: string): string {
@@ -12,7 +13,7 @@ export function hashSessionToken(token: string): string {
 }
 
 export async function currentSessionHash(): Promise<string | null> {
-  if (process.env.NODE_ENV !== 'development') return null;
+  if (!portalAccessEnabled()) return null;
   const token = (await cookies()).get(sessionCookiePolicy().name)?.value;
   if (!token || !/^[A-Za-z0-9_-]{40,50}$/.test(token)) return null;
   return hashSessionToken(token);

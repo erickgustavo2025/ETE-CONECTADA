@@ -18,15 +18,15 @@ import { createVerifiedSession } from '@/lib/session-record';
 import { hashSessionToken, sessionDurationSeconds } from '@/lib/session';
 
 import { sessionCookiePolicy } from '@/lib/session-cookie';
+import { portalAccessEnabled } from '@/lib/portal-access';
 
 export const runtime = 'nodejs';
 
 async function handlePOST(request: Request) {
-  // Fluxo de desenvolvimento definido pela equipe; produção continua bloqueada.
-  if (process.env.NODE_ENV !== 'development') {
+  if (!portalAccessEnabled()) {
     return NextResponse.json(
       { error: 'Acesso indisponível.' },
-      { status: 404 },
+      { status: 404, headers: privateHeaders },
     );
   }
 
@@ -65,6 +65,9 @@ async function handlePOST(request: Request) {
     const row = await getDb().account.findFirst({
       where: {
         status: 'active',
+        ...(process.env.NODE_ENV === 'production'
+          ? { OR: [{ role: 'student' }, { studentId: null }] }
+          : {}),
         ...(value.includes('@')
           ? { email: { equals: value, mode: 'insensitive' as const } }
           : { role: 'student', student: { cpf } }),
@@ -127,15 +130,16 @@ async function handlePOST(request: Request) {
     const cookie = sessionCookiePolicy();
     response.cookies.set(cookie.name, token, cookie.options);
     response.headers.set('Cache-Control', 'no-store');
-    // Tempos de desenvolvimento, sem credenciais ou dados do aluno.
-    response.headers.set(
-      'Server-Timing',
-      [
-        `lookup;dur=${(lookupFinished - started).toFixed(1)}`,
-        `password;dur=${(passwordFinished - lookupFinished).toFixed(1)}`,
-        `session;dur=${(sessionFinished - passwordFinished).toFixed(1)}`,
-      ].join(', '),
-    );
+    if (process.env.NODE_ENV === 'development') {
+      response.headers.set(
+        'Server-Timing',
+        [
+          `lookup;dur=${(lookupFinished - started).toFixed(1)}`,
+          `password;dur=${(passwordFinished - lookupFinished).toFixed(1)}`,
+          `session;dur=${(sessionFinished - passwordFinished).toFixed(1)}`,
+        ].join(', '),
+      );
+    }
     return response;
   } catch {
     return NextResponse.json(

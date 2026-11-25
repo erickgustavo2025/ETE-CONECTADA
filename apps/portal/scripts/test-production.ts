@@ -6,6 +6,9 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { findSessionRecord } from '../src/lib/session-record';
+import { hashPassword } from '../src/lib/password';
+import { claimAccount } from '../src/lib/account-registration';
+import { changeStaffAccess } from './staff-access';
 import {
   openTestEnvironment,
   reportTestFailure,
@@ -69,6 +72,7 @@ async function main() {
   try {
     const token = randomBytes(32).toString('base64url');
     const tokenHash = createHash('sha256').update(token).digest('hex');
+    const legacyPassword = randomBytes(20).toString('base64url');
     const student = await db.student.create({
       data: {
         schoolRegistration: String(randomInt(10000000, 99999999)),
@@ -83,7 +87,7 @@ async function main() {
         role: 'secretary',
         status: 'active',
         email: `producao-${studentId}@eteconectada.invalid`,
-        passwordHash: 'fixture-not-used-for-login',
+        passwordHash: await hashPassword(legacyPassword),
       },
     });
     assert.ok(account.email);
@@ -213,14 +217,22 @@ async function main() {
         );
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
-    const request = (path: string, body?: unknown) =>
+    const canonicalOrigin = 'https://portal.example.invalid';
+    const request = (
+      path: string,
+      body?: unknown,
+      sessionToken: string | null = token,
+      origin = canonicalOrigin,
+    ) =>
       fetch(`${base}${path}`, {
         method: body === undefined ? 'GET' : 'POST',
         redirect: 'manual',
         headers: {
-          Cookie: `__Host-ete_portal_session=${token}`,
+          ...(sessionToken
+            ? { Cookie: `__Host-ete_portal_session=${sessionToken}` }
+            : {}),
           'Content-Type': 'application/json',
-          Origin: 'https://portal.example.invalid',
+          Origin: origin,
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         signal: AbortSignal.any([
@@ -413,38 +425,42 @@ async function main() {
     );
     await stop(server);
     env.DECLARATION_ISSUANCE_MODE = 'school';
-    const schoolServer = launch(
-      [
-        require.resolve('next/dist/bin/next'),
-        'start',
-        '--hostname',
-        '127.0.0.1',
-        '--port',
-        String(port),
-      ],
-      portal,
-    );
-    const schoolDeadline = Date.now() + 60000;
-    while (true) {
-      if (
-        controller.signal.aborted ||
-        schoolServer.exitCode !== null ||
-        schoolServer.signalCode !== null
-      )
-        throw new TestEnvironmentError(
-          'Servidor escolar de produção interrompido.',
-        );
-      try {
-        if ((await request('/login')).status === 200) break;
-      } catch {
-        /* somente servidor próprio */
+    env.PORTAL_ACCESS_MODE = 'school';
+    env.HTTPS_VERIFIED = 'true';
+    async function startSchool() {
+      const schoolServer = launch(
+        [
+          require.resolve('next/dist/bin/next'),
+          'start',
+          '--hostname',
+          '127.0.0.1',
+          '--port',
+          String(port),
+        ],
+        portal,
+      );
+      const until = Date.now() + 60000;
+      while (Date.now() < until) {
+        if (
+          controller.signal.aborted ||
+          schoolServer.exitCode !== null ||
+          schoolServer.signalCode !== null
+        )
+          throw new TestEnvironmentError(
+            'Servidor escolar de produção interrompido.',
+          );
+        try {
+          if ((await request('/login')).status === 200) return schoolServer;
+        } catch {
+          /* Aguarda somente o servidor próprio. */
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
-      if (Date.now() > schoolDeadline)
-        throw new TestEnvironmentError(
-          'Servidor escolar não iniciou em um minuto.',
-        );
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      throw new TestEnvironmentError(
+        'Servidor escolar não iniciou em um minuto.',
+      );
     }
+    const schoolServer = await startSchool();
     const schoolPage = await request('/validar/' + 'A'.repeat(43));
     assert.equal(schoolPage.status, 200);
     assert.match(schoolPage.headers.get('x-robots-tag') ?? '', /noindex/);
@@ -471,13 +487,209 @@ async function main() {
     assert.equal(
       connections,
       0,
-      'Ativar documentos não permite autenticação experimental ou consulta privada.',
+      'Configuração incompleta de e-mail mantém o acesso fechado.',
     );
     console.log(
       'Produção: configuração escolar explícita habilita somente a consulta; origem, autenticação e dados privados continuam protegidos.',
     );
     console.log(
       'Produção: build sem banco; cadastro/login bloqueados; sessão válida recusada; logout sem consulta; nenhum link/token de teste retornado.',
+    );
+    await stop(schoolServer);
+
+    assert.ok(process.env.DATABASE_URL);
+    env.DATABASE_URL = process.env.DATABASE_URL;
+    delete env.DIRECT_URL;
+    // O provedor é representado pelo transporte de captura do convite. Nenhum envio externo.
+    env.EMAIL_TRANSPORT = 'smtp';
+    env.EMAIL_FROM = 'secretaria@eteconectada.invalid';
+    env.SMTP_HOST = '127.0.0.1';
+    env.SMTP_PORT = String(address.port);
+    env.SMTP_USER = 'smtp-fixture-user';
+    env.SMTP_PASSWORD = randomBytes(24).toString('base64url');
+    const enabled = await startSchool();
+    const staffEmail = 'secretaria-producao@eteconectada.invalid';
+    const invitePassword = randomBytes(20).toString('base64url');
+    let inviteLink = '';
+    await changeStaffAccess(
+      db,
+      {
+        action: 'invite',
+        email: staffEmail,
+        name: 'Secretaria Fictícia de Produção',
+        reason: 'Acesso aprovado no ensaio fictício',
+      },
+      {
+        origin: canonicalOrigin,
+        async send(to, link) {
+          assert.equal(to, staffEmail);
+          inviteLink = link;
+        },
+      },
+    );
+    const inviteToken = new URLSearchParams(
+      new URL(inviteLink).hash.slice(1),
+    ).get('token');
+    const activation = {
+      token: inviteToken,
+      password: invitePassword,
+      confirmPassword: invitePassword,
+    };
+    assert.equal(
+      (
+        await request(
+          '/api/password-reset/confirm',
+          activation,
+          null,
+          'https://externo.invalid',
+        )
+      ).status,
+      403,
+    );
+    assert.equal(
+      (await request('/api/password-reset/confirm', activation, null)).status,
+      200,
+    );
+    assert.equal(
+      (await request('/api/password-reset/confirm', activation, null)).status,
+      400,
+    );
+    assert.equal(
+      (await request('/')).status,
+      307,
+      'Sessão antiga de demonstração é recusada.',
+    );
+    const legacyLogin = await request(
+      '/api/login',
+      {
+        identifier: account.email,
+        password: legacyPassword,
+      },
+      null,
+    );
+    assert.equal(legacyLogin.status, 401);
+
+    const staffLogin = () =>
+      request(
+        '/api/login',
+        { identifier: staffEmail, password: invitePassword },
+        null,
+      );
+    async function signedInToken(result: Response) {
+      assert.equal(result.status, 200);
+      const cookie = result.headers.get('set-cookie') ?? '';
+      const signedIn = cookie.match(
+        /^__Host-ete_portal_session=([a-z0-9_-]{43});/i,
+      )?.[1];
+      assert.ok(signedIn);
+      assert.match(cookie, /; Secure/i);
+      assert.match(cookie, /; HttpOnly/i);
+      assert.match(cookie, /; SameSite=lax/i);
+      assert.doesNotMatch(cookie, /; Domain=/i);
+      assert.equal(result.headers.get('server-timing'), null);
+      return signedIn;
+    }
+    const staffToken = await signedInToken(await staffLogin());
+    assert.equal(
+      (await request('/secretaria/declaracoes', undefined, staffToken)).status,
+      200,
+    );
+    assert.equal(
+      (await request('/api/declaracao/solicitacoes', undefined, staffToken))
+        .status,
+      403,
+    );
+    assert.equal((await request('/api/logout', {}, staffToken)).status, 200);
+    assert.equal((await request('/', undefined, staffToken)).status, 307);
+    const revokedToken = await signedInToken(await staffLogin());
+    await changeStaffAccess(db, {
+      action: 'revoke',
+      email: staffEmail,
+      reason: 'Acesso fictício retirado no ensaio',
+    });
+    assert.equal(
+      (await request('/secretaria/declaracoes', undefined, revokedToken))
+        .status,
+      307,
+    );
+    assert.equal((await staffLogin()).status, 401);
+
+    const identity = {
+      schoolRegistration: String(randomInt(10000000, 99999999)),
+      birthDate: '2008-03-15',
+      parentName: 'Filiação Fictícia da Produção',
+    };
+    const studentEmail = 'aluno-producao@eteconectada.invalid';
+    const studentPassword = randomBytes(20).toString('base64url');
+    await db.student.create({
+      data: {
+        fullName: 'Pessoa Estudante Fictícia',
+        schoolRegistration: identity.schoolRegistration,
+        birthDate: new Date(identity.birthDate),
+        registrationAllowed: true,
+        details: {
+          create: {
+            parentOne: identity.parentName,
+            parentageSource: 'SCHOOL_RECORD',
+          },
+        },
+      },
+    });
+    const check = await request('/api/registration/check', identity, null);
+    assert.equal(check.status, 200);
+    assert.deepEqual(await check.json(), { result: 'eligible' });
+    // A etapa de envio do cadastro é exercitada com captura em test-registration-mail.
+    const verificationToken = randomBytes(32).toString('base64url');
+    await claimAccount({
+      ...identity,
+      birthDate: new Date(identity.birthDate),
+      cpf: '52998224725',
+      email: studentEmail,
+      password: studentPassword,
+      passwordHash: await hashPassword(studentPassword),
+      tokenHash: createHash('sha256').update(verificationToken).digest('hex'),
+    });
+    const verify = await request(
+      '/api/registration/verify',
+      { token: verificationToken },
+      null,
+    );
+    assert.equal(verify.status, 200);
+    assert.deepEqual(await verify.json(), { result: 'verified' });
+    const studentLogin = () =>
+      request(
+        '/api/login',
+        { identifier: studentEmail, password: studentPassword },
+        null,
+      );
+    const studentToken = await signedInToken(await studentLogin());
+    assert.equal(
+      (await request('/api/declaracao/solicitacoes', undefined, studentToken))
+        .status,
+      200,
+    );
+    assert.equal(
+      (await request('/api/secretaria/documentos/busca', {}, studentToken))
+        .status,
+      403,
+    );
+    assert.equal(
+      (await request('/api/conta/senha', { desconhecido: true }, studentToken))
+        .status,
+      422,
+    );
+    assert.equal(
+      connections,
+      0,
+      'O ensaio de produção não envia e-mail externo.',
+    );
+    await stop(enabled);
+    delete env.PORTAL_ACCESS_MODE;
+    await startSchool();
+    assert.equal((await studentLogin()).status, 404);
+    assert.equal((await request('/', undefined, studentToken)).status, 307);
+    console.log(
+      'Produção: convite, cadastro, sessão segura, separação de papéis, retirada e desligamento conferidos.',
     );
   } finally {
     controller.abort();
