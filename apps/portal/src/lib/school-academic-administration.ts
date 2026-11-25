@@ -318,7 +318,11 @@ export async function manageAcademicEnrollment(
     orderBy: { revision: 'desc' },
     skip: (page - 1) * pageSize,
     take: pageSize,
-    include: { actor: { select: { student: { select: { fullName: true } } } } },
+    include: {
+      actor: {
+        select: { staffName: true, student: { select: { fullName: true } } },
+      },
+    },
   });
   const previous = await tx.schoolAcademicEvent.findFirst({
     where: { enrollmentId: row.id, kind: 'PROGRESSION' },
@@ -394,7 +398,8 @@ export async function manageAcademicEnrollment(
       actor: e.actorId
         ? String(
             object(e.afterState).actorLabel ??
-              e.actor?.student.fullName ??
+              e.actor?.staffName ??
+              e.actor?.student?.fullName ??
               'Responsável da secretaria',
           )
         : 'Sistema automático',

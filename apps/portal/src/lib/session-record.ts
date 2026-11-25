@@ -2,11 +2,12 @@ import type { PrismaClient } from '../generated/prisma/client';
 
 export type SessionRecord = {
   accountId: string;
-  studentId: string;
   email: string;
   fullName: string | null;
-  role: 'student' | 'secretary';
-};
+} & (
+  | { role: 'student'; studentId: string }
+  | { role: 'secretary'; studentId: null }
+);
 
 // Reconfere o mesmo e-mail e a mesma senha sob o lock das alterações da conta.
 export async function createVerifiedSession(
@@ -20,7 +21,7 @@ export async function createVerifiedSession(
   return db.$transaction(
     async (tx) => {
       const current = await tx.$queryRaw<
-        Array<{ id: string; studentId: string; role: string }>
+        Array<{ id: string; studentId: string | null; role: string }>
       >`
       SELECT id, student_id AS "studentId", role FROM accounts WHERE id = ${accountId}::uuid
       AND status = 'active' AND password_hash = ${passwordHash}
@@ -28,6 +29,7 @@ export async function createVerifiedSession(
     `;
       if (!current.length) return false;
       if (current[0].role === 'student') {
+        if (!current[0].studentId) return false;
         const allowed = await tx.$queryRaw<Array<{ id: string }>>`
           SELECT id FROM students WHERE id=${current[0].studentId}::uuid AND NOT login_blocked FOR SHARE
         `;
@@ -46,15 +48,16 @@ export async function findSessionRecord(
   tokenHash: string,
 ): Promise<SessionRecord | null> {
   const rows = await db.$queryRaw<SessionRecord[]>`
-    SELECT a.id AS "accountId", s.id AS "studentId", a.email, a.role,
-           s.full_name AS "fullName"
+    SELECT a.id AS "accountId",
+           CASE WHEN a.role = 'student' THEN s.id END AS "studentId",
+           a.email, a.role, COALESCE(a.staff_name, s.full_name) AS "fullName"
     FROM sessions se
     JOIN accounts a ON a.id = se.account_id
-    JOIN students s ON s.id = a.student_id
+    LEFT JOIN students s ON s.id = a.student_id
     WHERE se.token_hash = ${tokenHash}
       AND se.expires_at > ${new Date()}
       AND a.status = 'active'
-      AND (a.role <> 'student' OR NOT s.login_blocked)
+      AND (a.role = 'secretary' OR (a.role = 'student' AND NOT s.login_blocked))
       AND a.email IS NOT NULL AND a.email <> ''
     LIMIT 1
   `;

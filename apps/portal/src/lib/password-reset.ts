@@ -139,14 +139,16 @@ export async function completePasswordReset(
         data: { passwordHash, updatedAt: now, passwordResetAt: now },
       });
       await invalidateAccountCredentials(tx, token.accountId);
-      const student = await tx.student.findUniqueOrThrow({
-        where: { id: token.account.studentId },
-        select: { cpf: true },
-      });
+      const student = token.account.studentId
+        ? await tx.student.findUniqueOrThrow({
+            where: { id: token.account.studentId },
+            select: { cpf: true },
+          })
+        : null;
       await clearLoginAttempts(tx, {
         id: token.accountId,
         email: token.account.email,
-        cpf: student.cpf,
+        cpf: student?.cpf ?? null,
       });
       return { email: token.account.email };
     },

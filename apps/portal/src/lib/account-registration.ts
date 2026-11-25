@@ -36,12 +36,7 @@ function claimDataHash(student: ClaimStudent) {
 export class RegistrationConflict extends Error {
   constructor(
     public readonly reason:
-      | 'unmatched'
-      | 'created'
-      | 'pending'
-      | 'invalid'
-      | 'used'
-      | 'cpf',
+      'unmatched' | 'created' | 'pending' | 'invalid' | 'used' | 'cpf',
   ) {
     super(reason);
   }
@@ -89,6 +84,8 @@ export async function claimAccount(input: {
       include: { account: true, details: true },
     });
     if (!student || !matchesRegisteredParent(input.parentName, student.details))
+      throw new RegistrationConflict('unmatched');
+    if (student.account?.role === 'secretary')
       throw new RegistrationConflict('unmatched');
     if (student.account?.status === 'active')
       throw new RegistrationConflict('created');
@@ -160,7 +157,8 @@ export async function verifyAccount(tokenHash: string) {
     // Links anteriores à conferência, ou emitidos antes de uma correção/bloqueio,
     // não podem ativar a conta. O rollback também desfaz o consumo do token.
     if (
-      !current.student.registrationAllowed ||
+      current.role !== 'student' ||
+      !current.student?.registrationAllowed ||
       !token.claimDataHash ||
       token.claimDataHash !== claimDataHash(current.student)
     )

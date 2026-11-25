@@ -48,7 +48,7 @@ test('secretaria consulta o histórico de ações e o aluno não tem acesso', as
     const operation = randomUUID();
     const entry = await env.db.studentAccessChange.create({
       data: {
-        studentId: student.studentId,
+        studentId: student.studentId!,
         createdById: staff.id,
         kind: 'ISSUANCE',
         blocked: true,

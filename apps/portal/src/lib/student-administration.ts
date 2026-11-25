@@ -179,7 +179,12 @@ export async function administerStudents(
             reason: true,
             createdAt: true,
             revision: true,
-            createdBy: { select: { student: { select: { fullName: true } } } },
+            createdBy: {
+              select: {
+                staffName: true,
+                student: { select: { fullName: true } },
+              },
+            },
           },
           orderBy: { revision: 'desc' },
           skip: (page - 1) * pageSize,
@@ -194,7 +199,10 @@ export async function administerStudents(
             blocked: h.blocked,
             reason: h.reason,
             date: h.createdAt.toISOString(),
-            actor: h.createdBy.student.fullName ?? 'Responsável da secretaria',
+            actor:
+              h.createdBy.staffName ??
+              h.createdBy.student?.fullName ??
+              'Responsável da secretaria',
             revision: h.revision,
           })),
           total,

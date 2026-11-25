@@ -88,14 +88,21 @@ export async function searchDocuments(body: Record<string, unknown>) {
         enrollmentId: true,
         sourcePdfSha256: true,
         archiveSha256: true,
-        createdBy: { select: { student: { select: { fullName: true } } } },
+        createdBy: {
+          select: { staffName: true, student: { select: { fullName: true } } },
+        },
         terminalActions: {
           select: {
             action: true,
             reason: true,
             createdAt: true,
             successorId: true,
-            createdBy: { select: { student: { select: { fullName: true } } } },
+            createdBy: {
+              select: {
+                staffName: true,
+                student: { select: { fullName: true } },
+              },
+            },
           },
         },
       },
@@ -144,7 +151,8 @@ export async function searchDocuments(body: Record<string, unknown>) {
             action: row.status,
             date: row.createdAt.toISOString(),
             actor:
-              row.createdBy.student.fullName ??
+              row.createdBy.staffName ??
+              row.createdBy.student?.fullName ??
               'Nome do responsável não informado',
             reason: null,
             relatedId: null,
@@ -153,7 +161,8 @@ export async function searchDocuments(body: Record<string, unknown>) {
             action: a.action,
             date: a.createdAt.toISOString(),
             actor:
-              a.createdBy.student.fullName ??
+              a.createdBy.staffName ??
+              a.createdBy.student?.fullName ??
               'Nome do responsável não informado',
             reason: a.reason,
             relatedId: a.successorId,

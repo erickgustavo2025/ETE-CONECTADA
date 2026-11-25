@@ -84,8 +84,8 @@ export async function listAuditHistory(
       )
       SELECT e.category, e.id::text, e.action, e.at, s.full_name AS student,
         s.school_registration AS registration, e.subject,
-        COALESCE(e.actor_label, staff.full_name) AS actor,
-        e.reason, e.operation, e.automatic, confirm_staff.full_name AS "confirmedBy",
+        COALESCE(e.actor_label, staff_account.staff_name, staff.full_name) AS actor,
+        e.reason, e.operation, e.automatic, COALESCE(confirm_account.staff_name, confirm_staff.full_name) AS "confirmedBy",
         e.confirmed_at AS "confirmedAt", e.correction AS "correctsEventId"
       FROM events e
       LEFT JOIN students s ON s.id=e.student_id

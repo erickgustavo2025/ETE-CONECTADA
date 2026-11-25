@@ -72,8 +72,9 @@ export async function issueDeclaration(
       student: { select: { loginBlocked: true, issuanceBlocked: true } },
     },
   });
-  if (!actor || actor.student.loginBlocked)
+  if (!actor?.studentId || !actor.student || actor.student.loginBlocked)
     throw new RequestError('Entre novamente para continuar.', 403);
+  const { studentId } = actor;
   const key = {
     createdById_requestKey: {
       createdById: accountId,
@@ -86,14 +87,14 @@ export async function issueDeclaration(
   });
   if (!replay) {
     requireIssuanceAccess(actor.student);
-    await requireAcademicRequestAccess(db, actor.studentId);
+    await requireAcademicRequestAccess(db, studentId);
     await synchronizeOwnAcademicState(accountId);
   }
   // Repetição de chave não gera um novo PDF, mesmo se o cadastro mudou depois.
   const original = replay
     ? null
     : await db.student.findUniqueOrThrow({
-        where: { id: actor.studentId },
+        where: { id: studentId },
         select: studentDeclarationSelect,
       });
   const content = original
@@ -128,11 +129,11 @@ export async function issueDeclaration(
     async (tx) => {
       const allowed = await tx.$queryRaw<
         Array<{ id: string }>
-      >`SELECT id FROM accounts WHERE id=${accountId}::uuid AND student_id=${actor.studentId}::uuid AND status='active' AND role='student' FOR UPDATE`;
+      >`SELECT id FROM accounts WHERE id=${accountId}::uuid AND student_id=${studentId}::uuid AND status='active' AND role='student' FOR UPDATE`;
       if (!allowed.length)
         throw new RequestError('Seu acesso mudou. Entre novamente.', 403);
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(774056)::text`;
-      const access = await lockStudentAccess(tx, actor.studentId);
+      const access = await lockStudentAccess(tx, studentId);
       const previousRequest = await tx.declarationDocument.findUnique({
         where: key,
         select: issuedSelect,
@@ -155,14 +156,14 @@ export async function issueDeclaration(
           409,
         );
       requireIssuanceAccess(access);
-      await requireAcademicRequestAccess(tx, actor.studentId);
-      await applyStudentAcademicProgression(tx, actor.studentId);
+      await requireAcademicRequestAccess(tx, studentId);
+      await applyStudentAcademicProgression(tx, studentId);
       if (!content || !file)
         throw new RequestError('Atualize a página e tente novamente.', 409);
-      await tx.$queryRaw`SELECT student_id FROM student_details WHERE student_id=${actor.studentId}::uuid FOR UPDATE`;
-      await tx.$queryRaw`SELECT id FROM enrollments WHERE id=${input.enrollmentId}::uuid AND student_id=${actor.studentId}::uuid FOR UPDATE`;
+      await tx.$queryRaw`SELECT student_id FROM student_details WHERE student_id=${studentId}::uuid FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM enrollments WHERE id=${input.enrollmentId}::uuid AND student_id=${studentId}::uuid FOR UPDATE`;
       const fresh = await tx.student.findUniqueOrThrow({
-        where: { id: actor.studentId },
+        where: { id: studentId },
         select: studentDeclarationSelect,
       });
       if (
@@ -183,7 +184,7 @@ export async function issueDeclaration(
       ) {
         const details = content.student.details;
         await tx.studentDetails.update({
-          where: { studentId: actor.studentId },
+          where: { studentId: studentId },
           data: {
             birthCity: details.birthCity,
             birthState: details.birthState,
@@ -201,7 +202,7 @@ export async function issueDeclaration(
         data: {
           id,
           publicCode,
-          studentId: actor.studentId,
+          studentId: studentId,
           enrollmentId: input.enrollmentId,
           createdById: accountId,
           createdAt,
@@ -238,7 +239,7 @@ export async function issueDeclaration(
         await tx.declarationDocumentAction.create({
           data: {
             documentId: current.documentId,
-            studentId: actor.studentId,
+            studentId: studentId,
             enrollmentId: input.enrollmentId,
             action: 'SUPERSEDED',
             reason:
@@ -253,7 +254,7 @@ export async function issueDeclaration(
       await tx.declarationCurrentIssue.upsert({
         where: scope,
         create: {
-          studentId: actor.studentId,
+          studentId: studentId,
           enrollmentId: input.enrollmentId,
           documentType: 'DECLARACAO_VINCULO',
           documentId: document.id,
@@ -262,7 +263,7 @@ export async function issueDeclaration(
       });
       await tx.declarationRequest.create({
         data: {
-          studentId: actor.studentId,
+          studentId: studentId,
           enrollmentId: input.enrollmentId,
           status: 'AVAILABLE',
           generatedAt: createdAt,

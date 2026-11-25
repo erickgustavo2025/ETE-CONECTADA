@@ -23,7 +23,7 @@ const columns: Record<string, string> = {
   student_details:
     'student_id parent_one parent_two parentage_source social_name social_name_source birth_city birth_state birth_country birthplace_source updated_at updated_by_id',
   accounts:
-    'id student_id email password_hash status created_at updated_at role password_reset_at',
+    'id student_id email password_hash status created_at updated_at role password_reset_at staff_name',
   account_security_events: 'id account_id action created_at',
   account_email_changes:
     'account_id new_email token_hash credential_hash created_at expires_at',
@@ -107,6 +107,7 @@ async function main() {
       )!;
     assert.equal(column('students', 'cpf').is_nullable, 'YES');
     assert.equal(column('accounts', 'password_reset_at').is_nullable, 'YES');
+    assert.equal(column('accounts', 'student_id').is_nullable, 'YES');
     assert.equal(
       column('password_reset_tokens', 'token_hash').udt_name,
       'bpchar',
@@ -180,6 +181,10 @@ async function main() {
     );
     assert.match(constraint('students_cpf_check'), /\^\[0-9\]\{11\}\$/);
     assert.match(constraint('accounts_role_check'), /student.*secretary/);
+    assert.match(
+      constraint('accounts_identity_check'),
+      /student_id IS NULL.*staff_name IS NOT NULL/,
+    );
     assert.match(
       constraint('accounts_status_check'),
       /unclaimed.*pending.*active/,

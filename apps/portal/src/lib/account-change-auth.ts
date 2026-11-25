@@ -50,7 +50,8 @@ export async function lockAccountChange(
   `;
   if (!account) throw new AccountChangeError('session');
   // A ordem conta, aluno e sessão é a mesma empregada pelo bloqueio de login.
-  await tx.$queryRaw`SELECT id FROM students WHERE id=${session.studentId}::uuid FOR SHARE`;
+  if (session.role === 'student')
+    await tx.$queryRaw`SELECT id FROM students WHERE id=${session.studentId}::uuid FOR SHARE`;
   const [active] = await tx.$queryRaw<{ token_hash: string }[]>`
     SELECT token_hash FROM sessions
     WHERE token_hash=${sessionHash} AND account_id=${account.id}::uuid
