@@ -30,6 +30,11 @@ async function handleGET() {
         { error: 'Entre novamente para continuar.' },
         { status: 401, headers: privateHeaders },
       );
+    if (session.role !== 'student')
+      return Response.json(
+        { error: 'Entre com sua conta de aluno.' },
+        { status: 403, headers: privateHeaders },
+      );
     return Response.json(
       { requests: await studentRequests(session.studentId) },
       { headers: privateHeaders },
@@ -63,15 +68,15 @@ async function handlePOST(request: Request) {
         { error: 'Entre novamente para continuar.' },
         { status: 401, headers: privateHeaders },
       );
+    if (session.role !== 'student')
+      return Response.json(
+        { error: 'Entre com sua conta de aluno.' },
+        { status: 403, headers: privateHeaders },
+      );
     const input = await readPrivateBody(request, 1000);
     if ('response' in input) return input.response;
     const body = input.body;
     if (declarationPortalEnabled()) {
-      if (session.role !== 'student')
-        return Response.json(
-          { error: 'Entre com sua conta de aluno.' },
-          { status: 403, headers: privateHeaders },
-        );
       // Nenhum campo de identidade, autorização ou conteúdo do PDF é aceito.
       const { birthplace, ...intent } = body;
       const value = readIssuanceInput(intent);

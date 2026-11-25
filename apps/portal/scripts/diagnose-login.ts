@@ -43,14 +43,15 @@ async function main() {
       await measure(`warm_select_1_${i}`, () => db.$queryRaw`SELECT 1`);
     }
     const sample = await db.account.findFirst({
-      where: { status: 'active' },
+      where: { status: 'active', role: 'student' },
       select: { email: true, student: { select: { cpf: true } } },
     });
+    const cpf = sample?.student?.cpf;
     if (sample) {
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 1; cpf && i <= 3; i++) {
         await measure(`account_lookup_cpf_${i}`, () =>
           db.account.findFirst({
-            where: { status: 'active', student: { cpf: sample.student.cpf } },
+            where: { status: 'active', role: 'student', student: { cpf } },
             select: { id: true, passwordHash: true },
           }),
         );
@@ -116,6 +117,8 @@ async function main() {
             select: {
               id: true,
               email: true,
+              role: true,
+              staffName: true,
               student: {
                 select: { id: true, fullName: true },
               },
@@ -128,9 +131,11 @@ async function main() {
         !old ||
         !optimized ||
         optimized.accountId !== old.account.id ||
-        optimized.studentId !== old.account.student.id ||
+        optimized.studentId !==
+          (old.account.role === 'student' ? old.account.student?.id : null) ||
         optimized.email !== old.account.email ||
-        optimized.fullName !== old.account.student.fullName
+        optimized.fullName !==
+          (old.account.staffName ?? old.account.student?.fullName ?? null)
       ) {
         throw new Error('Resultado de sessão divergente.');
       }

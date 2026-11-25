@@ -158,7 +158,7 @@ async function main() {
     ) =>
       db.enrollment.create({
         data: {
-          studentId: student.studentId,
+          studentId: student.studentId!,
           mode,
           className: 'Turma fictícia A',
           courseLabel: 'DS',
@@ -418,7 +418,7 @@ async function main() {
       const last = cal.modules.at(-1)!;
       const row = await db.enrollment.create({
         data: {
-          studentId: student.studentId,
+          studentId: student.studentId!,
           mode: 'SUBSEQUENTE',
           courseLabel,
           className: 'Turma sem letra fictícia',

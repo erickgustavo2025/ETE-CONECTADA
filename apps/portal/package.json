@@ -33,6 +33,7 @@
     "lint": "eslint . --max-warnings=0",
     "format": "node ../../scripts/format.mjs --write --scope=apps/portal",
     "format:check": "node ../../scripts/format.mjs --check --scope=apps/portal",
+    "test:staff-access": "node --import tsx scripts/test-staff-access.ts",
     "test:session": "node --import tsx scripts/test-session-authorization.ts",
     "test:production": "node --import tsx scripts/test-production.ts",
     "pretest:unit": "prisma generate",

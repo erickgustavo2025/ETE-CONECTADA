@@ -45,13 +45,16 @@ A prova automática desse fluxo é `npm run test:import`, usando apenas fixtures
 
 ## Acesso à secretaria
 
-O papel padrão de toda conta é `student`. Somente uma conta ativa autorizada pela equipe pode receber `secretary`:
+A secretaria usa contas individuais, sem vínculo de aluno. O papel é o mesmo para toda a equipe. Com autorização da escola, use o terminal de manutenção com `DIRECT_URL` e, para o convite, com o remetente e `PORTAL_PUBLIC_URL` já configurados:
 
 ```sh
-npm run access:secretary -- 'email-da-conta-autorizada'
+npm run access:secretary -- invite
+npm run access:secretary -- revoke
 ```
 
-O comando não cria conta nem redefine senha. O servidor consulta o papel da conta em cada requisição; esconder ou mostrar o menu não substitui autorização. O aluno apenas solicita e acompanha o atendimento; o atendimento escolar prepara o PDF, imprime e confirma quando estiver pronto para retirada. Não há emissão oficial ou assinatura eletrônica nesta etapa.
+Os comandos pedem os dados e uma confirmação. O convite é individual, vale 30 minutos e é invalidado após uso, reenvio ou retirada do acesso. A retirada revoga sessões e links pendentes sem apagar as ações da pessoa. Concessões e retiradas registram o papel de manutenção conectado, data e motivo no histórico protegido. Dê a cada operador autorizado uma identidade individual no banco.
+
+A gestão controla o endereço de acesso da secretaria. O portal oferece troca e recuperação de senha para a conta ativa. Contas antigas de demonstração associadas a alunos não são promovidas ou convertidas pelo comando.
 
 ## Migrações Prisma
 

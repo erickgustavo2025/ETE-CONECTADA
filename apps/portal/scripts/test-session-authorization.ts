@@ -123,6 +123,27 @@ async function main() {
     let sessionA = await login(a.account.email!);
     const sessionB = await login(b.account.email!);
     const staffSession = await login(staff.account.email!);
+    const individual = await db.account.create({
+      data: {
+        staffName: 'Funcionário Fictício',
+        role: 'secretary',
+        status: 'active',
+        passwordHash,
+        email: `secretaria-${suffix}@eteconectada.invalid`,
+      },
+    });
+    assert.equal(individual.studentId, null);
+    const individualSession = await login(individual.email!);
+    assert.equal(
+      (await request('/api/secretaria/solicitacoes', individualSession.cookie))
+        .status,
+      200,
+    );
+    assert.equal(
+      (await request('/api/declaracao/solicitacoes', individualSession.cookie))
+        .status,
+      403,
+    );
     await denied('sem cookie');
     await denied('cookie malformado', 'ete_portal_session=invalido');
     await denied(

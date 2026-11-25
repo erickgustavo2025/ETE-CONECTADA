@@ -34,6 +34,7 @@ async function main() {
         (SELECT count(*) FROM enrollment_import_history) +
         (SELECT count(*) FROM accounts) +
         (SELECT count(*) FROM account_security_events) +
+        (SELECT count(*) FROM staff_access_events) +
         (SELECT count(*) FROM account_email_changes) +
         (SELECT count(*) FROM enrollments) +
         (SELECT count(*) FROM sessions) +

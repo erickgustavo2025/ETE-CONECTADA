@@ -11,9 +11,10 @@ import { validResetToken } from '@/lib/password-reset-input';
 export default function PasswordRecovery({
   mode,
 }: {
-  mode: 'request' | 'reset';
+  mode: 'request' | 'reset' | 'invite';
 }) {
-  const reset = mode === 'reset';
+  const invite = mode === 'invite';
+  const reset = mode !== 'request';
   const validation = useFormValidation('recovery-error');
   const [loaded, setLoaded] = useState(!reset);
   const [token, setToken] = useState('');
@@ -45,13 +46,17 @@ export default function PasswordRecovery({
       resetValidation();
       formRef.current?.reset();
       // O fragmento não chega ao servidor; remove também do histórico antes do envio.
-      window.history.replaceState(null, '', '/redefinir-senha');
+      window.history.replaceState(
+        null,
+        '',
+        invite ? '/redefinir-senha?convite=1' : '/redefinir-senha',
+      );
       setLoaded(true);
     }
     readLink();
     window.addEventListener('hashchange', readLink);
     return () => window.removeEventListener('hashchange', readLink);
-  }, [reset, resetValidation]);
+  }, [invite, reset, resetValidation]);
 
   useEffect(() => {
     if (done) heading.current?.focus();
@@ -114,7 +119,9 @@ export default function PasswordRecovery({
       if (version !== linkVersion.current) return;
       setMessage(
         reset
-          ? 'Não foi possível confirmar a alteração. Tente entrar com a nova senha; se não funcionar, solicite outro link.'
+          ? invite
+            ? 'Não foi possível confirmar o convite. Tente entrar com a senha escolhida ou peça outro convite à gestão.'
+            : 'Não foi possível confirmar a alteração. Tente entrar com a nova senha; se não funcionar, solicite outro link.'
           : 'Não foi possível enviar a solicitação agora. Confira a conexão e tente novamente.',
       );
     } finally {
@@ -132,14 +139,20 @@ export default function PasswordRecovery({
               <span className="eyebrow">ACESSO AO PORTAL</span>
               <h1 ref={heading} tabIndex={-1}>
                 {done
-                  ? 'Senha atualizada'
-                  : reset
-                    ? 'Crie uma nova senha'
-                    : 'Recuperar acesso'}
+                  ? invite
+                    ? 'Conta ativada'
+                    : 'Senha atualizada'
+                  : invite
+                    ? 'Defina sua senha da secretaria'
+                    : reset
+                      ? 'Crie uma nova senha'
+                      : 'Recuperar acesso'}
               </h1>
               <p>
                 {done
-                  ? 'Entre novamente com sua nova senha. As sessões anteriores foram encerradas.'
+                  ? invite
+                    ? 'Entre com seu e-mail e a senha que acabou de criar.'
+                    : 'Entre novamente com sua nova senha. As sessões anteriores foram encerradas.'
                   : reset
                     ? 'Use uma senha de 8 a 128 caracteres.'
                     : 'Receba um link no e-mail confirmado da sua conta.'}
@@ -150,8 +163,9 @@ export default function PasswordRecovery({
                 <p role="status">Carregando…</p>
               ) : reset && !token && !done ? (
                 <p role="status" className="registration-result">
-                  Este link é inválido. Solicite outro link para redefinir a
-                  senha.
+                  {invite
+                    ? 'Este convite é inválido. Peça um novo à gestão da escola.'
+                    : 'Este link é inválido. Solicite outro link para redefinir a senha.'}
                 </p>
               ) : (
                 !done && (
@@ -251,7 +265,7 @@ export default function PasswordRecovery({
                   seus dados e receber orientação.
                 </p>
               )}
-              {reset && !done && (
+              {reset && !invite && !done && (
                 <p className="form-note">
                   <Link href="/recuperar-acesso">Solicitar outro link</Link>
                 </p>

@@ -97,6 +97,11 @@ export function accountChangeError(
       'Não foi possível concluir agora. Tente novamente mais tarde.',
       503,
     );
+  if (error.reason === 'staff-email')
+    return accountChangeFailure(
+      'Peça à gestão da escola para atualizar o e-mail da secretaria.',
+      403,
+    );
   if (error.reason === 'session')
     return accountChangeFailure('Entre novamente para continuar.', 401);
   return accountChangeFailure(

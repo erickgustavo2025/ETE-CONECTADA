@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import type { PrismaClient } from '../generated/prisma/client';
+import type { Account, PrismaClient } from '../generated/prisma/client';
 import { normalizeEmail } from './registration';
 import { clearLoginAttempts } from './access-throttle';
 import { invalidateAccountCredentials } from './account-change-auth';
@@ -18,6 +18,48 @@ const credentialHash = (account: {
   email: string | null;
   passwordHash: string | null;
 }) => hash(JSON.stringify([account.id, account.email, account.passwordHash]));
+export const isStaffIdentity = (
+  account: Pick<Account, 'role' | 'studentId' | 'staffName'>,
+) => account.role === 'secretary' && !account.studentId && !!account.staffName;
+
+function pendingStaffInvite(account: Account) {
+  return (
+    isStaffIdentity(account) &&
+    account.status === 'pending' &&
+    account.email !== null &&
+    account.passwordHash === null
+  );
+}
+
+function staffInviteStamp(account: Account) {
+  return hash(JSON.stringify(['staff-invite', account.id, account.email]));
+}
+
+function confirmsCredential(account: Account, stamp: string) {
+  if (pendingStaffInvite(account)) return stamp === staffInviteStamp(account);
+  return (
+    account.status === 'active' &&
+    !!account.email &&
+    !!account.passwordHash &&
+    stamp === credentialHash(account)
+  );
+}
+
+export function newStaffInvite(account: Account) {
+  if (!pendingStaffInvite(account))
+    throw new Error('Conta não elegível para convite.');
+  const token = randomBytes(32).toString('base64url');
+  return {
+    token,
+    record: {
+      tokenHash: hash(token),
+      accountId: account.id,
+      credentialHash: staffInviteStamp(account),
+      expiresAt: new Date(Date.now() + resetLifetimeMs),
+    },
+  };
+}
+
 export class PasswordResetError extends Error {
   constructor(public readonly reason: ResetProblem) {
     super(reason);
@@ -112,8 +154,7 @@ export async function completePasswordReset(
   if (
     !preview ||
     preview.expiresAt <= new Date() ||
-    preview.account.status !== 'active' ||
-    preview.credentialHash !== credentialHash(preview.account)
+    !confirmsCredential(preview.account, preview.credentialHash)
   )
     throw new PasswordResetError('invalid');
   const passwordHash = await hashPassword(input.password as string);
@@ -129,24 +170,32 @@ export async function completePasswordReset(
       if (
         !token ||
         token.expiresAt <= now ||
-        token.account.status !== 'active' ||
         !token.account.email ||
-        token.credentialHash !== credentialHash(token.account)
+        !confirmsCredential(token.account, token.credentialHash)
       )
         throw new PasswordResetError('invalid');
       await tx.account.update({
         where: { id: token.accountId },
-        data: { passwordHash, updatedAt: now, passwordResetAt: now },
+        data: {
+          passwordHash,
+          status: 'active',
+          updatedAt: now,
+          ...(token.account.status === 'active'
+            ? { passwordResetAt: now }
+            : {}),
+        },
       });
       await invalidateAccountCredentials(tx, token.accountId);
-      const student = await tx.student.findUniqueOrThrow({
-        where: { id: token.account.studentId },
-        select: { cpf: true },
-      });
+      const student = token.account.studentId
+        ? await tx.student.findUniqueOrThrow({
+            where: { id: token.account.studentId },
+            select: { cpf: true },
+          })
+        : null;
       await clearLoginAttempts(tx, {
         id: token.accountId,
         email: token.account.email,
-        cpf: student.cpf,
+        cpf: student?.cpf ?? null,
       });
       return { email: token.account.email };
     },

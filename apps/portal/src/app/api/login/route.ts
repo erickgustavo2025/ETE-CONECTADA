@@ -67,7 +67,7 @@ async function handlePOST(request: Request) {
         status: 'active',
         ...(value.includes('@')
           ? { email: { equals: value, mode: 'insensitive' as const } }
-          : { student: { cpf } }),
+          : { role: 'student', student: { cpf } }),
       },
       select: {
         id: true,
@@ -119,7 +119,7 @@ async function handlePOST(request: Request) {
       clearLoginAttempts(tx, {
         id: row.id,
         email: row.email,
-        cpf: row.student.cpf,
+        cpf: row.student?.cpf ?? null,
       }),
     );
     const sessionFinished = performance.now();

@@ -19,6 +19,8 @@ const categoryLabel: Record<AuditCategory, string> = {
 const actionLabel: Record<string, string> = {
   PASSWORD_CHANGED: 'Senha alterada pela pessoa titular',
   EMAIL_CHANGED: 'E-mail alterado pela pessoa titular',
+  STAFF_INVITED: 'Convite de acesso à secretaria emitido',
+  STAFF_REVOKED: 'Acesso à secretaria retirado',
   LOGIN_BLOCK: 'Acesso ao portal bloqueado',
   LOGIN_UNBLOCK: 'Acesso ao portal restabelecido',
   ISSUANCE_BLOCK: 'Novas declarações bloqueadas',

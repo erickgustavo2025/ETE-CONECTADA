@@ -54,6 +54,10 @@ export async function listAuditHistory(
           NULL, e.account_id, NULL, NULL, e.id::text, false, NULL, NULL, NULL
         FROM account_security_events e JOIN accounts a ON a.id=e.account_id
         UNION ALL
+        SELECT 'ACESSO', e.id, e.action, e.created_at, NULL,
+          a.staff_name, NULL, e.operator_name, e.reason, e.id::text, false, NULL, NULL, NULL
+        FROM staff_access_events e JOIN accounts a ON a.id=e.account_id
+        UNION ALL
         SELECT 'MATRICULA', a.id, a.kind, a.created_at, n.student_id,
           COALESCE(a.after_state->>'className', n.class_name), a.actor_id,
           a.after_state->>'actorLabel', a.reason, a.operation_key,
@@ -84,8 +88,8 @@ export async function listAuditHistory(
       )
       SELECT e.category, e.id::text, e.action, e.at, s.full_name AS student,
         s.school_registration AS registration, e.subject,
-        COALESCE(e.actor_label, staff.full_name) AS actor,
-        e.reason, e.operation, e.automatic, confirm_staff.full_name AS "confirmedBy",
+        COALESCE(e.actor_label, staff_account.staff_name, staff.full_name) AS actor,
+        e.reason, e.operation, e.automatic, COALESCE(confirm_account.staff_name, confirm_staff.full_name) AS "confirmedBy",
         e.confirmed_at AS "confirmedAt", e.correction AS "correctsEventId"
       FROM events e
       LEFT JOIN students s ON s.id=e.student_id
