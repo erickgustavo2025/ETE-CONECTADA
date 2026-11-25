@@ -79,12 +79,31 @@ jobs:
           overwrite: false
           compression-level: 0
           retention-days: 3
+      # A lista de artefatos do GitHub demora alguns segundos para mostrar um upload novo.
+      - name: Aguardar o pacote aparecer na lista de artefatos
+        if: steps.package_request.outputs.package == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.release_package.outputs.artifact-id }}
+        run: |
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]
+          for attempt in $(seq 1 24); do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" --jq '.artifacts[].id' | grep -qx "$ARTIFACT_ID"; then
+              echo "Pacote visível após $attempt consulta(s)."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo 'O pacote enviado não apareceu na lista de artefatos em 2 minutos.' >&2
+          exit 1
       - name: Baixar somente o pacote criado nesta execução
         if: steps.package_request.outputs.package == 'true'
         id: release_download
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           artifact-ids: ${{ steps.release_package.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          run-id: ${{ github.run_id }}
           path: ${{ runner.temp }}/ete-release-download-${{ github.run_id }}-${{ github.run_attempt }}
           merge-multiple: true
           digest-mismatch: error

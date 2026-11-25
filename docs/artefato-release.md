@@ -21,7 +21,7 @@ O artefato `imagens-COMMIT-RUN-TENTATIVA` contém apenas:
 
 As imagens recebem o commit e a identificação do app em seus rótulos. O verificador exige correspondência entre arquivo, configuração da imagem, app, commit, auditoria e todas as camadas. Ele confere cada camada pelo hash de seus bytes descomprimidos, sem extrair arquivos no computador.
 
-Após o upload, o próprio runner baixa somente o artefato recém-criado pelo seu ID, reprova divergência no digest e verifica novamente seus arquivos. O manifesto e a lista de hashes baixados também precisam ser idênticos aos originais. Essa conferência não exige baixar as imagens na conexão do desenvolvedor.
+Após o upload, o próprio runner aguarda o artefato aparecer na lista da execução (a API do GitHub leva alguns segundos para mostrá-lo; o limite é de 2 minutos), baixa somente o artefato recém-criado pelo seu ID, reprova divergência no digest e verifica novamente seus arquivos. O manifesto e a lista de hashes baixados também precisam ser idênticos aos originais. Essa conferência não exige baixar as imagens na conexão do desenvolvedor.
 
 O **ID da imagem**, o **hash do arquivo comprimido**, o **digest do artefato GitHub** e um futuro **digest de manifesto no registry** são identificadores diferentes. Este pacote guarda os dois primeiros; o GitHub fornece o digest de seu próprio artefato. Ele não inventa um digest de registry antes de publicar uma imagem.
 
@@ -43,6 +43,6 @@ Uma nova tentativa pode produzir outro ID de imagem. Escolha o pacote exato e pr
 
 O pacote só é criado depois de os testes de contexto/camadas, runtime, navegador e auditoria das imagens passarem. Arquivos de ambiente, bancos, planilhas, backups, dados de alunos e credenciais reais não participam do build. Os relatórios permitem rever o alcance do scanner; nenhuma suíte ou auditoria assegura ausência total de falhas.
 
-O job tem leitura de código e de execuções para conferir os checks, sem permissão de publicar packages nem credencial de registry ou servidor. O token de leitura é fornecido somente à etapa de consulta. O upload usa a ação oficial fixada por commit, uma lista explícita de seis arquivos e não sobrescreve artefatos existentes.
+O job tem leitura de código e de execuções para conferir os checks, sem permissão de publicar packages nem credencial de registry ou servidor. O token de leitura é fornecido somente às etapas de consulta dos checks, de espera e de download do próprio artefato. O upload usa a ação oficial fixada por commit, uma lista explícita de seis arquivos e não sobrescreve artefatos existentes.
 
 Referências: [artefatos de workflow](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts) e [ação oficial de upload](https://github.com/actions/upload-artifact).
