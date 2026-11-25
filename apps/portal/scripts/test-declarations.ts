@@ -165,7 +165,7 @@ async function main() {
           staffCookie,
         )
       ).status,
-      422,
+      403,
     );
     const concurrent = await Promise.all(
       Array.from({ length: 3 }, () =>

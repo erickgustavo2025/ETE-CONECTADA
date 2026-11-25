@@ -132,6 +132,7 @@ model Account {
   studentAccessChanges StudentAccessChange[]
   academicEvents SchoolAcademicEvent[]
   securityEvents AccountSecurityEvent[]
+  staffAccessEvents StaffAccessEvent[]
   pendingEmailChange AccountEmailChange?
   @@map("accounts")
 }
@@ -174,6 +175,18 @@ model AccountSecurityEvent {
   account Account @relation(fields: [accountId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   @@index([accountId, createdAt, id])
   @@map("account_security_events")
+}
+
+model StaffAccessEvent {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String @map("account_id") @db.Uuid
+  action String @db.VarChar(24)
+  operatorName String @default(dbgenerated("SESSION_USER")) @map("operator_name")
+  reason String @db.VarChar(300)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  @@index([accountId, createdAt, id])
+  @@map("staff_access_events")
 }
 
 model PasswordResetToken {

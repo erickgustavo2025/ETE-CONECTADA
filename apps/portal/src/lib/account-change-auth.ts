@@ -4,7 +4,7 @@ import { findSessionRecord, type SessionRecord } from './session-record';
 
 type Credential = { session: SessionRecord; passwordHash: string };
 export type AccountChangeProblem =
-  'session' | 'password' | 'same' | 'format' | 'link';
+  'session' | 'password' | 'same' | 'format' | 'link' | 'staff-email';
 export class AccountChangeError extends Error {
   constructor(public readonly reason: AccountChangeProblem) {
     super(reason);

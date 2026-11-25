@@ -4,6 +4,16 @@ export const metadata = {
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };
-export default function ResetPage() {
-  return <PasswordRecovery key="reset" mode="reset" />;
+export default async function ResetPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ convite?: string | string[] }>;
+}) {
+  const invite = (await searchParams).convite === '1';
+  return (
+    <PasswordRecovery
+      key={invite ? 'invite' : 'reset'}
+      mode={invite ? 'invite' : 'reset'}
+    />
+  );
 }

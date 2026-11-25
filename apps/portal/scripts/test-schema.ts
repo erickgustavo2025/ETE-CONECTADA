@@ -25,6 +25,7 @@ const columns: Record<string, string> = {
   accounts:
     'id student_id email password_hash status created_at updated_at role password_reset_at staff_name',
   account_security_events: 'id account_id action created_at',
+  staff_access_events: 'id account_id action operator_name reason created_at',
   account_email_changes:
     'account_id new_email token_hash credential_hash created_at expires_at',
   password_reset_tokens:
@@ -308,6 +309,7 @@ async function main() {
       constraint(name);
     const protectedHistory = [
       ['account_security_events', 'account_security_events_immutable'],
+      ['staff_access_events', 'staff_access_events_immutable'],
       ['student_access_changes', 'student_access_changes_immutable'],
       ['enrollment_import_history', 'enrollment_import_history_immutable'],
       ['course_calendar_versions', 'course_calendar_versions_immutable'],
@@ -357,6 +359,7 @@ async function main() {
       ],
       ['course_calendar_versions', 'created_by_id', 'accounts', 'RESTRICT'],
       ['account_security_events', 'account_id', 'accounts', 'RESTRICT'],
+      ['staff_access_events', 'account_id', 'accounts', 'RESTRICT'],
       ['account_email_changes', 'account_id', 'accounts', 'CASCADE'],
       ['sessions', 'account_id', 'accounts', 'CASCADE'],
       ['email_verification_tokens', 'account_id', 'accounts', 'CASCADE'],

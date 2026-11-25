@@ -45,6 +45,8 @@ export async function requestAccountEmailChange(
     sessionHash,
     input.currentPassword,
   );
+  if (credential.session.role !== 'student')
+    throw new AccountChangeError('staff-email');
   if (email === normalizeEmail(credential.session.email))
     throw new AccountChangeError('same');
   const { accountId } = credential.session;
@@ -85,6 +87,8 @@ export async function confirmAccountEmailChange(
 ) {
   if (!validResetToken(token)) throw new AccountChangeError('link');
   const credential = await accountChangeCredential(db, sessionHash);
+  if (credential.session.role !== 'student')
+    throw new AccountChangeError('staff-email');
   const { accountId, email: previousEmail } = credential.session;
   try {
     return await db.$transaction(

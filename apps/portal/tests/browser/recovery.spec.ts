@@ -2,6 +2,66 @@ import { test, expect } from '@playwright/test';
 import { randomBytes, createHash } from 'node:crypto';
 import { hashPassword, verifyPassword } from '../../src/lib/password';
 import { requestPasswordReset } from '../../src/lib/password-reset';
+import { changeStaffAccess } from '../../scripts/staff-access';
+
+test('convite da secretaria define a primeira senha e abre o painel', async ({
+  page,
+}) => {
+  const { openTestEnvironment } =
+    await import('../../scripts/test-environment');
+  const savedPreview = process.env.DECLARATION_REGISTRY_PREVIEW;
+  process.env.DECLARATION_REGISTRY_PREVIEW = 'true';
+  let environment: Awaited<ReturnType<typeof openTestEnvironment>> | undefined;
+  const email = `staff-browser-${randomBytes(8).toString('hex')}@eteconectada.invalid`;
+  const password = 'SenhaDoConvite#456';
+  let link = '';
+  try {
+    environment = await openTestEnvironment({ http: true });
+    const { db, base } = environment;
+    await changeStaffAccess(
+      db,
+      {
+        action: 'invite',
+        email,
+        name: 'Secretaria Fictícia de Navegador',
+        reason: 'Acesso aprovado no ensaio fictício',
+      },
+      {
+        origin: base,
+        async send(to, url) {
+          expect(to).toBe(email);
+          link = url;
+        },
+      },
+    );
+    expect(link).toBeTruthy();
+    await page.goto(link);
+    await expect(page).toHaveURL(`${base}/redefinir-senha?convite=1`);
+    await expect(
+      page.getByRole('heading', { name: 'Defina sua senha da secretaria' }),
+    ).toBeVisible();
+    await page.getByLabel('Nova senha', { exact: true }).fill(password);
+    await page.getByLabel('Confirme a senha').fill(password);
+    await page.getByRole('button', { name: 'Salvar nova senha' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Conta ativada' }),
+    ).toBeFocused();
+    await page.goto(`${base}/login`);
+    await page.getByLabel('CPF ou e-mail').fill(email);
+    await page.getByLabel('Senha', { exact: true }).fill(password);
+    await page.getByRole('button', { name: 'Entrar no portal' }).click();
+    await expect(page).toHaveURL(`${base}/`);
+    await page.goto(`${base}/secretaria/historico`);
+    await expect(
+      page.getByRole('heading', { name: 'Histórico de ações', exact: true }),
+    ).toBeVisible();
+  } finally {
+    if (savedPreview === undefined)
+      delete process.env.DECLARATION_REGISTRY_PREVIEW;
+    else process.env.DECLARATION_REGISTRY_PREVIEW = savedPreview;
+    await environment?.close();
+  }
+});
 
 test('recuperação protege o link, trata resposta perdida e encerra sessões antigas', async ({
   page,
