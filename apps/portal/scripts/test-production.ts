@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createHash, randomBytes, randomInt } from 'node:crypto';
+import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -64,6 +65,11 @@ async function main() {
   const sink = createServer((socket) => {
     connections++;
     socket.destroy();
+  });
+  let notifications = 0;
+  const smtpSink = createServer((socket) => {
+    notifications++;
+    socket.end('421 Envio simulado indisponível\r\n');
   });
   const controller = new AbortController();
   const interrupted = () => controller.abort();
@@ -500,11 +506,16 @@ async function main() {
     assert.ok(process.env.DATABASE_URL);
     env.DATABASE_URL = process.env.DATABASE_URL;
     delete env.DIRECT_URL;
-    // O provedor é representado pelo transporte de captura do convite. Nenhum envio externo.
+    // O convite é capturado. A confirmação também tenta avisar por um SMTP
+    // próprio em loopback e separado da sonda de conexões com o banco.
+    smtpSink.listen(0, '127.0.0.1');
+    await once(smtpSink, 'listening');
+    const smtpAddress = smtpSink.address();
+    assert.ok(smtpAddress && typeof smtpAddress === 'object');
     env.EMAIL_TRANSPORT = 'smtp';
     env.EMAIL_FROM = 'secretaria@eteconectada.invalid';
     env.SMTP_HOST = '127.0.0.1';
-    env.SMTP_PORT = String(address.port);
+    env.SMTP_PORT = String(smtpAddress.port);
     env.SMTP_USER = 'smtp-fixture-user';
     env.SMTP_PASSWORD = randomBytes(24).toString('base64url');
     const enabled = await startSchool();
@@ -678,11 +689,12 @@ async function main() {
         .status,
       422,
     );
-    assert.equal(
-      connections,
-      0,
-      'O ensaio de produção não envia e-mail externo.',
-    );
+    if (notifications === 0)
+      await once(smtpSink, 'connection', {
+        signal: AbortSignal.timeout(8000),
+      });
+    assert.equal(notifications, 1, 'A confirmação agenda um aviso de senha.');
+    assert.equal(connections, 0, 'A sonda do banco permanece sem conexões.');
     await stop(enabled);
     delete env.PORTAL_ACCESS_MODE;
     await startSchool();
@@ -699,6 +711,8 @@ async function main() {
       if (child) await stop(child);
     } finally {
       try {
+        if (smtpSink.listening)
+          await new Promise<void>((resolve) => smtpSink.close(() => resolve()));
         await new Promise<void>((resolve, reject) =>
           sink.close((error) =>
             error &&
