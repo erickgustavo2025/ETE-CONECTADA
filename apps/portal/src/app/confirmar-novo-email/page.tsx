@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { portalAccessEnabled } from '@/lib/portal-access';
 import { AccountConfirmEmail } from '@/components/account-confirm-email';
 import PortalHome from '@/components/portal-home';
 import { currentSession } from '@/lib/session';
@@ -6,7 +7,7 @@ import { currentSession } from '@/lib/session';
 export const metadata = { title: 'Confirmar novo e-mail | ETE CONECTADA' };
 
 export default async function AccountConfirmEmailPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
+  if (!portalAccessEnabled()) notFound();
   const session = await currentSession();
   return (
     <PortalHome

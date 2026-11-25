@@ -1,5 +1,6 @@
 import { createInterface } from 'node:readline/promises';
 import { emailTransport } from '../src/lib/email-transport';
+import { portalAccessEnabled } from '../src/lib/portal-access';
 import { openMaintenanceDatabase } from './database-maintenance';
 import { changeStaffAccess, StaffAccessError } from './staff-access';
 
@@ -12,8 +13,10 @@ async function main() {
     );
 
   const transport = action === 'invite' ? emailTransport() : null;
-  if (action === 'invite' && !transport)
-    throw new StaffAccessError('Configure o remetente e o endereço do portal.');
+  if (action === 'invite' && (!transport || !portalAccessEnabled()))
+    throw new StaffAccessError(
+      'Verifique a configuração de acesso, o remetente e o endereço do portal.',
+    );
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {

@@ -1,4 +1,5 @@
 import { withApiCanonicalPath } from '@/lib/api-route';
+import { portalAccessEnabled } from '@/lib/portal-access';
 import { after } from 'next/server';
 import { boundedString, readAccessBody } from '@/lib/access-input';
 import { getDb } from '@/lib/db';
@@ -18,7 +19,7 @@ import { recoveryMailer } from '@/lib/recovery-mail';
 
 export const runtime = 'nodejs';
 async function handlePOST(request: Request) {
-  if (process.env.NODE_ENV !== 'development') return disabledResponse();
+  if (!portalAccessEnabled()) return disabledResponse();
   if (!sameOriginRequest(request))
     return Response.json(
       { error: 'Solicitação não autorizada.' },

@@ -25,6 +25,7 @@ export async function createVerifiedSession(
       >`
       SELECT id, student_id AS "studentId", role FROM accounts WHERE id = ${accountId}::uuid
       AND status = 'active' AND password_hash = ${passwordHash}
+      AND (${process.env.NODE_ENV !== 'production'} OR role = 'student' OR student_id IS NULL)
       AND email IS NOT DISTINCT FROM ${email}::text FOR UPDATE
     `;
       if (!current.length) return false;
@@ -57,7 +58,10 @@ export async function findSessionRecord(
     WHERE se.token_hash = ${tokenHash}
       AND se.expires_at > ${new Date()}
       AND a.status = 'active'
-      AND (a.role = 'secretary' OR (a.role = 'student' AND NOT s.login_blocked))
+      AND (
+        (a.role = 'secretary' AND (${process.env.NODE_ENV !== 'production'} OR a.student_id IS NULL))
+        OR (a.role = 'student' AND NOT s.login_blocked)
+      )
       AND a.email IS NOT NULL AND a.email <> ''
     LIMIT 1
   `;

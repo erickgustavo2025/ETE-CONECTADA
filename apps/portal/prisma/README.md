@@ -39,13 +39,13 @@ Na raiz:
 npm run students:import -- '/caminho/Backup.alunos.json'
 ```
 
-A importação valida o arquivo inteiro antes de escrever, usa transação e identificadores únicos, não duplica alunos/matrículas e preserva registros já importados. Matrícula e identificador de origem devem continuar vinculados ao mesmo aluno; conflitos cancelam o lote inteiro. O identificador da matrícula de curso também precisa pertencer ao aluno correspondente. Não importa senhas, e-mails, permissões, fotos ou dados da gamificação. Não cria contas. O primeiro acesso fica bloqueado por padrão; a equipe autorizou explicitamente `--enable-development-registration` para testar matrícula/nascimento em desenvolvimento. A aplicação continua sem autenticação/cadastro em produção. O CPF é incluído no banco quando os dados da segunda etapa são aceitos, com validação matemática e unicidade.
+A importação valida o arquivo inteiro antes de escrever, usa transação e identificadores únicos, não duplica alunos/matrículas e preserva registros já importados. Matrícula e identificador de origem devem continuar vinculados ao mesmo aluno; conflitos cancelam o lote inteiro. O identificador da matrícula de curso também precisa pertencer ao aluno correspondente. Não importa senhas, e-mails, permissões, fotos ou dados da gamificação. Não cria contas. O primeiro acesso fica bloqueado por padrão; a equipe autorizou explicitamente `--enable-development-registration` para testar matrícula/nascimento em desenvolvimento. O acesso em produção depende da configuração aprovada descrita abaixo. O CPF é incluído no banco quando os dados da segunda etapa são aceitos, com validação matemática e unicidade.
 
 A prova automática desse fluxo é `npm run test:import`, usando apenas fixtures sintéticas em [PostgreSQL descartável](../../../docs/testes-isolados.md#importação-json). Ela cobre repetição, preservação, lista branca, bloqueio padrão e rollback após falha de escrita.
 
 ## Acesso à secretaria
 
-A secretaria usa contas individuais, sem vínculo de aluno. O papel é o mesmo para toda a equipe. Com autorização da escola, use o terminal de manutenção com `DIRECT_URL` e, para o convite, com o remetente e `PORTAL_PUBLIC_URL` já configurados:
+A secretaria usa contas individuais, sem vínculo de aluno. O papel é o mesmo para toda a equipe. Com autorização da escola, use o terminal de manutenção com `DIRECT_URL`. Para convidar, use a mesma configuração de acesso e e-mail do portal, incluindo `NODE_ENV`:
 
 ```sh
 npm run access:secretary -- invite
@@ -54,7 +54,9 @@ npm run access:secretary -- revoke
 
 Os comandos pedem os dados e uma confirmação. O convite é individual, vale 30 minutos e é invalidado após uso, reenvio ou retirada do acesso. A retirada revoga sessões e links pendentes sem apagar as ações da pessoa. Concessões e retiradas registram o papel de manutenção conectado, data e motivo no histórico protegido. Dê a cada operador autorizado uma identidade individual no banco.
 
-A gestão controla o endereço de acesso da secretaria. O portal oferece troca e recuperação de senha para a conta ativa. Contas antigas de demonstração associadas a alunos não são promovidas ou convertidas pelo comando.
+A gestão controla o endereço de acesso da secretaria. O portal oferece troca e recuperação de senha para a conta ativa. Contas antigas de demonstração associadas a alunos ficam disponíveis para desenvolvimento.
+
+Em produção, aplique as migrações e atualize as permissões do papel limitado. Depois de aprovados o acesso e o uso do ambiente, configure `PORTAL_ACCESS_MODE=school`, `HTTPS_VERIFIED=true`, a origem HTTPS em `PORTAL_PUBLIC_URL` e o provedor de e-mail. Confirme o recebimento de um convite no ambiente de homologação. Para fechar o acesso, retire `PORTAL_ACCESS_MODE` e reinicie o portal. Documentos usam sua própria configuração de emissão.
 
 ## Migrações Prisma
 

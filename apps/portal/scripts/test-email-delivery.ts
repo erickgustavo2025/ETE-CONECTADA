@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { emailTransport, MailDeliveryError } from '../src/lib/email-transport';
 import { verificationDelivery } from '../src/lib/verification-delivery';
 import { recoveryMailer } from '../src/lib/recovery-mail';
+import { portalAccessEnabled } from '../src/lib/portal-access';
 
 const settings = {
   NODE_ENV: 'development',
@@ -12,6 +13,29 @@ const settings = {
 };
 const token = 'A'.repeat(43);
 const recipient = 'aluno@eteconectada.invalid';
+
+test('acesso em produção exige autorização, HTTPS e configuração de e-mail', () => {
+  const approved = {
+    ...settings,
+    NODE_ENV: 'production',
+    PORTAL_ACCESS_MODE: 'school',
+    HTTPS_VERIFIED: 'true',
+  };
+  assert.equal(portalAccessEnabled({ NODE_ENV: 'development' }), true);
+  assert.equal(portalAccessEnabled(approved), true);
+  for (const override of [
+    { NODE_ENV: 'test' },
+    { PORTAL_ACCESS_MODE: undefined },
+    { PORTAL_ACCESS_MODE: 'true' },
+    { HTTPS_VERIFIED: undefined },
+    { PORTAL_PUBLIC_URL: 'http://localhost:3002' },
+    { PORTAL_PUBLIC_URL: 'https://portal.example.invalid/cadastro' },
+    { EMAIL_FROM: '' },
+    { RESEND_API_KEY: '' },
+    { EMAIL_TRANSPORT: 'smtp' },
+  ])
+    assert.equal(portalAccessEnabled({ ...approved, ...override }), false);
+});
 
 test('e-mail: somente desenvolvimento sem provedor oferece link de demonstração', async () => {
   let calls = 0;

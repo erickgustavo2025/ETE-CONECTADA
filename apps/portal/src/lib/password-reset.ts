@@ -22,6 +22,17 @@ export const isStaffIdentity = (
   account: Pick<Account, 'role' | 'studentId' | 'staffName'>,
 ) => account.role === 'secretary' && !account.studentId && !!account.staffName;
 
+function canRecoverAccount(account: Account) {
+  return (
+    account.status === 'active' &&
+    !!account.email &&
+    !!account.passwordHash &&
+    (process.env.NODE_ENV !== 'production' ||
+      account.role === 'student' ||
+      isStaffIdentity(account))
+  );
+}
+
 function pendingStaffInvite(account: Account) {
   return (
     isStaffIdentity(account) &&
@@ -37,12 +48,7 @@ function staffInviteStamp(account: Account) {
 
 function confirmsCredential(account: Account, stamp: string) {
   if (pendingStaffInvite(account)) return stamp === staffInviteStamp(account);
-  return (
-    account.status === 'active' &&
-    !!account.email &&
-    !!account.passwordHash &&
-    stamp === credentialHash(account)
-  );
+  return canRecoverAccount(account) && stamp === credentialHash(account);
 }
 
 export function newStaffInvite(account: Account) {
@@ -93,9 +99,8 @@ export async function requestPasswordReset(
       });
       if (
         !account ||
-        account.status !== 'active' ||
+        !canRecoverAccount(account) ||
         !account.email ||
-        !account.passwordHash ||
         normalizeEmail(account.email) !== email
       )
         return null;

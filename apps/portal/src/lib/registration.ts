@@ -1,3 +1,5 @@
+import { apiSecurityHeaders } from '../../../../shared/security-headers';
+
 export function normalizeCpf(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const cpf = value.replace(/\D/g, '');
@@ -84,12 +86,10 @@ export function matchesRegisteredParent(
   );
 }
 
-export const registrationEnabled = process.env.NODE_ENV === 'development';
-
 export function disabledResponse() {
   return Response.json(
     { error: 'O cadastro ainda não está disponível neste ambiente.' },
-    { status: 503 },
+    { status: 503, headers: apiSecurityHeaders },
   );
 }
 
@@ -98,6 +98,6 @@ export function databaseErrorResponse() {
     {
       error: 'Não foi possível acessar o banco agora. Tente novamente depois.',
     },
-    { status: 503 },
+    { status: 503, headers: apiSecurityHeaders },
   );
 }

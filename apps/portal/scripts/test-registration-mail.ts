@@ -7,6 +7,9 @@ async function main() {
   const savedFetch = globalThis.fetch;
   const keys = [
     'NODE_ENV',
+    'PORTAL_ACCESS_MODE',
+    'HTTPS_VERIFIED',
+    'EMAIL_TRANSPORT',
     'PORTAL_PUBLIC_URL',
     'RESEND_API_KEY',
     'EMAIL_FROM',
@@ -31,7 +34,10 @@ async function main() {
   let provider: number | 'network' | 'timeout' = 503;
   let aborted = false;
   try {
-    Reflect.set(process.env, 'NODE_ENV', 'development');
+    Reflect.set(process.env, 'NODE_ENV', 'production');
+    process.env.PORTAL_ACCESS_MODE = 'school';
+    process.env.HTTPS_VERIFIED = 'true';
+    process.env.EMAIL_TRANSPORT = 'resend';
     process.env.PORTAL_PUBLIC_URL = origin;
     process.env.RESEND_API_KEY = 'fixture-key';
     process.env.EMAIL_FROM = 'noreply@eteconectada.invalid';
