@@ -24,6 +24,8 @@ As aplicações usam Next.js e TypeScript. O portal usa PostgreSQL, com Prisma p
 
 ## Rodar localmente
 
+Para começar com PostgreSQL local, Turma DevOps e contas fictícias, siga o [guia de ambiente da equipe](docs/ambiente-local.md).
+
 Use Node.js 24, conforme a versão indicada em `.nvmrc`. Se você usa nvm, execute `nvm use` na raiz do projeto. Com o repositório clonado, instale as dependências:
 
 ```bash
