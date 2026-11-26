@@ -58,6 +58,28 @@ const studentOnly: Prisma.StudentWhereInput = {
   OR: [{ account: { is: null } }, { account: { is: { role: 'student' } } }],
 };
 const pageSize = 20;
+
+const courseByClassPrefix: Record<string, string> = {
+  TDS: 'DS',
+  ADM: 'ADM',
+  STDSIN: 'DS',
+  STADMN: 'ADM',
+  STENFN: 'ENF',
+};
+
+function classSearchKey(value: string) {
+  const key = value
+    .normalize('NFD')
+    .replace(/[ºª\p{M}]/gu, '')
+    .toUpperCase()
+    .replace(/[^\p{L}\p{N}]/gu, '');
+  // Códigos das planilhas e nomes usados pela secretaria representam a mesma busca.
+  const code =
+    /^(TDS|ADM)([1-3])IN([A-Z])$/.exec(key) ??
+    /^(STDSIN|STADMN|STENFN)([1-4])([A-Z])$/.exec(key);
+  return code ? `${code[2]}${code[3]}${courseByClassPrefix[code[1]]}` : key;
+}
+
 async function change(
   tx: Prisma.TransactionClient,
   actorId: string,
@@ -213,12 +235,31 @@ export async function administerStudents(
       }
       const enrollment: Prisma.EnrollmentWhereInput = {
         ...(input.mode ? { mode: input.mode } : {}),
-        ...(input.className ? { className: input.className } : {}),
         ...(input.periodLabel !== undefined
           ? { periodLabel: input.periodLabel }
           : {}),
         ...(input.courseLabel ? { courseLabel: input.courseLabel } : {}),
       };
+      if (input.className) {
+        // Ao abrir uma turma do catálogo, preserva a identificação exata
+        // pelo nome, período, curso e modalidade selecionados.
+        if (input.periodLabel !== undefined) {
+          enrollment.className = input.className;
+        } else {
+          const key = classSearchKey(input.className);
+          const candidates = key
+            ? await tx.enrollment.groupBy({
+                by: ['className'],
+                where: { ...enrollment, student: studentOnly },
+              })
+            : [];
+          enrollment.className = {
+            in: candidates
+              .filter((row) => classSearchKey(row.className) === key)
+              .map((row) => row.className),
+          };
+        }
+      }
       const where: Prisma.StudentWhereInput = {
         AND: [
           studentOnly,

@@ -41,6 +41,10 @@ const accountStatus: Record<string, string> = {
   pending: 'Cadastro em confirmação',
   unclaimed: 'Cadastro ainda não ativado',
 };
+const accountLabel = (status: string | null) =>
+  status
+    ? (accountStatus[status] ?? 'Conta a conferir')
+    : 'Sem conta no portal';
 const kindLabel = (kind: StudentAccessKind) =>
   kind === 'LOGIN' ? 'acesso ao portal' : 'novas declarações';
 function isStudent(value: unknown): value is AdminStudent {
@@ -375,8 +379,8 @@ export default function StudentAdministration() {
       <Link href="/secretaria/declaracoes">Voltar às declarações</Link>
       <h1>Alunos e acesso</h1>
       <p className="document-intro">
-        Abra uma turma para consultar seus alunos ou busque pelo nome ou
-        matrícula. Nos detalhes, consulte a situação escolar e os bloqueios.
+        Abra uma turma ou busque por nome, matrícula ou turma. A lista inclui
+        alunos que ainda não criaram conta no portal.
       </p>
       <aside className="document-notice">
         <strong>Como funcionam os bloqueios</strong>
@@ -455,7 +459,7 @@ export default function StudentAdministration() {
                 })
               }
               list="student-classes"
-              placeholder="Todas as turmas"
+              placeholder="Ex.: 1 A DS ou 1ads"
             />
             <datalist id="student-classes">
               {(results?.classes ?? []).map((name) => (
@@ -573,6 +577,9 @@ export default function StudentAdministration() {
                   <h2>{s.name}</h2>
                   <p>
                     Matrícula: {s.registration ?? 'Não informada'} ·{' '}
+                    {accountLabel(s.accountStatus)}
+                  </p>
+                  <p>
                     {s.loginBlocked
                       ? 'Acesso bloqueado'
                       : 'Acesso sem bloqueio'}{' '}
@@ -666,9 +673,7 @@ export default function StudentAdministration() {
               <h3 className={styles.identity}>{student.name}</h3>
               <p>
                 Matrícula: {student.registration ?? 'Não informada'} ·{' '}
-                {student.accountStatus
-                  ? (accountStatus[student.accountStatus] ?? 'Conta a conferir')
-                  : 'Ainda sem conta no portal'}
+                {accountLabel(student.accountStatus)}
               </p>
               <p>Até dez matrículas mais recentes.</p>
               <ul className={styles.rows}>

@@ -365,6 +365,52 @@ async function main() {
     ).json();
     assert.equal(filtered.total, 1);
     assert.equal(filtered.classes[0], enrollment.className);
+    const roster = await env.db.student.createManyAndReturn({
+      data: Array.from({ length: 23 }, (_, index) => ({
+        fullName: `Turma fictícia ${String(index).padStart(2, '0')}`,
+        birthDate: new Date('2000-01-01'),
+      })),
+      select: { id: true },
+    });
+    await env.db.enrollment.createMany({
+      data: roster.map(({ id }, index) => ({
+        studentId: id,
+        mode: 'INTEGRADO',
+        className:
+          index === 22 ? 'TDS1IN-B' : index < 21 ? 'TDS1IN-A' : '1 A DS',
+        courseLabel: 'DS',
+        periodLabel: '2026',
+        grade: 1,
+      })),
+    });
+    const searchClass = async (className: string, page = 1) => {
+      const response = await post({ operation: 'search', className, page });
+      assert.equal(response.status, 200);
+      return response.json();
+    };
+    for (const spelling of ['1ads', '1a ds', '1 ads', '1 A DS', 'TDS1IN-A']) {
+      const result = await searchClass(spelling);
+      assert.equal(result.total, 22, spelling);
+      assert.equal(result.students.length, 20, spelling);
+      assert.ok(
+        result.students.every(
+          (row: { accountStatus: string | null }) => row.accountStatus === null,
+        ),
+      );
+    }
+    const tail = await searchClass('1ads', 2);
+    assert.equal(tail.students.length, 2);
+    assert.equal(tail.total, 22);
+    assert.equal((await searchClass('1bds')).total, 1);
+    const exactClass = await post({
+      operation: 'search',
+      mode: 'INTEGRADO',
+      className: 'TDS1IN-A',
+      periodLabel: '2026',
+      courseLabel: 'DS',
+    });
+    assert.equal(exactClass.status, 200);
+    assert.equal((await exactClass.json()).total, 21);
     const origin = await fetch(
       env.base + '/api/secretaria/alunos/administracao',
       {

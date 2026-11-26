@@ -89,7 +89,7 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
             data: {
               studentId: student.s.id,
               mode,
-              className: '2A DS fictícia',
+              className: 'TDS2IN-A',
               grade: 2,
               courseLabel: 'DS',
               ...syntheticEnrollmentValidity(),
@@ -153,6 +153,36 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
       await expect(
         page.getByRole('heading', { name: 'Alunos e acesso', exact: true }),
       ).toBeVisible();
+      const result = page.getByRole('region', {
+        name: 'Resultado da busca de alunos',
+      });
+      if (mode === 'INTEGRADO') {
+        await env.db.student.create({
+          data: {
+            fullName: 'Estudante fictício sem conta',
+            birthDate: new Date('2000-01-01'),
+            enrollments: {
+              create: {
+                mode,
+                className: 'TDS2IN-A',
+                grade: 2,
+                courseLabel: 'DS',
+              },
+            },
+          },
+        });
+        const turma = page.getByLabel('Turma', { exact: true });
+        await turma.fill('2 a ds');
+        await page
+          .getByRole('button', { name: 'Buscar alunos', exact: true })
+          .click();
+        await expect(
+          result.getByText('Estudante fictício sem conta'),
+        ).toBeVisible();
+        await expect(result.getByText(/Sem conta no portal/)).toBeVisible();
+        await expect(result.getByText(/Conta ativa/)).toBeVisible();
+        await turma.fill('');
+      }
       await page
         .getByLabel('Nome ou matrícula do aluno')
         .fill(student.s.schoolRegistration!);
@@ -162,9 +192,6 @@ for (const mode of ['INTEGRADO', 'SUBSEQUENTE'] as const) {
       await page
         .getByRole('button', { name: 'Buscar alunos', exact: true })
         .click();
-      const result = page.getByRole('region', {
-        name: 'Resultado da busca de alunos',
-      });
       await expect(
         result.getByText(student.s.fullName!, { exact: true }),
       ).toBeVisible();
