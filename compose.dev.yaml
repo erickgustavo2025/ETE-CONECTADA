@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16.15-alpine3.24@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36
+    environment:
+      POSTGRES_DB: ete_test_equipe
+      POSTGRES_USER: ete_maint
+      POSTGRES_PASSWORD_FILE: /run/secrets/ete_dev_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    ports:
+      - '127.0.0.1:${ETE_DEV_DB_PORT:?}:5432'
+    volumes:
+      - dev_data:/var/lib/postgresql/data
+      - ${ETE_DEV_STATE_DIR:?}/db-password:/run/secrets/ete_dev_password:ro
+      - ${ETE_DEV_STATE_DIR:?}/init.sql:/docker-entrypoint-initdb.d/10-ete.sql:ro
+    command: ['postgres', '-c', 'shared_buffers=24MB']
+    cpus: 1
+    mem_limit: 384m
+    healthcheck:
+      test: [CMD, pg_isready, -h, 127.0.0.1, -U, ete_maint, -d, ete_test_equipe]
+      interval: 2s
+      timeout: 3s
+      retries: 25
+
+volumes:
+  dev_data:
