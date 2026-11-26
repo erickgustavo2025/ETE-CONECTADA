@@ -1,5 +1,7 @@
 import { syntheticEnrollmentValidity } from '../../scripts/enrollment-fixture';
 import { randomBytes, randomInt } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
 import { hashPassword } from '../../src/lib/password';
 
@@ -40,6 +42,81 @@ async function login(
     page.getByRole('button', { name: 'Abrir menu de serviços' }),
   ).toBeEnabled();
 }
+
+test('Turma DevOps libera o primeiro acesso das dez matrículas no banco local', async ({
+  page,
+}) => {
+  const { openTestEnvironment } =
+    await import('../../scripts/test-environment');
+  const { db, base, close } = await openTestEnvironment({ http: true });
+  const prepare = () =>
+    execFileSync(
+      process.execPath,
+      ['--import', 'tsx', 'scripts/prepare-demo.ts', '--turma-devops'],
+      {
+        cwd: fileURLToPath(new URL('../../', import.meta.url)),
+        timeout: 30_000,
+      },
+    );
+  try {
+    prepare();
+    const students = await db.student.findMany({
+      where: {
+        enrollments: { some: { className: 'Turma DevOps', status: 'ACTIVE' } },
+      },
+      include: { details: true },
+      orderBy: { schoolRegistration: 'asc' },
+    });
+    expect(students).toHaveLength(10);
+    expect(await db.account.count()).toBe(0);
+    const identification = (student: (typeof students)[number]) => ({
+      schoolRegistration: student.schoolRegistration!,
+      birthDate: student.birthDate.toISOString().slice(0, 10),
+      parentName: student.details!.parentOne!,
+    });
+    for (const student of students.slice(1)) {
+      const check = await page.request.post(`${base}/api/registration/check`, {
+        headers: { Origin: base },
+        data: identification(student),
+      });
+      expect(await check.json()).toEqual({ result: 'eligible' });
+    }
+
+    const identity = identification(students[0]);
+    const password = randomBytes(18).toString('base64url');
+    const email = 'devops-01@example.invalid';
+    await page.goto(`${base}/cadastro`);
+    await page.getByLabel('Matrícula').fill(identity.schoolRegistration);
+    await page.getByLabel('Data de nascimento').fill(identity.birthDate);
+    await page
+      .getByLabel('Nome completo do pai ou da mãe')
+      .fill(identity.parentName);
+    await checkRegistration(page);
+    await page.getByLabel('CPF', { exact: true }).fill(students[0].cpf!);
+    await page.getByLabel('E-mail', { exact: true }).fill(email);
+    await page.getByLabel('Nova senha').fill(password);
+    await page.getByLabel('Confirme a senha').fill(password);
+    await page
+      .getByRole('button', { name: /Confirmar dados e enviar link/ })
+      .click();
+    await page.getByRole('link', { name: 'Confirmar conta de teste' }).click();
+    const verification = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/registration/verify',
+    );
+    await page.getByRole('button', { name: 'Confirmar e-mail' }).click();
+    expect((await verification).status()).toBe(200);
+    await expect(
+      page.getByText(/E-mail confirmado\. Sua conta está ativa\./),
+    ).toBeVisible();
+    prepare();
+    expect(await db.student.count()).toBe(10);
+    expect(await db.account.count()).toBe(1);
+    await login(page, base, email, password);
+  } finally {
+    await close();
+  }
+});
 
 test('primeiro acesso pode ser retomado, confirmado, usado e encerrado', async ({
   page,

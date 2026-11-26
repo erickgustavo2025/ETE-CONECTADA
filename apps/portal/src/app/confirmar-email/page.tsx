@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import PortalFrame from '@/components/portal-frame';
 import UiIcon from '@/components/ui-icon';
+import { useClientReady } from '@/components/use-client-ready';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 
 function Confirmation() {
+  const ready = useClientReady();
   const token = useSearchParams().get('token');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -56,7 +58,7 @@ function Confirmation() {
               className="ete-button"
               type="button"
               onClick={confirm}
-              disabled={busy || !token}
+              disabled={!ready || busy || !token}
             >
               {busy ? 'Confirmando…' : 'Confirmar e-mail'}
             </button>

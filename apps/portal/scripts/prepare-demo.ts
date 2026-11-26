@@ -1,15 +1,26 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { verifyTestDatabase, reportTestFailure } from './test-environment';
+import {
+  verifyTestDatabase,
+  reportTestFailure,
+  TestEnvironmentError,
+} from './test-environment';
 
 async function main() {
-  if (process.argv.length > 2) throw new Error('Use db:demo sem argumentos.');
+  const args = process.argv.slice(2);
+  const devops = args[0] === '--turma-devops';
+  if (args.length > 1 || (args.length === 1 && !devops))
+    throw new TestEnvironmentError(
+      'Use db:demo sem argumentos ou db:demo:devops.',
+    );
   // Confere banco loopback e marcador ANTES de qualquer migração ou seed.
   await verifyTestDatabase();
   const require = createRequire(import.meta.url);
   for (const args of [
     [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
-    ['--import', 'tsx', 'scripts/seed.ts', '--demo'],
+    devops
+      ? ['--import', 'tsx', 'scripts/seed-devops.ts']
+      : ['--import', 'tsx', 'scripts/seed.ts', '--demo'],
   ]) {
     const child = spawnSync(process.execPath, args, {
       stdio: 'inherit',
